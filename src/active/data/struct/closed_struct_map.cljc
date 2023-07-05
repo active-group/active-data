@@ -463,3 +463,7 @@
 
 (defn from-map [struct m]
   (build-map* struct (seq m)))
+
+(defn struct-of-map [m]
+  (assert (clj-instance? PersistentClosedStructMap m))
+  (.-struct m))

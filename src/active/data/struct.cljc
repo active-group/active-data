@@ -66,7 +66,8 @@
 
 ;; TODO: construct from map; either arity 1 of struct-map, or (also) IFn on struct, or separate?
 
-;; TODO: get struct from struct-map (to enable defmethod)
+(defn struct-of [m]
+  (closed-struct-map/struct-of-map m))
 
 (defn ^{:no-doc true
         :doc "Replace validator of struct. Unsynchronized side effect; use only if you know what you are doing."}
