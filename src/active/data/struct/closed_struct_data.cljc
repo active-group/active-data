@@ -7,7 +7,7 @@
 (defn create [struct]
   (object-array (closed-struct/size struct)))
 
-(defn unsafe-access [data index]
+(defn unsafe-access [^objects data ^long index]
   (aget data index))
 
 (defn access [struct data key]
@@ -15,13 +15,13 @@
                  (closed-struct/index-of struct key)))
 
 (let [not-found #?(:clj (Object.) :cljs #js {})]
-  (defn access-with-default [struct data key default]
+  (defn access-with-default [struct ^objects data key default]
     (let [index (closed-struct/maybe-index-of struct key not-found)]
       (if (identical? index not-found)
         default
         (aget data index)))))
 
-(defn kv-reduce [struct data f init]
+(defn kv-reduce [struct ^objects data f init]
   (let [keys (closed-struct/keys struct)
         len (closed-struct/size struct)]
     (loop [res init
@@ -33,15 +33,15 @@
             (recur res (inc idx))))
         res))))
 
-(defn unsafe-mutate! [data index value]
+(defn unsafe-mutate! [^objects data ^long index value]
   (aset data index value)
   data)
 
 (defn mutate! [struct data key value]
-  (let [index (closed-struct/index-of struct key)]
+  (let [index ^long (closed-struct/index-of struct key)]
     (unsafe-mutate! data index value)))
 
-(defn copy [data]
+(defn copy [^objects data]
   (aclone data))
 
 (defn equiv [^objects v1 ^objects v2]
