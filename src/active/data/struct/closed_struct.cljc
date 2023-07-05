@@ -9,6 +9,8 @@
   (-get-validator [this])
   (-set-validator [this validator]))
 
+(declare equals?)
+
 (deftype ^:private ClosedStruct [keys keyset index-map  ^:unsynchronized-mutable validator extended-struct]
   ;; Note: 'keys' is in original order; keyset the same as a set.
   IClosedStruct
@@ -16,18 +18,35 @@
     (.-validator this))
   (-set-validator [this validator]
     (set! (.-validator this) validator))
-  #?@(:clj
 
+  ;; TODO: hashing.
+  #?@(:clj
       [clojure.lang.IHashEq
        (hasheq [this]
                (hash index-map))
        Object
        (equals [this other]
-               (if (instance? ClosedStruct other)
-                 ;; Note: this makes sure keys are in the same order (required because of the internal representation as an array)
-                 ;; OPT: faster to compare only the keys?
-                 (= index-map (.-index-map other))
-                 false))]))
+               (equals? this other))]
+
+      :cljs
+      [Object
+       (equiv [this other] (-equiv this other))
+
+       IEquiv
+       (-equiv [this other]
+               (equals? this other))
+
+       ;;IHash
+       ;;(-hash [this] (caching-hash this hash-unordered-coll _hash))
+       ]))
+
+(defn- equals? [^ClosedStruct struct other]
+  (if (instance? ClosedStruct other)
+    ;; Note: this makes sure keys are in the same order (required because of the internal representation as an array)
+    ;; OPT: faster to compare only the keys?
+    (= (.-index-map struct) (.-index-map ^ClosedStruct other))
+    false))
+
 
 #?(:clj
    ;; TODO: tune that a bit, add namespace, deduplicate impls.
