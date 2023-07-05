@@ -78,7 +78,7 @@
 
 (defn predicate?
   [thing]
-  (satisfies? predicate-realm thing))
+  (instance? predicate-realm thing))
 
 (defn predicate
   [desc predicate]
@@ -94,7 +94,7 @@
 
 (defn optional?
   [thing]
-  (satisfies? optional-realm thing))
+  (instance? optional-realm thing))
 
 (declare compile)
 
@@ -112,7 +112,7 @@
 
 (defn integer-from-to?
   [thing]
-  (satisfies? integer-from-to-realm thing))
+  (instance? integer-from-to-realm thing))
 
 (defn integer-from-to
   [from to]
@@ -135,7 +135,7 @@
 
 (defn mixed?
   [thing]
-  (satisfies? mixed-realm thing))
+  (instance? mixed-realm thing))
 
 (defn mixed
   [& realms]
@@ -153,7 +153,7 @@
 
 (defn enum?
   [thing]
-  (satisfies? enum-realm thing))
+  (instance? enum-realm thing))
 
 (defn enum
   [& values]
@@ -169,7 +169,7 @@
 
 (defn seq-of?
   [thing]
-  (satisfies? seq-of-realm thing))
+  (instance? seq-of-realm thing))
 
 (defn seq-of
   [realm]
@@ -185,7 +185,7 @@
 
 (defn set-of?
   [thing]
-  (satisfies? set-of-realm thing))
+  (instance? set-of-realm thing))
 
 (defn set-of
   [realm]
@@ -201,7 +201,7 @@
 
 (defn map-with-keys?
   [thing]
-  (satisfies? map-with-keys-realm thing))
+  (instance? map-with-keys-realm thing))
 
 (defn map-with-keys
   [keys-realm-map]
@@ -226,7 +226,7 @@
 
 (defn map-of?
   [thing]
-  (satisfies? map-of-realm thing))
+  (instance? map-of-realm thing))
 
 (defn map-of
   [key-realm value-realm]
@@ -247,7 +247,7 @@
 
 (defn tuple?
   [thing]
-  (satisfies? tuple-realm thing))
+  (instance? tuple-realm thing))
 
 (defn tuple
   [& realms]
@@ -279,7 +279,7 @@
 
 (defn record?
   [thing]
-  (satisfies? record-realm thing))
+  (instance? record-realm thing))
 
 (defn record
   [name constructor predicate fields]
