@@ -1,4 +1,4 @@
-(ns ^:realm active.data.realm-test
+(ns active.data.realm-test
   (:require [active.data.realm :as realm]
             #?(:cljs [cljs.test :as t])
             #?(:clj [clojure.test :refer :all]))
