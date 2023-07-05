@@ -5,7 +5,6 @@
                               struct-map instance? satisfies? set-validator!])
     (:require
      [clojure.core :as core]
-     [active.clojure.record :refer :all]
      [active.data.struct :refer :all]
      [clojure.set :as set]
      [clojure.string :as string])
