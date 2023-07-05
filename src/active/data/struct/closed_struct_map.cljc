@@ -62,7 +62,9 @@
 (defn- unchecked-assoc! [struct data key val]
   ;; unchecked = without ensure-editable!
   (closed-struct/validate-single! struct key val)
-  (data/mutate! struct data key val))
+  (if-let [index (struct-key/optimized-for? key struct)]
+    (data/unsafe-mutate! data index val)
+    (data/mutate! struct data key)))
 
 (defprotocol ^:private TransientUtil ;; to share some code between clj/cljs, with hopefully little runtime overhead.
   (t-assoc [this key val])
@@ -451,11 +453,13 @@
   ;; TODO: fail if not all keys given, or not? (records allowed that to some extend - via less fields in ctor)
   ;; TODO: if allowing the same key multiple times, then each occurrence is validated; even if overriden later; is that what we want?
   (assert (closed-struct/closed-struct? struct)) ;; TODO: exception
-  (-> (reduce (fn [res [k v]]
-                (assoc! res k v))
-              (unvalidated-empty-transient struct)
-              key-val-pairs)
-      (persistent!)))
+  (-> (create struct
+              (reduce (fn [res [k v]]
+                        (unchecked-assoc! struct res k v))
+                      (data/create struct)
+                      key-val-pairs)
+              nil)
+      (closed-struct/validate-map-only struct)))
 
 (defn build-map [struct keys-vals]
   (assert (even? (count keys-vals))) ;; TODO: exception
