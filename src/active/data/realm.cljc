@@ -297,6 +297,8 @@
               record-realm-fields fields
               metadata {}))
 
+; FIXME: struct-map-record
+
 (defn compile
   [shorthand]
   (if (realm? shorthand)
