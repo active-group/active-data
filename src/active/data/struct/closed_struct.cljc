@@ -1,6 +1,7 @@
 (ns ^:no-doc active.data.struct.closed-struct
   (:require [active.data.struct.validator :as v])
-  (:refer-clojure :exclude [set-validator! #?@(:cljs [contains? keys])]
+  (:refer-clojure :exclude [set-validator! get-validator
+                            #?@(:cljs [contains? keys])]
                   :rename {contains? clj-contains?
                            keys clj-keys}))
 
@@ -23,6 +24,7 @@
        Object
        (equals [this other]
                (if (instance? ClosedStruct other)
+                 ;; Note: this makes sure keys are in the same order (required because of the internal representation as an array)
                  ;; OPT: faster to compare only the keys?
                  (= index-map (.-index-map other))
                  false))]))
@@ -54,6 +56,10 @@
 (defn set-validator! [^ClosedStruct t validator]
   (assert (closed-struct? t)) ;; TODO: nice exception?
   (-set-validator t validator))
+
+(defn get-validator [^ClosedStruct t]
+  (assert (closed-struct? t)) ;; TODO: nice exception?
+  (-get-validator t))
 
 (defn- maybe-validate! [m ^ClosedStruct t changed-keys changed-values]
   ;; validate map, if the struct has any of the changed-keys

@@ -4,7 +4,7 @@
             [active.data.struct.closed-struct-map :as closed-struct-map]
             #_[active.clojure.lens :as lens])
   (:refer-clojure :exclude [struct-map instance? satisfies?
-                            set-validator!]))
+                            set-validator! get-validator]))
 
 ;; Note: there is no positional constructor on purpose; although they
 ;; can be handy for small structs, they quickly become hard to read
@@ -75,6 +75,9 @@
   ;; you usually want to use the defined keys in the validator
   ;; implementation; that would make for a weird macro.
   (closed-struct/set-validator! struct validator))
+
+(defn ^:no-doc get-validator [struct]
+  (closed-struct/get-validator struct))
 
 (defn struct?
   "Tests if v is a struct defined by [[def-struct]]."
