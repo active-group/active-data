@@ -491,3 +491,43 @@
 (defn struct-of-map [m]
   (assert (clj-instance? PersistentClosedStructMap m))
   (.-struct m))
+
+(defn accessor [struct key]
+  ;; TODO: actually optimize it, e.g by looking at key beforehand.
+  (fn [m]
+    (get m key)))
+
+(defn mutator [struct key]
+  ;; TODO: actually optimize it, e.g by looking at key beforehand.
+  (fn [m v]
+    (assoc m key v)))
+
+(defn mutator! [struct key]
+  ;; TODO: actually optimize it, e.g by looking at key beforehand.
+  (fn [m v]
+    (assoc! m key v)))
+
+(defn positional-constructor [struct]
+  ;; TODO: actually optimized; a lot can be done here; use
+  ;; arity-specific functions (for #fields < 21), look if validation
+  ;; is needed; generate validation functions beforehand, etc.
+
+  (fn [& args]
+    (build-map-positional struct args))
+  
+  ;; Note: this makes for a 10x speedup, for example:
+  #_(let [keys (closed-struct/keys struct)
+        has-validation? true ;; checking that makes it even faster (half the time).
+        ]
+    (if (= 2 (count (closed-struct/keys struct)))
+      (let [[k1 k2] keys]
+        (fn [v1 v2]
+          (closed-struct/validate-single! struct k1 v1)
+          (closed-struct/validate-single! struct k2 v2)
+          (-> (create struct
+                      (doto (data/create struct)
+                        (data/unsafe-mutate! 0 v1)
+                        (data/unsafe-mutate! 1 v2))
+                      nil)
+              (closed-struct/validate-map-only struct))))
+      )))

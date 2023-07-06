@@ -70,7 +70,45 @@
 
 ;; TODO: construct from map; either arity 1 of struct-map, or (also) IFn on struct, or separate?
 
-(defn struct-of [m]
+(defn constructor
+  "Returns an optimized positional constructor function for struct-maps
+  of the given struct. The order of the arguments to the constructor
+  must match that of the definition of the struct, with additional
+  fields from extended structs first."
+  [struct]
+  ;; Note: any validator (set-validator!) must already be set; setting
+  ;; it afterwards may not be reflected in the returned constructor
+  ;; function.
+  (closed-struct-map/positional-constructor struct))
+
+(defn accessor
+  "Returns an optimized accessor function for the value associated with
+  the given key in a struct-map of the given struct."
+  [struct key]
+  ;; Note: (key m) and even (get m key) is already very
+  ;; efficient. This is slightly more efficient; but only use it if
+  ;; needed.
+  (closed-struct-map/accessor struct key))
+
+(defn mutator
+  "Returns an optimized mutator function for the value associated with
+  the given key in a struct-map of the given struct."
+  [struct key]
+  ;; Note: (key m v) and even (assoc m key v) is already very
+  ;; efficient. This is slightly more efficient; but only use it if
+  ;; needed.
+  (closed-struct-map/mutator struct key))
+
+(defn mutator!
+  "Returns an optimized mutator function for the value associated with
+  the given key in a transient struct-map of the given struct."
+  [struct key]
+  ;; Note: (assoc! m key v) and even (assoc m key v) is already very
+  ;; efficient. This is slightly more efficient; but only use it if
+  ;; needed.
+  (closed-struct-map/mutator! struct key))
+
+(defn struct-of "Returns the struct the given struct-map was created from." [m]
   (closed-struct-map/struct-of-map m))
 
 (defn ^{:no-doc true
