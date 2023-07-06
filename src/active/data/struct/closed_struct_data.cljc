@@ -4,8 +4,12 @@
 
 ;; TODO: maybe this should do field validation?
 
-(defn create [struct]
-  (object-array (closed-struct/size struct)))
+(defn create
+  ([struct]
+   (object-array (closed-struct/size struct)))
+  ([struct values]
+   (assert (= (closed-struct/size struct) (count values))) ;; TODO: proper exception
+   (to-array values)))
 
 (defn unsafe-access [^objects data ^long index]
   (aget data index))

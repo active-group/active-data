@@ -51,7 +51,7 @@
 #?(:clj
    ;; TODO: tune that a bit, add namespace, deduplicate impls.
    
-   (defmethod print-method ClosedStruct [s ^java.io.Writer writer]
+   (defmethod print-method ClosedStruct [^ClosedStruct s ^java.io.Writer writer]
      (.write writer "#Struct{")
      (when-let [k (first (.-keys s))]
        (print-method k writer))
@@ -63,7 +63,7 @@
    :cljs
    (extend-protocol IPrintWithWriter
      ClosedStruct
-     (-pr-writer [s writer _]
+     (-pr-writer [^ClosedStruct s writer _]
        (write-all writer "#Struct{")
        (doseq [k (interpose ", " (.-keys s))]
          (write-all writer k))
@@ -131,7 +131,7 @@
 (defn extended-struct [^ClosedStruct t]
   (.-extended-struct t))
 
-(defn create [fields extended-struct]
+(defn create [fields ^ClosedStruct extended-struct]
   ;; Note: keys of the extended struct must come first! (for optimizations to work)
   (let [all-fields (vec (concat (when (some? extended-struct) (.-keys extended-struct)) fields))]
     (ClosedStruct. all-fields
@@ -167,8 +167,8 @@
 (defn keys "Vector of keys in order given in [[create]]." [^ClosedStruct t]
   (.-keys t))
 
-(defn keyset [t]
+(defn keyset [^ClosedStruct t]
   (.-keyset t))
 
-(defn extended-struct "The struct that t extends, or nil." [t]
+(defn extended-struct "The struct that t extends, or nil." [^ClosedStruct t]
   (.-extended-struct t))

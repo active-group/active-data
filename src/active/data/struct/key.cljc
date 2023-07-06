@@ -19,10 +19,9 @@
       (set! (.-struct this) s)
       (set! (.-index this) idx)))
   (-optimized-for? [this s]
-    (if (and (some? struct)
-             (same-or-extended? s struct))
-      index
-      nil))
+    (when (and (some? struct)
+               (same-or-extended? s struct))
+      index))
   
   #?@(:clj
       [clojure.lang.IHashEq

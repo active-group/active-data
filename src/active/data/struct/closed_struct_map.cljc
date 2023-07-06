@@ -453,20 +453,40 @@
   ;; TODO: fail if not all keys given, or not? (records allowed that to some extend - via less fields in ctor)
   ;; TODO: if allowing the same key multiple times, then each occurrence is validated; even if overriden later; is that what we want?
   (assert (closed-struct/closed-struct? struct)) ;; TODO: exception
-  (-> (create struct
-              (reduce (fn [res [k v]]
-                        (unchecked-assoc! struct res k v))
-                      (data/create struct)
-                      key-val-pairs)
-              nil)
-      (closed-struct/validate-map-only struct)))
+  (let [data (data/create struct)]
+    (doseq [[k v] key-val-pairs]
+      ;; Note: unchecked-assoc! does validate-field!
+      (unchecked-assoc! struct data k v))
+    (-> (create struct
+                data
+                nil)
+        (closed-struct/validate-map-only struct))))
 
-(defn build-map [struct keys-vals]
-  (assert (even? (count keys-vals))) ;; TODO: exception
-  (build-map* struct (partition 2 keys-vals)))
+(defn build-map-positional [struct vals]
+  (assert (closed-struct/closed-struct? struct))
+  (let [data (data/create struct vals)] ;; Note: data/create checks arity
+    (doseq [[key val] (map vector (closed-struct/keys struct) vals)]
+      (closed-struct/validate-single! struct key val))
+    (-> (create struct
+                data
+                nil)
+        (closed-struct/validate-map-only struct))))
 
 (defn from-map [struct m]
-  (build-map* struct (seq m)))
+  #_(build-map* struct (seq m))
+  
+  (assert (= (set (keys m)) (closed-struct/keyset struct))) ;; TODO: 'key not in struct' exception? or assert and ignore?
+  (build-map-positional struct
+                        (map m
+                             (closed-struct/keys struct))))
+
+(defn build-map [struct keys-vals]
+  ;; alternative; slightly slower currently:
+  #_(build-map* struct
+                (partition 2 keys-vals))
+
+  ;; Note: this already removes duplicated.
+  (from-map struct (apply hash-map keys-vals)))
 
 (defn struct-of-map [m]
   (assert (clj-instance? PersistentClosedStructMap m))
