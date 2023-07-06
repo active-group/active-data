@@ -34,6 +34,10 @@
    `(def-struct ~t :extends nil ~fields))
   ([t x super fields]
    (assert (= :extends x)) ;; TODO: proper exception
+   (when (empty? fields)
+     ;; Note: all empty structs would be equal (and all struct-map instances of all)
+     ;; And unique values should probably be created differently anyway.
+     (throw (ex-info "Cannot define an empty struct." {:name t})))
    `(do
       ~@(for [f# fields]
           `(def-key ~(cond-> f#
