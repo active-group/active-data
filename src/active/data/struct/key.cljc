@@ -38,7 +38,12 @@
        (equals [this other]
                (if (instance? Key other)
                  (= sym (.-sym other))
-                 false))])
+                 false))
+
+       (toString [this]
+                 ;; this is (str key)
+                 ;; TODO: with or without ~ ?
+                 (name sym))])
 
   #?@(:clj
       ;; Note: the struct-map implementation of get and assoc will look for 'struct' and 'index', and use it if set.
