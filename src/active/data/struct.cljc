@@ -130,6 +130,7 @@
 (defn instance?
   "Tests if `v` is a struct map created from the given `struct`."
   [struct v]
+  ;; TODO: should a struct-map of a derived struct be an instance of the extended struct? (it currently isn't; only satisfies? allows that)
   (closed-struct-map/instance? struct v))
 
 (defn satisfies?
