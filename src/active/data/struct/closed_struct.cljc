@@ -1,5 +1,4 @@
 (ns ^:no-doc active.data.struct.closed-struct
-  (:require [active.data.struct.validator :as v])
   (:refer-clojure :exclude [set-validator! get-validator
                             #?@(:cljs [contains? keys])]
                   :rename {contains? clj-contains?
@@ -79,54 +78,6 @@
 (defn get-validator [^ClosedStruct t]
   (assert (closed-struct? t)) ;; TODO: nice exception?
   (-get-validator t))
-
-(defn- maybe-validate! [m ^ClosedStruct t changed-keys changed-values]
-  ;; validate map, if the struct has any of the changed-keys
-  (when-let [v (-get-validator t)]
-    ;; OPT: maybe validators should be able to say that they are 'inactive', so that we don't have to do this:
-    (when-let [red (->> (map (fn [k v]
-                               (when (clj-contains? (.-keyset t) k)
-                                 [k v]))
-                             changed-keys changed-values)
-                        (remove nil?)
-                        (not-empty))]
-      (let [changed-keys (map first red)
-            changed-values (map second red)]
-        (when-let [s (.-extended-struct t)]
-          (maybe-validate! m s changed-keys changed-values))
-        
-        (v/validate! v m changed-keys changed-values)))))
-
-(defn validate [m ^ClosedStruct t changed-keys changed-values]
-  ;; validator of extended struct, only if its fields changed:
-  (when-let [s (.-extended-struct t)]
-    (maybe-validate! m s changed-keys changed-values))
-  ;; but this one always:
-  (when-let [v (-get-validator t)]
-    (v/validate! v m changed-keys changed-values))
-  m)
-
-(defn validate-single! [^ClosedStruct t changed-key changed-value]
-  (when-let [s (.-extended-struct t)]
-    (when (clj-contains? (.-keyset s) changed-key)
-      (validate-single! s changed-key changed-value)))
-  (when-let [v (-get-validator t)]
-    (v/validate-single! v changed-key changed-value)))
-
-(defn validate-map-only [m ^ClosedStruct t]
-  (when-let [s (.-extended-struct t)]
-    (validate-map-only m s))
-  (when-let [v (-get-validator t)]
-    (v/validate-map-only! v m))
-  m)
-
-(defn valid? [^ClosedStruct t m]
-  (and (if-let [s (.-extended-struct t)]
-         (valid? s m)
-         true)
-       (if-let [validator (-get-validator t)]
-           (v/valid? validator m)
-           true)))
 
 (defn extended-struct [^ClosedStruct t]
   (.-extended-struct t))

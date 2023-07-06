@@ -1,13 +1,62 @@
 (ns ^:no-doc active.data.struct.closed-struct-map
   (:require [active.data.struct.closed-struct :as closed-struct]
             [active.data.struct.closed-struct-data :as data]
-            [active.data.struct.key :as struct-key])
+            [active.data.struct.key :as struct-key]
+            [active.data.struct.validator :as v])
   #?(:clj (:import (clojure.lang Util)))
   (:refer-clojure :rename {instance? clj-instance?
                            satisfies? clj-satisfies?}
                   :exclude [#?@(:cljs [satisfies? instance?])
                             accessor struct-map struct create-struct]))
 
+
+(defn- maybe-validate! [m t changed-keys changed-values]
+  ;; validate map, if the struct has any of the changed-keys
+  (when-let [v (closed-struct/get-validator t)]
+    ;; OPT: maybe validators should be able to say that they are 'inactive', so that we don't have to do this:
+    (when-let [red (->> (map (fn [k v]
+                               (when (closed-struct/contains? t k)
+                                 [k v]))
+                             changed-keys changed-values)
+                        (remove nil?)
+                        (not-empty))]
+      (let [changed-keys (map first red)
+            changed-values (map second red)]
+        (when-let [s (closed-struct/extended-struct t)]
+          (maybe-validate! m s changed-keys changed-values))
+        
+        (v/validate! v m changed-keys changed-values)))))
+
+(defn- validate [m t changed-keys changed-values]
+  ;; validator of extended struct, only if its fields changed:
+  (when-let [s (closed-struct/extended-struct t)]
+    (maybe-validate! m s changed-keys changed-values))
+  ;; but this one always:
+  (when-let [v (closed-struct/get-validator t)]
+    (v/validate! v m changed-keys changed-values))
+  m)
+
+(defn- validate-single! [t changed-key changed-value]
+  (when-let [s (closed-struct/extended-struct t)]
+    (when (closed-struct/contains? s changed-key)
+      (validate-single! s changed-key changed-value)))
+  (when-let [v (closed-struct/get-validator t)]
+    (v/validate-single! v changed-key changed-value)))
+
+(defn- validate-map-only [m t]
+  (when-let [s (closed-struct/extended-struct t)]
+    (validate-map-only m s))
+  (when-let [v (closed-struct/get-validator t)]
+    (v/validate-map-only! v m))
+  m)
+
+(defn valid? [t m]
+  (and (if-let [s (closed-struct/extended-struct t)]
+         (valid? s m)
+         true)
+       (if-let [validator (closed-struct/get-validator t)]
+         (v/valid? validator m)
+         true)))
 
 #?(:clj
    (defn- java-cons-o [o]
@@ -61,7 +110,7 @@
 
 (defn- unchecked-assoc! [struct data key val]
   ;; unchecked = without ensure-editable!
-  (closed-struct/validate-single! struct key val)
+  (validate-single! struct key val)
   (if-let [index (struct-key/optimized-for? key struct)]
     (data/unsafe-mutate! data index val)
     (data/mutate! struct data key)))
@@ -92,7 +141,7 @@
     (set! (.-owner this) false)
     ;; transient -> persistent looses meta.
     (-> (create struct data nil)
-        (closed-struct/validate-map-only struct)))
+        (validate-map-only struct)))
 
   (t-get [this key]
     (ensure-editable! owner)
@@ -205,13 +254,13 @@
                          (data/unsafe-mutate! (data/copy data) index val)
                          (data/mutate! struct (data/copy data) key val))
                 _meta)
-        (closed-struct/validate struct (list key) (list val))))
+        (validate struct (list key) (list val))))
 
   (do-empty [this]
     ;; OPT: 'memoize' the empty val in struct? we can't create it before hand because of the validation :-/
     (-> (create struct (data/create struct) _meta)
         ;; potentially all keys have changed, to nil
-        (closed-struct/validate struct (closed-struct/keys struct) (repeat (closed-struct/size struct) nil))))
+        (validate struct (closed-struct/keys struct) (repeat (closed-struct/size struct) nil))))
 
   (do-transient [this]
     (TransientClosedStructMap. struct (data/copy data) true))
@@ -227,7 +276,7 @@
                                  (data/copy data)
                                  changed-keys-vals)
                   _meta)
-          (closed-struct/validate struct changed-keys changed-vals))))
+          (validate struct changed-keys changed-vals))))
 
   (do-struct-equiv [this other]
     (and (= struct (.-struct ^PersistentClosedStructMap other))
@@ -441,7 +490,7 @@
       (and (map? v)
            (and (every? #(contains? v %) (closed-struct/keys t))
                 ;; Note: passes v to validator, which may contain more keys. (validators should allow that)
-                (closed-struct/valid? t v)))))
+                (valid? t v)))))
 
 (defn unvalidated-empty-transient [struct]
   ;; even if an all-nil map would be invalid, if it is immediately
@@ -460,17 +509,17 @@
     (-> (create struct
                 data
                 nil)
-        (closed-struct/validate-map-only struct))))
+        (validate-map-only struct))))
 
 (defn build-map-positional [struct vals]
   (assert (closed-struct/closed-struct? struct))
   (let [data (data/create struct vals)] ;; Note: data/create checks arity
     (doseq [[key val] (map vector (closed-struct/keys struct) vals)]
-      (closed-struct/validate-single! struct key val))
+      (validate-single! struct key val))
     (-> (create struct
                 data
                 nil)
-        (closed-struct/validate-map-only struct))))
+        (validate-map-only struct))))
 
 (defn from-map [struct m]
   #_(build-map* struct (seq m))
