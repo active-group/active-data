@@ -4,7 +4,8 @@
             [active.data.struct.closed-struct-map :as closed-struct-map]
             #_[active.clojure.lens :as lens])
   (:refer-clojure :exclude [struct-map instance? satisfies?
-                            set-validator! get-validator]))
+                            set-validator! get-validator
+                            accessor]))
 
 ;; Note: there is no positional constructor on purpose; although they
 ;; can be handy for small structs, they quickly become hard to read

@@ -5,7 +5,7 @@
                               struct-map instance? satisfies? set-validator!])
     (:require
      [clojure.core :as core]
-     [active.data.struct :refer :all]
+     [active.data.struct :refer [def-struct struct-map satisfies? instance?]]
      [clojure.set :as set]
      [clojure.string :as string])
     (:import java.net.URL)
