@@ -556,27 +556,90 @@
   (fn [m v]
     (assoc! m key v)))
 
-(defn positional-constructor [struct]
-  ;; TODO: actually optimized; a lot can be done here; use
-  ;; arity-specific functions (for #fields < 21), look if validation
-  ;; is needed; generate validation functions beforehand, etc.
-
-  (fn [& args]
-    (build-map-positional struct args))
-  
-  ;; Note: this makes for a 10x speedup, for example:
-  #_(let [keys (closed-struct/keys struct)
-        has-validation? true ;; checking that makes it even faster (half the time).
-        ]
-    (if (= 2 (count (closed-struct/keys struct)))
-      (let [[k1 k2] keys]
-        (fn [v1 v2]
-          (closed-struct/validate-single! struct k1 v1)
-          (closed-struct/validate-single! struct k2 v2)
-          (-> (create struct
-                      (doto (data/create struct)
-                        (data/unsafe-mutate! 0 v1)
-                        (data/unsafe-mutate! 1 v2))
+(defn positional-n [struct]
+  (let [keys (closed-struct/keys struct)
+        nkeys (count keys)
+        has-validation? (some? (closed-struct/get-validator struct))]
+    (fn [& args]
+      (assert (= (count args) nkeys))
+      (when has-validation?
+        (doseq [[k v] (map vector keys args)]
+          (validate-single! struct k v)))
+      (cond-> (create struct
+                      (let [data (data/create struct)]
+                        (doseq [[idx v] (map-indexed vector args)]
+                          (data/unsafe-mutate! data idx v))
+                        data)
                       nil)
-              (closed-struct/validate-map-only struct))))
-      )))
+        has-validation? (validate-map-only struct)))))
+
+(defmacro gen-positional [n]
+  (let [keys (repeatedly n #(gensym "k"))
+        vars (repeatedly n #(gensym "v"))
+        struct (gensym "struct")
+        data (gensym "data")]
+    `(fn [~struct]
+       (let [[~@keys] (closed-struct/keys ~struct)
+             has-validation?# (some? (closed-struct/get-validator ~struct))]
+         ;; OPT: we could check if struct is an extended struct, and optimize a few things based on that.
+         (fn [~@vars]
+           (when has-validation?#
+             (do ~@(map (fn [k v]
+                          `(validate-single! ~struct ~k ~v))
+                        keys
+                        vars)))
+           (cond-> (create ~struct
+                           (let [~data (data/create ~struct)]
+                             (do
+                               ~@(map-indexed (fn [idx v]
+                                                `(data/unsafe-mutate! ~data ~idx ~v))
+                                              vars))
+                             ~data)
+                           nil)
+             has-validation?# (validate-map-only ~struct)))))))
+
+(def positional-1 (gen-positional 1))
+(def positional-2 (gen-positional 2))
+(def positional-3 (gen-positional 3))
+(def positional-4 (gen-positional 4))
+(def positional-5 (gen-positional 5))
+(def positional-6 (gen-positional 6))
+(def positional-7 (gen-positional 7))
+(def positional-8 (gen-positional 8))
+(def positional-9 (gen-positional 9))
+(def positional-10 (gen-positional 10))
+(def positional-11 (gen-positional 11))
+(def positional-12 (gen-positional 12))
+(def positional-13 (gen-positional 13))
+(def positional-14 (gen-positional 14))
+(def positional-15 (gen-positional 15))
+(def positional-16 (gen-positional 16))
+(def positional-17 (gen-positional 17))
+(def positional-18 (gen-positional 18))
+(def positional-19 (gen-positional 19))
+(def positional-20 (gen-positional 20))
+
+(defn positional-constructor [struct]
+  (case (count (closed-struct/keys struct))
+    1 (positional-1 struct)
+    2 (positional-2 struct)
+    3 (positional-3 struct)
+    4 (positional-4 struct)
+    5 (positional-5 struct)
+    6 (positional-6 struct)
+    7 (positional-7 struct)
+    8 (positional-8 struct)
+    9 (positional-9 struct)
+    10 (positional-10 struct)
+    11 (positional-11 struct)
+    12 (positional-12 struct)
+    13 (positional-13 struct)
+    14 (positional-14 struct)
+    15 (positional-15 struct)
+    16 (positional-16 struct)
+    17 (positional-17 struct)
+    18 (positional-18 struct)
+    19 (positional-19 struct)
+    20 (positional-20 struct)
+    ;; else
+    (positional-n struct)))

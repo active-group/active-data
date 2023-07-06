@@ -58,7 +58,13 @@
                            t-a nil
                            t-a 42))
         "Later values 'override' previous values in struct-map")
-  )
+
+  (t/testing "precalculated positional ctor"
+    (let [ctor (sut/constructor T)]
+      (t/is (= (sut/struct-map T
+                               t-a 42
+                               t-b :foo)
+               (ctor 42 :foo))))))
 
 (t/deftest printer-test
   ;; (also indirectly tests key printer)
