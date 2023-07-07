@@ -9,7 +9,7 @@
   "
   ```
   (def-realm-struct T
-    [f1 X
+    [f1 realm/int
      f2 realm/string])
   "
   
