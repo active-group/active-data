@@ -2,6 +2,7 @@
   (:require [active.data.struct.key :as key]
             [active.data.struct.closed-struct :as closed-struct]
             [active.data.struct.closed-struct-map :as closed-struct-map]
+            [active.data.struct.closed-struct-meta :as closed-struct-meta]
             #_[active.clojure.lens :as lens])
   (:refer-clojure :exclude [struct-map instance? satisfies?
                             set-validator! get-validator
@@ -15,6 +16,51 @@
 
 (defmacro ^:no-doc def-key [name]
   `(def ~name (key/make (symbol ~(str *ns*) ~(str name)))))
+
+(defn ^:no-doc parse-def-struct-args [args]
+  ;; ...could use spec for that.
+  ;; TODO: not super tight on possible errors...
+  (loop [args args
+         extends nil
+         fields nil]
+    (if (empty? args)
+      [extends nil fields]
+      (cond
+        (true? extends) (recur (rest args)
+                               (first args)
+                               fields)
+        :else
+        (case (first args)
+          :extends (recur (rest args)
+                          true
+                          fields)
+          (recur (rest args)
+                 extends
+                 (first args)))))))
+
+(defmacro ^:no-doc def-struct*
+  [t extends _meta fields]
+  (when (empty? fields)
+    ;; Note: all empty structs would be equal (and all struct-map instances of all)
+    ;; And unique values should probably be created differently anyway.
+    (throw (ex-info "Cannot define an empty struct." {:name t})))
+
+  `(do
+     ~@(for [f# fields]
+         `(def-key ~(cond-> f#
+                      (and (contains? (meta t) :private)
+                           (not (contains? (meta f#) :private)))
+                      (vary-meta assoc :private (:private (meta t))))))
+
+     ;; Note that 'meta' is evaluated after the fields, so they may refer to them.
+     (def ~t (closed-struct/create ~fields
+                                   ~extends
+                                   (assoc ~_meta closed-struct-meta/name-meta-key (symbol (str *ns*) (str '~t)))))
+
+     ~@(for [f# fields]
+         `(key/optimize-for! ~f# ~t))
+     
+     ~t))
 
 (defmacro def-struct
   "Defines a struct and its keys:
@@ -31,28 +77,9 @@
     [field-2])
   ```
   "
-  ([t fields]
-   `(def-struct ~t :extends nil ~fields))
-  ([t x super fields]
-   (assert (= :extends x)) ;; TODO: proper exception
-   (when (empty? fields)
-     ;; Note: all empty structs would be equal (and all struct-map instances of all)
-     ;; And unique values should probably be created differently anyway.
-     (throw (ex-info "Cannot define an empty struct." {:name t})))
-   `(do
-      ~@(for [f# fields]
-          `(def-key ~(cond-> f#
-                       (and (contains? (meta t) :private)
-                            (not (contains? (meta f#) :private)))
-                       (vary-meta assoc :private (:private (meta t))))))
-     
-      (def ~t (closed-struct/create ~fields
-                                    ~super))
-
-      ~@(for [f# fields]
-          `(key/optimize-for! ~f# ~t))
-     
-      ~t)))
+  ([t & args]
+   (let [[extends _meta fields] (parse-def-struct-args args)]
+     `(def-struct* ~t ~extends ~_meta ~fields))))
 
 (defn struct-map
   "Returns a new struct map with the keys of the struct. All keys of the
@@ -77,9 +104,6 @@
   must match that of the definition of the struct, with additional
   fields from extended structs first."
   [struct]
-  ;; Note: any validator (set-validator!) must already be set; setting
-  ;; it afterwards may not be reflected in the returned constructor
-  ;; function.
   (closed-struct-map/positional-constructor struct))
 
 (defn accessor
