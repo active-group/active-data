@@ -260,14 +260,14 @@
 
 (def-struct ^{:doc "Description of the field of a record."}
   record-realm-field
-  [record-realm-field-name record-realm-field-realm record-realm-field-lens])
+  [record-realm-field-name record-realm-field-realm record-realm-field-getter])
 
 (defn field
-  [name realm lens]
+  [name realm getter]
   (struct-map record-realm-field
               record-realm-field-name name
               record-realm-field-realm (compile realm)
-              record-realm-field-lens lens))
+              record-realm-field-getter getter))
 
 (def-struct ^{:doc "Realm for records."}
   record-realm

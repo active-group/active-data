@@ -51,20 +51,12 @@
 
 (defrecord Pare [kar kdr])
 
-(defn kar-lens
-  ([pare] (:kar pare))
-  ([pare new-kar] (assoc pare :kar new-kar)))
-
-(defn kdr-lens
-  ([pare] (:kdr pare))
-  ([pare new-kdr] (assoc pare :kdr new-kdr)))
-
 (def pare-realm
   (realm/record "Pare"
                 ->Pare
                 (partial instance? Pare)
-                [(realm/field "kar" realm/int kar-lens)
-                 (realm/field "kdr" realm/double kdr-lens)]))
+                [(realm/field "kar" realm/int :kar)
+                 (realm/field "kdr" realm/double :kdr)]))
 
 (deftest description-test
   (is (= "optional int"
