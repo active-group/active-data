@@ -1,23 +1,21 @@
 (ns ^:no-doc active.data.struct.closed-struct
-  (:refer-clojure :exclude [set-validator! get-validator
+  (:refer-clojure :exclude [set-validator! get-validator alter-meta!
                             #?@(:cljs [contains? keys])]
                   :rename {contains? clj-contains?
                            keys clj-keys}))
 
-(defprotocol ^:private IClosedStruct
-  (-get-validator [this])
-  (-set-validator [this validator]))
-
 (declare equals?)
 
-(deftype ^:private ClosedStruct [keys keyset index-map  ^:unsynchronized-mutable validator extended-struct]
+(defprotocol IClosedStruct
+  (-alter-meta! [this f args]))
+
+(deftype ^:private ClosedStruct [keys keyset index-map ^:unsynchronized-mutable _meta extended-struct]
   ;; Note: 'keys' is in original order; keyset the same as a set.
   IClosedStruct
-  (-get-validator [this]
-    (.-validator this))
-  (-set-validator [this validator]
-    (set! (.-validator this) validator))
-
+  (-alter-meta! [this f args]
+    (set! (.-_meta this) (apply f (.-_meta this) args))
+    (.-_meta this))
+  
   ;; TODO: hashing.
   #?@(:clj
       [clojure.lang.IHashEq
@@ -25,11 +23,21 @@
                (hash index-map))
        Object
        (equals [this other]
-               (equals? this other))]
+               (equals? this other))
+
+       clojure.lang.IObj
+       clojure.lang.IMeta
+       (withMeta [this meta] (ClosedStruct. keys keyset index-map meta extended-struct))
+       (meta [this] _meta)]
 
       :cljs
       [Object
        (equiv [this other] (-equiv this other))
+
+       IWithMeta
+       (-with-meta [this meta] (ClosedStruct. keys keyset index-map meta extended-struct))
+       IMeta
+       (-meta [this] _meta)
 
        IEquiv
        (-equiv [this other]
@@ -46,6 +54,9 @@
     (= (.-index-map struct) (.-index-map ^ClosedStruct other))
     false))
 
+(defn alter-meta! [^ClosedStruct struct f & args]
+  ;; we want to add meta-data that references the struct itself. Needs mutability therefor.
+  (-alter-meta! struct f args))
 
 #?(:clj
    ;; TODO: tune that a bit, add namespace, deduplicate impls.
@@ -71,18 +82,20 @@
 (defn closed-struct? [v]
   (instance? ClosedStruct v))
 
+(def validator-meta-key ::validator)
+
 (defn set-validator! [^ClosedStruct t validator]
-  (assert (closed-struct? t)) ;; TODO: nice exception?
-  (-set-validator t validator))
+  (alter-meta! t assoc validator-meta-key validator))
 
 (defn get-validator [^ClosedStruct t]
+  ;; Note: validators are optional.
   (assert (closed-struct? t)) ;; TODO: nice exception?
-  (-get-validator t))
+  (get (meta t) validator-meta-key))
 
 (defn extended-struct [^ClosedStruct t]
   (.-extended-struct t))
 
-(defn create [fields ^ClosedStruct extended-struct]
+(defn create [fields ^ClosedStruct extended-struct meta]
   ;; Note: keys of the extended struct must come first! (for optimizations to work)
   (let [all-fields (vec (concat (when (some? extended-struct) (.-keys extended-struct)) fields))]
     (ClosedStruct. all-fields
@@ -95,7 +108,7 @@
                               (assoc! r (first fs) idx)
                               (rest fs))
                        (persistent! r)))
-                   nil
+                   meta
                    extended-struct)))
 
 (defn size [^ClosedStruct t]
