@@ -6,6 +6,9 @@
     (:require
      [clojure.core :as core]
      [active.data.struct :refer [def-struct struct-map satisfies? instance?]]
+     [active.data.struct :as struct]
+     [active.data.struct.closed-struct :as closed-struct]
+     [active.data.struct.closed-struct-meta :as closed-struct-meta]
      [clojure.set :as set]
      [clojure.string :as string])
     (:import java.net.URL)
@@ -297,7 +300,22 @@
               record-realm-fields fields
               metadata {}))
 
-; FIXME: struct-map-record
+(defn- struct->record-realm
+  "Returns a realm for a struct with the given fields and their reals."
+  [struct]
+  (record (or (get (meta struct) closed-struct-meta/name-meta-key)
+              'unnamed-struct)
+          (struct/constructor struct)
+          (partial struct/instance? struct)
+          (map (fn [[getter realm]]
+                 (field (core/symbol (str getter))
+                        realm
+                        getter))
+               (or (get (meta struct) closed-struct-meta/fields-realm-map-meta-key)
+                   (into {}
+                         (map (fn [key]
+                                [key any])
+                              (closed-struct/keys struct)))))))
 
 (defn compile
   [shorthand]
@@ -330,5 +348,8 @@
           (let [[key value] (first shorthand)]
             (map-of key value))
           (map-with-keys shorthand))
+
+        (closed-struct/closed-struct? shorthand)
+        (struct->record-realm shorthand)
         
         :else (throw (Exception. (str "unknown realm shorthand: " shorthand)))))))

@@ -1,5 +1,6 @@
 (ns active.data.realm-test
   (:require [active.data.realm :as realm]
+            [active.data.struct :refer [def-struct]]
             #?(:cljs [cljs.test :as t])
             #?(:clj [clojure.test :refer :all]))
   #?(:cljs (:require-macros [cljs.test :refer (is deftest run-tests testing)])))
@@ -58,6 +59,8 @@
                 [(realm/field "kar" realm/int :kar)
                  (realm/field "kdr" realm/double :kdr)]))
 
+(def-struct Sare [sar sdr])
+
 (deftest description-test
   (is (= "optional int"
          (realm/description (realm/optional realm/int))))
@@ -72,10 +75,6 @@
   (is (= "map of {int -> double}"
          (realm/description (realm/map-of realm/int realm/double))))
   (is (= "record Pare with fields kar from realm int, kdr from realm double"
-         (realm/description pare-realm))))
-
-
-
-                                          
-                     
-  
+         (realm/description pare-realm)))
+  (is (= "record active.data.realm-test/Sare with fields sar from realm any, sdr from realm any"
+         (realm/description (realm/compile Sare)))))
