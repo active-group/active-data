@@ -2,6 +2,7 @@
   (:require [active.data.struct :as sut #?@(:cljs [:include-macros true])]
             [active.data.struct.validator :as validator]
             [active.data.struct.key :as key]
+            [active.data.struct.closed-struct-meta :as closed-struct-meta]
             #_[active.clojure.lens :as lens]
             [clojure.data :as data]
             #?(:clj [clojure.test :as t]
@@ -12,6 +13,9 @@
 (sut/def-struct ^:private PrivT [pt-a ^{:private false} pt-b])
 
 (t/deftest metadata-test
+  (t/is (= (str (var T))
+           (str "#'" (get (meta T) closed-struct-meta/name-meta-key))))
+  
   (t/is (:foo (meta #'T)))
   (t/is (:a (meta #'t-a)))
 

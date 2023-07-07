@@ -1,4 +1,5 @@
 (ns ^:no-doc active.data.struct.closed-struct
+  (:require [active.data.struct.closed-struct-meta :as closed-struct-meta])
   (:refer-clojure :exclude [set-validator! get-validator alter-meta!
                             #?@(:cljs [contains? keys])]
                   :rename {contains? clj-contains?
@@ -82,15 +83,13 @@
 (defn closed-struct? [v]
   (instance? ClosedStruct v))
 
-(def validator-meta-key ::validator)
-
 (defn set-validator! [^ClosedStruct t validator]
-  (alter-meta! t assoc validator-meta-key validator))
+  (alter-meta! t assoc closed-struct-meta/validator-meta-key validator))
 
 (defn get-validator [^ClosedStruct t]
   ;; Note: validators are optional.
   (assert (closed-struct? t)) ;; TODO: nice exception?
-  (get (meta t) validator-meta-key))
+  (get (meta t) closed-struct-meta/validator-meta-key))
 
 (defn extended-struct [^ClosedStruct t]
   (.-extended-struct t))

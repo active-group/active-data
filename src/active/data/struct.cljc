@@ -2,6 +2,7 @@
   (:require [active.data.struct.key :as key]
             [active.data.struct.closed-struct :as closed-struct]
             [active.data.struct.closed-struct-map :as closed-struct-map]
+            [active.data.struct.closed-struct-meta :as closed-struct-meta]
             #_[active.clojure.lens :as lens])
   (:refer-clojure :exclude [struct-map instance? satisfies?
                             set-validator! get-validator
@@ -54,7 +55,7 @@
      ;; Note that 'meta' is evaluated after the fields, so they may refer to them.
      (def ~t (closed-struct/create ~fields
                                    ~extends
-                                   ~_meta))
+                                   (assoc ~_meta closed-struct-meta/name-meta-key (symbol (str *ns*) (str '~t)))))
 
      ~@(for [f# fields]
          `(key/optimize-for! ~f# ~t))
