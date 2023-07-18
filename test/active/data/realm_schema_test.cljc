@@ -21,7 +21,19 @@
                (schema/validate (schema (realm/predicate "odd integer" odd?))
                                 12))))
 
-  
+
+(deftest optional-realm-test
+  (is (some?
+       (schema/validate (schema (realm/optional realm/int))
+                        12)))
+
+  (is (nil?
+       (schema/validate (schema (realm/optional realm/int))
+                        nil)))
+
+  (is (thrown? Exception
+               (schema/validate (schema (realm/optional (realm/int)))
+                                "12"))))
 
 
 

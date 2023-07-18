@@ -17,4 +17,8 @@
       (:any) schema/Any)
 
     (realm/predicate? realm)
-    (schema/pred (realm/predicate-realm-predicate realm))))
+    (schema/pred (realm/predicate-realm-predicate realm))
+
+    (realm/optional? realm)
+    (schema/maybe (schema (realm/optional-realm-realm realm)))))
+    
