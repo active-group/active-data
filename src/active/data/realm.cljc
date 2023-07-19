@@ -1,24 +1,14 @@
 (ns active.data.realm
-  #?@
-  (:clj
-   [(:refer-clojure :exclude [int bigdec float double keyword symbol seq compile record?
-                              struct-map instance? satisfies? set-validator!])
-    (:require
-     [clojure.core :as core]
-     [active.data.struct :refer [def-struct struct-map satisfies? instance?]]
-     [active.data.struct :as struct]
-     [active.data.struct.closed-struct :as closed-struct]
-     [active.data.struct.closed-struct-meta :as closed-struct-meta]
-     [clojure.set :as set]
-     [clojure.string :as string])
-    (:import java.net.URL)
-    ]
-   :cljs
-   [(:require [clojure.set :as set]
-              [clojure.string :as string]
-              active.clojure.cljs.record)
-    (:require-macros
-     [active.clojure.cljs.record :refer [define-record-type]])]))
+  (:refer-clojure :exclude [int bigdec float double keyword symbol seq compile record?
+                            struct-map instance? satisfies? set-validator!])
+  (:require
+   [clojure.core :as core]
+   [active.data.struct :refer [def-struct struct-map satisfies? instance?]]
+   [active.data.struct :as struct]
+   [active.data.struct.closed-struct :as closed-struct]
+   [active.data.struct.closed-struct-meta :as closed-struct-meta]
+   [clojure.set :as set]
+   [clojure.string :as string]))
 
 (def-struct Realm [description metadata])
 
@@ -26,25 +16,16 @@
   [thing]
   (satisfies? Realm thing))
 
-;; builtin-scalar-realm
-;; predicate-realm
-;; optional-realm
-;; integer-from-to-realm
-;; mixed-realm
-;; intersection-realm
-;; enum-realm
-;; sequence-of-realm
-;; array-of-realm
-;; set-of-realm
-;; map-with-keys-realm
-;; map-of-realm
-;; tuple-of-realm
-;; record-realm
-;; function realm: optional arguments ... keywords?
-;; restricted-realm
+;; FIXME: should there be a fold/generic dispatch?
+;; FIXME: realm realm ...
 
-;; nonempty-string-realm
-;; max-length-string-realm
+;; FIXME: lazy realm
+;; FIXME: function realm: optional arguments ... keywords?
+;; 
+;; FIXME: restricted-realm
+
+;; FIXME: nonempty-string-realm
+;; FIXME: max-length-string-realm
 
 (def-struct ^{:doc "Builtin scalar realm."}
   builtin-scalar-realm
@@ -353,3 +334,5 @@
         (struct->record-realm shorthand)
         
         :else (throw (Exception. (str "unknown realm shorthand: " shorthand)))))))
+
+    
