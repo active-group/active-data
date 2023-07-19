@@ -21,6 +21,7 @@
 
 ;; FIXME: lazy realm
 ;; FIXME: function realm: optional arguments ... keywords?
+;; FIXME: separate realm for arglist from parameter spec
 ;; 
 ;; FIXME: restricted-realm
 
@@ -38,7 +39,7 @@
 
 ; FIXME: natural positive-int
 (def int (struct-map builtin-scalar-realm description "int" builtin-scalar-realm-id :int metadata {}))
-; FIXME? long?
+; FIXME? long? number?
 (def bigdec (struct-map builtin-scalar-realm description "big decimal" builtin-scalar-realm-id :bigdec metadata {}))
 (def float (struct-map builtin-scalar-realm description  "float" builtin-scalar-realm-id :float metadata {}))
 (def double (struct-map builtin-scalar-realm description "double" builtin-scalar-realm-id :double metadata {}))
@@ -115,6 +116,7 @@
 (def-struct ^{:doc "Realm for mixed data."}
   mixed-realm
   :extends Realm
+  ;; the shallow predicates of these should identify pairwise disjoint sets
   [mixed-realm-realms])
 
 (defn mixed?
@@ -133,7 +135,7 @@
 (def-struct^{:doc "Realm for enumerations."}
   enum-realm
   :extends Realm
-  [enum-realm-values])
+  [enum-realm-values]) ; set
 
 (defn enum?
   [thing]
@@ -143,8 +145,10 @@
   [& values]
   (struct-map enum-realm
               description (str "enumeration of [" (string/join ", " (map str values)) "]")
-              enum-realm-values values
+              enum-realm-values (set values)
               metadata {}))
+
+;; FIXME: rename to "sequential"
 
 (def-struct ^{:doc "Realm for sequences."}
   seq-of-realm
@@ -177,6 +181,9 @@
               description (str "set of " (description realm))
               set-of-realm-realm (compile realm)
               metadata{}))
+
+;; FIXME: always all the keys, or are certain keys optional?
+;; maybe do that with optional realms?
 
 (def-struct ^{:doc "Realm for maps with certain constant keys."}
   map-with-keys-realm
@@ -239,7 +246,7 @@
               description (str "tuple of ("
                                (string/join ", " (map description realms))
                                ")")
-              tuple-realm-realms (map compile realms)
+              tuple-realm-realms (mapv compile realms)
               metadata {}))
 
 (def-struct ^{:doc "Description of the field of a record."}
@@ -333,6 +340,65 @@
         (closed-struct/closed-struct? shorthand)
         (struct->record-realm shorthand)
         
-        :else (throw (Exception. (str "unknown realm shorthand: " shorthand)))))))
+        :else (throw (ex-info (str "unknown realm shorthand: " shorthand)
+                              {::unknown-realm-shorthand shorthand}))))))
 
     
+(defn shallow-predicate
+  "Return a shallow predicate for the realm.
+
+  This does not perform a full check whether a value conforms to a realm,
+  but is rather intended only to figure out which one of a set of realms
+  a value belongs to, and quickly.
+
+  In particular, the predicate does not consider the realms of the
+  contents of collections and records.
+
+  It does, however, distinguish tuples of different sizes."
+  [realm]
+  (cond
+    (builtin-scalar? realm)
+    (case (builtin-scalar-realm-id realm)
+      (:int) int?
+      (:bigdec) (fn [x] (core/instance? java.math.BigDecimal x))
+      (:float) float?
+      (:double) double?
+      (:keyword) keyword?
+      (:symbol) symbol?
+      (:string) string?
+      (:any) any?
+      (throw (Exception. (str "unknown builtin scalar realm: " (builtin-scalar-realm-id realm)))))
+    (predicate? realm) (predicate-realm-predicate realm)
+    (optional? realm)
+    (let [inner-predicate (shallow-predicate (optional-realm-realm realm))]
+      (fn [x]
+        (or (nil? x)
+            (inner-predicate x))))
+    (integer-from-to? realm)
+    (let [from (integer-from-to-realm-from realm)
+          to (integer-from-to-realm-to realm)]
+      (fn [x]
+        (and (integer? x)
+             (>= x from)
+             (<= x to))))
+    (mixed? realm)
+    (let [predicates (map shallow-predicate (mixed-realm-realms realm))]
+      (fn [x]
+        (some #(% x) predicates)))
+    (enum? realm) (enum-realm-values realm)
+    (seq-of? realm) sequential? 
+    (set-of? realm) set?
+    (map-with-keys? realm) map?
+    (map-of? realm) map?
+    (tuple? realm)
+    (let [size (count (tuple-realm-realms realm))]
+      (fn [x]
+        (and (sequential? x)
+             (= (count x) size))))
+    (record? realm)
+    (record-realm-predicate realm)
+
+    :else
+    (throw (ex-info (str "unknown realm: " realm)
+                    {::unknown-realm realm}))))
+  

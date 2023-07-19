@@ -1,6 +1,7 @@
 (ns active.data.realm-test
   (:require [active.data.realm :as realm]
             [active.data.struct :refer [def-struct]]
+            [active.data.struct :as struct]
             #?(:cljs [cljs.test :as t])
             #?(:clj [clojure.test :refer :all]))
   #?(:cljs (:require-macros [cljs.test :refer (is deftest run-tests testing)])))
@@ -78,3 +79,76 @@
          (realm/description pare-realm)))
   (is (= "record active.data.realm-test/Sare with fields sar from realm any, sdr from realm any"
          (realm/description (realm/compile Sare)))))
+
+(deftest shallow-predicate-test
+  (is ((realm/shallow-predicate realm/int) 5))
+  (is (not ((realm/shallow-predicate realm/int) "5")))
+  (is ((realm/shallow-predicate realm/bigdec) (bigdec 5)))
+  (is (not ((realm/shallow-predicate realm/bigdec) "5")))
+  (is ((realm/shallow-predicate realm/float) 5.0))
+  (is (not ((realm/shallow-predicate realm/float) 5)))
+  (is ((realm/shallow-predicate realm/double) 5.0))
+  (is (not ((realm/shallow-predicate realm/double) 5)))
+  (is ((realm/shallow-predicate realm/keyword) :keyword))
+  (is (not ((realm/shallow-predicate realm/double) "keyword")))
+  (is ((realm/shallow-predicate realm/string) "string"))
+  (is (not ((realm/shallow-predicate realm/double) :string)))
+
+  (is ((realm/shallow-predicate realm/any) "string"))
+
+  (is ((realm/shallow-predicate (realm/predicate "ints" int?)) 5))
+  (is (not ((realm/shallow-predicate (realm/predicate "ints" int?)) "5")))
+
+  (is ((realm/shallow-predicate (realm/optional realm/int)) 5))
+  (is ((realm/shallow-predicate (realm/optional realm/int)) nil))
+  (is (not ((realm/shallow-predicate (realm/optional realm/int)) "5")))
+
+  (is ((realm/shallow-predicate (realm/integer-from-to 5 7)) 5))
+  (is ((realm/shallow-predicate (realm/integer-from-to 5 7)) 6))
+  (is ((realm/shallow-predicate (realm/integer-from-to 5 7)) 7))
+  (is (not ((realm/shallow-predicate (realm/integer-from-to 5 7)) 4)))
+  (is (not ((realm/shallow-predicate (realm/integer-from-to 5 7)) 8)))
+  (is (not ((realm/shallow-predicate (realm/integer-from-to 5 7)) "5")))
+
+  (is ((realm/shallow-predicate (realm/mixed realm/int realm/string)) 5))
+  (is ((realm/shallow-predicate (realm/mixed realm/int realm/string)) "5"))
+  (is (not ((realm/shallow-predicate (realm/mixed realm/int realm/string)) :five)))
+
+  (is ((realm/shallow-predicate (realm/enum 2 3 5)) 2))
+  (is ((realm/shallow-predicate (realm/enum 2 3 5)) 3))
+  (is ((realm/shallow-predicate (realm/enum 2 3 5)) 5))
+  (is (not ((realm/shallow-predicate (realm/enum 2 3 5)) 7)))
+
+  (is ((realm/shallow-predicate (realm/seq-of realm/int)) [1 2 3]))
+  (is ((realm/shallow-predicate (realm/seq-of realm/int)) [:one :two :three]))
+  (is (not ((realm/shallow-predicate (realm/seq-of realm/int)) 5)))
+  (is (not ((realm/shallow-predicate (realm/seq-of realm/int)) #{5})))
+  (is (not ((realm/shallow-predicate (realm/seq-of realm/int)) {5 2})))
+  
+  (is ((realm/shallow-predicate (realm/set-of realm/int)) #{1 2 3}))
+  (is ((realm/shallow-predicate (realm/set-of realm/int)) #{:one :two :three}))
+  (is (not ((realm/shallow-predicate (realm/set-of realm/int)) [1 2 3])))
+
+  (is ((realm/shallow-predicate (realm/map-with-keys {:foo realm/int :bar realm/string})) {:foo 5 :bar "5"}))
+  (is ((realm/shallow-predicate (realm/map-with-keys {:foo realm/int :bar realm/string})) {:foo "5" :bar 5}))
+  (is ((realm/shallow-predicate (realm/map-with-keys {:foo realm/int :bar realm/string})) {:bla 5 :baz "5"}))
+  (is (not ((realm/shallow-predicate (realm/map-with-keys {:foo realm/int :bar realm/string})) 5)))
+  (is (not ((realm/shallow-predicate (realm/map-with-keys {:foo realm/int :bar realm/string})) [])))
+
+  (is ((realm/shallow-predicate (realm/map-of realm/keyword realm/int)) {}))
+  (is ((realm/shallow-predicate (realm/map-of realm/keyword realm/int)) {:foo 5}))
+  (is ((realm/shallow-predicate (realm/map-of realm/keyword realm/int)) {"foo" "5"}))
+  (is (not ((realm/shallow-predicate (realm/map-of realm/keyword realm/int)) [])))
+
+  (is ((realm/shallow-predicate (realm/tuple realm/keyword realm/int)) [:foo 5]))
+  (is ((realm/shallow-predicate (realm/tuple realm/keyword realm/int)) [5 :foo]))
+  (is (not ((realm/shallow-predicate (realm/tuple realm/keyword realm/int)) [5 :foo 12])))
+  (is (not ((realm/shallow-predicate (realm/tuple realm/keyword realm/int)) {5 :foo})))
+  (is (not ((realm/shallow-predicate (realm/tuple realm/keyword realm/int)) #{5 :foo})))
+
+  (is ((realm/shallow-predicate (realm/compile Sare)) (struct/struct-map Sare sar 1 sdr 2)))
+  (is (not ((realm/shallow-predicate (realm/compile Sare)) 5)))
+
+  )
+  
+  
