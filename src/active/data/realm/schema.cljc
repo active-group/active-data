@@ -1,4 +1,4 @@
-(ns active.data.realm-schema
+(ns active.data.realm.schema
   (:require [active.data.realm :as realm]
             [schema.core :as schema]))
 
