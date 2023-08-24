@@ -1,6 +1,16 @@
 # Active Data
 
-A Clojure library for doing data modelling.
+The goal of this library is to provide facilities for systematic data
+modelling in the style of design recipes.  
+
+In particular, it includes
+
+- *structs* for representing compound data associated with a fixed
+  "schema", addressing the shortcomings of Clojure
+  records
+- [*realms*](doc/realms.md) for describing data, enabling documentation, validation,
+  and generating, addressing the shortcomings of `clojure.spec`,
+  Schema, Malli and similar libraries.
 
 ## License
 
