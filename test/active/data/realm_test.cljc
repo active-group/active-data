@@ -114,8 +114,8 @@
          (realm/description (realm/optional realm/int))))
   (is (= "integer from 5 to 10"
          (realm/description (realm/integer-from-to 5 10))))
-  (is (= "mixed of [int, float, double]"
-         (realm/description (realm/mixed realm/int realm/float realm/double))))
+  (is (= "union of [int, float, double]"
+         (realm/description (realm/union realm/int realm/float realm/double))))
   (is (= "enumeration of [1, 2, 3]"
          (realm/description (realm/enum 1 2 3))))
   (is (= "map with keys {:a -> int, :b -> double}"
@@ -180,9 +180,9 @@
   (is (not ((realm/shallow-predicate (realm/integer-from-to 5 7)) 8)))
   (is (not ((realm/shallow-predicate (realm/integer-from-to 5 7)) "5")))
 
-  (is ((realm/shallow-predicate (realm/mixed realm/int realm/string)) 5))
-  (is ((realm/shallow-predicate (realm/mixed realm/int realm/string)) "5"))
-  (is (not ((realm/shallow-predicate (realm/mixed realm/int realm/string)) :five)))
+  (is ((realm/shallow-predicate (realm/union realm/int realm/string)) 5))
+  (is ((realm/shallow-predicate (realm/union realm/int realm/string)) "5"))
+  (is (not ((realm/shallow-predicate (realm/union realm/int realm/string)) :five)))
 
   (is ((realm/shallow-predicate (realm/enum 2 3 5)) 2))
   (is ((realm/shallow-predicate (realm/enum 2 3 5)) 3))

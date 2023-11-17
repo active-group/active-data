@@ -108,21 +108,21 @@
        (string/join ", " (map description realms))
        "]"))
 
-(def-struct ^{:doc "Realm for mixed data."}
-  mixed-realm
+(def-struct ^{:doc "Realm for unions."}
+  union-realm
   :extends Realm
   ;; the shallow predicates of these should identify pairwise disjoint sets
-  [mixed-realm-realms])
+  [union-realm-realms])
 
-(defn mixed?
+(defn union?
   [thing]
-  (instance? mixed-realm thing))
+  (instance? union-realm thing))
 
-(defn mixed
+(defn union
   [& realms]
-  (struct-map mixed-realm
-              description (str "mixed of " (realm-seq-description realms))
-              mixed-realm-realms (map compile realms)
+  (struct-map union-realm
+              description (str "union of " (realm-seq-description realms))
+              union-realm-realms (map compile realms)
               metadata {}))
 
 ;; TODO: intersection-realm
@@ -577,8 +577,8 @@
         (and (integer? x)
              (>= x from)
              (<= x to))))
-    (mixed? realm)
-    (let [predicates (map shallow-predicate (mixed-realm-realms realm))]
+    (union? realm)
+    (let [predicates (map shallow-predicate (union-realm-realms realm))]
       (fn [x]
         (some #(% x) predicates)))
     (enum? realm) (enum-realm-values realm)
