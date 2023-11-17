@@ -69,6 +69,9 @@
         (realm/function int int -> boolean)
         (realm/function int int & (realm/string) -> boolean)))))
 
+(deftest delay-test
+  (is (realm/delayed? (realm/delay (/ 1 0)))))
+
 (defrecord Pare [kar kdr])
 
 (def pare-realm
@@ -108,7 +111,9 @@
   (is (= "record Pare with fields kar from realm int, kdr from realm double"
          (realm/description pare-realm)))
   (is (= "record active.data.realm-test/Sare with fields sar from realm any, sdr from realm any"
-         (realm/description (realm/compile Sare)))))
+         (realm/description (realm/compile Sare))))
+  (is (= "delayed realm"
+         (realm/description (realm/delay (/ 1 0))))))
 
 (deftest shallow-predicate-test
   (is ((realm/shallow-predicate realm/int) 5))

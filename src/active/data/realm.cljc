@@ -1,5 +1,5 @@
 (ns active.data.realm
-  (:refer-clojure :exclude [int bigdec float double keyword symbol boolean seq compile record?
+  (:refer-clojure :exclude [int bigdec float double keyword symbol boolean seq compile record? delay delayed?
                             struct-map instance? satisfies? set-validator!])
   (:require
    [clojure.core :as core]
@@ -18,8 +18,6 @@
 
 ;; FIXME: should there be a fold/generic dispatch?
 ;; FIXME: realm realm ...
-
-;; FIXME: lazy realm
 
 ;; FIXME: restricted-realm
 
@@ -433,6 +431,22 @@
   (or (instance? function-realm thing)
       (instance? function-cases-realm thing)))
 
+(def-struct ^{:doc "Lazy realm."}
+  delayed-realm
+  :extends Realm
+  [delayed-realm-delay])
+
+(defmacro delay
+  [realm-expression]
+  `(struct-map delayed-realm
+               delayed-realm-delay (clojure.core/delay (compile ~realm-expression))
+               metadata {}
+               description "delayed realm"))
+
+(defn delayed?
+  [thing]
+  (instance? delayed-realm thing))
+
 (defn compile
   [shorthand]
   (if (realm? shorthand)
@@ -527,6 +541,10 @@
              (= (count x) size))))
     (record? realm)
     (record-realm-predicate realm)
+    (function? realm)
+    fn?
+    (delayed? realm)
+    (shallow-predicate (delayed-realm-delay realm))
 
     :else
     (throw (ex-info (str "unknown realm: " realm)
