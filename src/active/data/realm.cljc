@@ -28,6 +28,10 @@
 
 ;; FIXME: "multi-spec" ... i.e. look at special key in map
 
+;; FIXME rename mixed to union
+
+;; FIXME intersection realm
+
 (def-struct ^{:doc "Builtin scalar realm."}
   builtin-scalar-realm
   :extends Realm
