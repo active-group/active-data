@@ -451,6 +451,23 @@
   [thing]
   (instance? delayed-realm thing))
 
+(def-struct ^{:doc "Realm for objects implementing a protocol."}
+  protocol-realm
+  :extends Realm
+  [protocol-realm-protocol])
+
+(defn protocol
+  [protocol]
+  (struct-map protocol-realm
+              protocol-realm-protocol protocol
+              metadata {}
+              description (str "realm for protocol " (:var protocol))))
+
+
+(defn protocol?
+  [thing]
+  (instance? protocol-realm thing))
+
 (defn compile
   [shorthand]
   (if (realm? shorthand)
@@ -549,6 +566,8 @@
     fn?
     (delayed? realm)
     (shallow-predicate (delayed-realm-delay realm))
+    (protocol? realm)
+    (fn [thing] (clojure.core/satisfies? (protocol-realm-protocol realm) thing))
 
     :else
     (throw (ex-info (str "unknown realm: " realm)

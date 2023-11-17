@@ -72,7 +72,16 @@
 (deftest delay-test
   (is (realm/delayed? (realm/delay (/ 1 0)))))
 
-(defrecord Pare [kar kdr])
+(defprotocol Indexed
+  (index [x index]))
+  
+
+(defrecord Pare [kar kdr]
+  Indexed
+  (index [_ index]
+    (case index
+      (0) kar
+      (1) kdr)))
 
 (def pare-realm
   (realm/record "Pare"
@@ -82,6 +91,10 @@
                  (realm/field "kdr" realm/double :kdr)]))
 
 (def-struct Sare [sar sdr])
+
+(deftest protocol-test
+  (is (realm/protocol?
+       (realm/protocol Indexed))))
 
 (deftest description-test
   (is (= "optional int"
@@ -113,7 +126,9 @@
   (is (= "record active.data.realm-test/Sare with fields sar from realm any, sdr from realm any"
          (realm/description (realm/compile Sare))))
   (is (= "delayed realm"
-         (realm/description (realm/delay (/ 1 0))))))
+         (realm/description (realm/delay (/ 1 0)))))
+  (is (= "realm for protocol #'active.data.realm-test/Indexed"
+         (realm/description (realm/protocol Indexed)))))
 
 (deftest shallow-predicate-test
   (is ((realm/shallow-predicate realm/int) 5))
