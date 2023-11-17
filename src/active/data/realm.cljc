@@ -19,8 +19,6 @@
 ;; FIXME: should there be a fold/generic dispatch?
 ;; FIXME: realm realm ...
 
-;; FIXME intersection realm
-
 (def-struct ^{:doc "Builtin scalar realm."}
   builtin-scalar-realm
   :extends Realm
@@ -125,8 +123,6 @@
               union-realm-realms (map compile realms)
               metadata {}))
 
-;; TODO: intersection-realm
-
 (def-struct^{:doc "Realm for enumerations."}
   enum-realm
   :extends Realm
@@ -141,6 +137,23 @@
   (struct-map enum-realm
               description (str "enumeration of [" (string/join ", " (map str values)) "]")
               enum-realm-values (set values)
+              metadata {}))
+
+(def-struct ^{:doc "Realm for intersections."}
+  intersection-realm
+  :extends Realm
+  ;; the shallow predicates of these should identify pairwise disjoint sets
+  [intersection-realm-realms])
+
+(defn intersection?
+  [thing]
+  (instance? intersection-realm thing))
+
+(defn intersection
+  [& realms]
+  (struct-map intersection-realm
+              description (str "intersection of " (realm-seq-description realms))
+              intersection-realm-realms (map compile realms)
               metadata {}))
 
 ;; FIXME: rename to "sequential"
@@ -580,7 +593,11 @@
     (union? realm)
     (let [predicates (map shallow-predicate (union-realm-realms realm))]
       (fn [x]
-        (some #(% x) predicates)))
+        (clojure.core/boolean (some #(% x) predicates))))
+    (intersection? realm)
+    (let [predicates (map shallow-predicate (intersection-realm-realms realm))]
+      (fn [x]
+        (every? #(% x) predicates)))
     (enum? realm) (enum-realm-values realm)
     (seq-of? realm) sequential?
     (set-of? realm) set?

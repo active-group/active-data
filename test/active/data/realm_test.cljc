@@ -116,6 +116,8 @@
          (realm/description (realm/integer-from-to 5 10))))
   (is (= "union of [int, float, double]"
          (realm/description (realm/union realm/int realm/float realm/double))))
+  (is (= "intersection of [int, float, double]"
+         (realm/description (realm/intersection realm/int realm/float realm/double))))
   (is (= "enumeration of [1, 2, 3]"
          (realm/description (realm/enum 1 2 3))))
   (is (= "map with keys {:a -> int, :b -> double}"
@@ -183,6 +185,9 @@
   (is ((realm/shallow-predicate (realm/union realm/int realm/string)) 5))
   (is ((realm/shallow-predicate (realm/union realm/int realm/string)) "5"))
   (is (not ((realm/shallow-predicate (realm/union realm/int realm/string)) :five)))
+
+  (is ((realm/shallow-predicate (realm/intersection realm/string nonempty-string-realm)) "foo"))
+  (is (not ((realm/shallow-predicate (realm/intersection realm/string nonempty-string-realm)) "")))
 
   (is ((realm/shallow-predicate (realm/enum 2 3 5)) 2))
   (is ((realm/shallow-predicate (realm/enum 2 3 5)) 3))
