@@ -368,6 +368,7 @@
       (:keyword) keyword?
       (:symbol) symbol?
       (:string) string?
+      (:boolean) boolean?
       (:any) any?
       (throw (Exception. (str "unknown builtin scalar realm: " (builtin-scalar-realm-id realm)))))
     (predicate? realm) (predicate-realm-predicate realm)
