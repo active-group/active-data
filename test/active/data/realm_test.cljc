@@ -96,6 +96,19 @@
   (is (realm/protocol?
        (realm/protocol Indexed))))
 
+(deftest named-test
+  (is (realm/named?
+       (realm/compile :a))))
+
+(def nonempty-string-realm
+  (realm/restricted realm/string
+                    (fn [s]
+                      (> (count s) 0))
+                    "nonempty strings"))
+
+(deftest restricted-test
+  (is (realm/restricted? nonempty-string-realm)))
+
 (deftest description-test
   (is (= "optional int"
          (realm/description (realm/optional realm/int))))
@@ -130,7 +143,10 @@
   (is (= "realm for protocol #'active.data.realm-test/Indexed"
          (realm/description (realm/protocol Indexed))))
   (is (= "realm named :a: int"
-         (realm/description (realm/named :a int)))))
+         (realm/description (realm/named :a int))))
+  (is (= "string restricted to nonempty strings"
+         (realm/description nonempty-string-realm))))
+      
 
 (deftest shallow-predicate-test
   (is ((realm/shallow-predicate realm/int) 5))
@@ -211,6 +227,10 @@
 
   (is ((realm/shallow-predicate (realm/named :a int)) 5))
   (is (not ((realm/shallow-predicate (realm/named :a int)) "5")))
+
+  (is ((realm/shallow-predicate nonempty-string-realm) "foo"))
+  (is (not ((realm/shallow-predicate nonempty-string-realm) "")))
+  (is (not ((realm/shallow-predicate nonempty-string-realm) 5)))
   
   )
   

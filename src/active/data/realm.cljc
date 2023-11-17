@@ -19,17 +19,6 @@
 ;; FIXME: should there be a fold/generic dispatch?
 ;; FIXME: realm realm ...
 
-;; FIXME: restricted-realm
-
-;; FIXME: nonempty-string-realm
-;; FIXME: max-length-string-realm
-
-;; FIXME: Implements protocol
-
-;; FIXME: "multi-spec" ... i.e. look at special key in map
-
-;; FIXME rename mixed to union
-
 ;; FIXME intersection realm
 
 (def-struct ^{:doc "Builtin scalar realm."}
@@ -488,6 +477,25 @@
   [thing]
   (instance? named-realm thing))
 
+(def-struct ^{:doc "Realm restricted by a predicate"}
+  restricted-realm
+  :extends Realm
+  [restricted-realm-realm
+   restricted-realm-predicate])
+
+(defn restricted
+  [realm predicate predicate-description]
+  (let [realm (compile realm)]
+    (struct-map restricted-realm
+                restricted-realm-realm realm
+                restricted-realm-predicate predicate
+                metadata {}
+                description (str (description realm) " restricted to " predicate-description))))
+
+(defn restricted?
+  [thing]
+  (instance? restricted-realm thing))
+
 (defn compile
   [shorthand]
   (if (realm? shorthand)
@@ -593,6 +601,13 @@
     (fn [thing] (clojure.core/satisfies? (protocol-realm-protocol realm) thing))
     (named? realm)
     (shallow-predicate (named-realm-realm realm))
+    (restricted? realm) ; debatable
+    (let [predicate (restricted-realm-predicate realm)
+          realm-predicate (shallow-predicate (restricted-realm-realm realm))]
+      (fn [thing]
+        (and (realm-predicate thing)
+             (predicate thing))))
+             
 
     :else
     (throw (ex-info (str "unknown realm: " realm)
