@@ -91,6 +91,8 @@
   (is (not ((realm/shallow-predicate realm/float) 5)))
   (is ((realm/shallow-predicate realm/double) 5.0))
   (is (not ((realm/shallow-predicate realm/double) 5)))
+  (is ((realm/shallow-predicate realm/boolean) true))
+  (is (not ((realm/shallow-predicate realm/boolean) "true")))
   (is ((realm/shallow-predicate realm/keyword) :keyword))
   (is (not ((realm/shallow-predicate realm/double) "keyword")))
   (is ((realm/shallow-predicate realm/string) "string"))
