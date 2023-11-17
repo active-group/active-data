@@ -18,6 +18,7 @@
 
 ;; FIXME: should there be a fold/generic dispatch?
 ;; FIXME: realm realm ...
+;; FIXME: put predicate into builtin
 
 (def-struct ^{:doc "Builtin scalar realm."}
   builtin-scalar-realm
@@ -156,23 +157,21 @@
               intersection-realm-realms (map compile realms)
               metadata {}))
 
-;; FIXME: rename to "sequential"
-
 (def-struct ^{:doc "Realm for sequences."}
-  seq-of-realm
+  sequence-of-realm
   :extends Realm
-  [seq-of-realm-realm])
+  [sequence-of-realm-realm])
 
-(defn seq-of?
+(defn sequence-of?
   [thing]
-  (instance? seq-of-realm thing))
+  (instance? sequence-of-realm thing))
 
-(defn seq-of
+(defn sequence-of
   [realm]
   (let [realm (compile realm)]
-    (struct-map seq-of-realm
+    (struct-map sequence-of-realm
                 description (str "sequence of " (description realm))
-                seq-of-realm-realm realm
+                sequence-of-realm-realm realm
                 metadata {})))
 
 (def-struct ^{:doc "Realm for sets."}
@@ -322,7 +321,7 @@
   function-realm
   :extends Realm
   [function-realm-positional-argument-realms ; seq of realms
-   function-realm-optional-arguments-realm ; seq-of realm or map-with-keys realm or tuple realm
+   function-realm-optional-arguments-realm ; sequence-of realm or map-with-keys realm or tuple realm
    function-realm-return-realm])
 
 ; list is expected to start with ->
@@ -379,7 +378,7 @@
                                  (throw (Exception. (str "in function realm, empty optional list realm: " shorthand))))
                                (when (not (empty (rest (rest list))))
                                  (throw (Exception. (str "in function realm, more than one optional list realm: " shorthand))))
-                               `(seq-of (compile ~(first f))))
+                               `(sequence-of (compile ~(first f))))
 
                              (vector? f)
                              `(tuple ~@(mapv (fn [o]
@@ -529,7 +528,7 @@
 
         (vector? shorthand)
         (if (= 1 (count shorthand))
-          (seq-of (first shorthand))
+          (sequence-of (first shorthand))
           (apply tuple shorthand))
 
         (and (set? shorthand)
@@ -599,7 +598,7 @@
       (fn [x]
         (every? #(% x) predicates)))
     (enum? realm) (enum-realm-values realm)
-    (seq-of? realm) sequential?
+    (sequence-of? realm) sequential?
     (set-of? realm) set?
     (map-with-keys? realm) map?
     (map-of? realm) map?
