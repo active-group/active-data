@@ -1,5 +1,5 @@
 (ns active.data.realm
-  (:refer-clojure :exclude [int bigdec float double keyword symbol seq compile record?
+  (:refer-clojure :exclude [int bigdec float double keyword symbol boolean seq compile record?
                             struct-map instance? satisfies? set-validator!])
   (:require
    [clojure.core :as core]
@@ -20,13 +20,15 @@
 ;; FIXME: realm realm ...
 
 ;; FIXME: lazy realm
-;; FIXME: function realm: optional arguments ... keywords?
-;; FIXME: separate realm for arglist from parameter spec
-;; 
+
 ;; FIXME: restricted-realm
 
 ;; FIXME: nonempty-string-realm
 ;; FIXME: max-length-string-realm
+
+;; FIXME: Implements protocol
+
+;; FIXME: "multi-spec" ... i.e. look at special key in map
 
 (def-struct ^{:doc "Builtin scalar realm."}
   builtin-scalar-realm
@@ -86,10 +88,11 @@
 
 (defn optional
   [realm]
-  (struct-map optional-realm
-              description (str "optional " (description realm))
-              optional-realm-realm (compile realm)
-              metadata {}))
+  (let [realm (compile realm)]
+    (struct-map optional-realm
+                description (str "optional " (description realm))
+                optional-realm-realm realm
+                metadata {})))
 
 (def-struct ^{:doc "Realm for integer ranges."}
   integer-from-to-realm
@@ -162,10 +165,11 @@
 
 (defn seq-of
   [realm]
-  (struct-map seq-of-realm
-              description (str "sequence of " (description realm))
-              seq-of-realm-realm (compile realm)
-              metadata {}))
+  (let [realm (compile realm)]
+    (struct-map seq-of-realm
+                description (str "sequence of " (description realm))
+                seq-of-realm-realm realm
+                metadata {})))
 
 (def-struct ^{:doc "Realm for sets."}
   set-of-realm
@@ -178,10 +182,11 @@
 
 (defn set-of
   [realm]
-  (struct-map set-of-realm
-              description (str "set of " (description realm))
-              set-of-realm-realm (compile realm)
-              metadata{}))
+  (let [realm (compile realm)]
+    (struct-map set-of-realm
+                description (str "set of " (description realm))
+                set-of-realm-realm realm
+                metadata {})))
 
 ;; FIXME: always all the keys, or are certain keys optional?
 ;; maybe do that with optional realms?
@@ -197,19 +202,19 @@
 
 (defn map-with-keys
   [keys-realm-map]
-  (struct-map map-with-keys-realm
-              description (str "map with keys {"
-                               (string/join ", "
-                                            (core/map (fn [[key realm]]
-                                                        (str key " -> " (description realm)))
-                                                      keys-realm-map))
-                               "}")
-              map-with-keys-realm-map (into {}
-                                            (map (fn [[key realm]]
-                                                   [key (compile realm)])
-                                                 keys-realm-map))
-              metadata {}))
-
+  (let [keys-realm-map (into {}
+                             (map (fn [[key realm]]
+                                    [key (compile realm)])
+                                  keys-realm-map))]
+    (struct-map map-with-keys-realm
+                description (str "map with keys {"
+                                 (string/join ", "
+                                              (core/map (fn [[key realm]]
+                                                          (str key " -> " (description realm)))
+                                                        keys-realm-map))
+                                 "}")
+                map-with-keys-realm-map keys-realm-map
+                metadata {})))
 
 (def-struct ^{:doc "Realm for maps with realms for keys and values respectively."}
   map-of-realm
@@ -222,15 +227,17 @@
 
 (defn map-of
   [key-realm value-realm]
-  (struct-map map-of-realm
-              description (str "map of {"
-                               (description key-realm)
-                               " -> "
-                               (description value-realm)
-                               "}")
-              map-of-realm-key-realm (compile key-realm)
-              map-of-realm-value-realm (compile value-realm)
-              metadata {}))
+  (let [key-realm (compile key-realm)
+        value-realm (compile value-realm)]
+    (struct-map map-of-realm
+                description (str "map of {"
+                                 (description key-realm)
+                                 " -> "
+                                 (description value-realm)
+                                 "}")
+                map-of-realm-key-realm key-realm
+                map-of-realm-value-realm value-realm
+                metadata {})))
 
 (def-struct ^{:doc "Realm for tuples, i.e. sequences with a fixed number of elements, each of which has a realm."}
   tuple-realm
@@ -243,12 +250,13 @@
 
 (defn tuple
   [& realms]
-  (struct-map tuple-realm
-              description (str "tuple of ("
-                               (string/join ", " (map description realms))
-                               ")")
-              tuple-realm-realms (mapv compile realms)
-              metadata {}))
+  (let [realms (mapv compile realms)]
+    (struct-map tuple-realm
+                description (str "tuple of ("
+                                 (string/join ", " (map description realms))
+                                 ")")
+                tuple-realm-realms realms
+                metadata {})))
 
 (def-struct ^{:doc "Description of the field of a record."}
   record-realm-field
@@ -306,6 +314,125 @@
                                 [key any])
                               (closed-struct/keys struct)))))))
 
+(def-struct ^{:doc "Realm for function."}
+  function-realm
+  :extends Realm
+  [function-realm-positional-argument-realms ; seq of realms
+   function-realm-optional-arguments-realm ; seq-of realm or map-with-keys realm or tuple realm
+   function-realm-return-realm])
+
+; list is expected to start with ->
+(defn- parse-function-return
+  [shorthand list]
+  (when (not (= (first list) '->))
+    (throw (Exception. (str "function realm has no arrow: " shorthand))))
+  (when (empty? (rest list))
+    (throw (Exception. (str "function realm has nothing after ->: " shorthand))))
+  (when (not (empty? (rest (rest list))))
+    (throw (Exception. (str "function realm has more then one thing after ->: " shorthand))))
+  (first (rest list)))
+
+;; (r1 r2 r3 -> r)
+;; (r1 r2 r3 & (rs) -> r)
+;; (r1 r2 r3 & [rr1 rr2]) -> r)
+;; (r1 r2 r3 & {:a ra :b rb :c rc} -> r)
+(defn- compile-function-case-shorthand
+  [shorthand]
+  (loop [list shorthand
+         positional (transient [])]
+    (if (empty? list)
+      (throw (Exception. (str "function realm does not have arrow: " shorthand)))
+
+      (let [f (first list)]
+        (case f
+          (->)
+          (let [positional (persistent! positional)
+                return `(compile ~(parse-function-return shorthand list))]
+            `(let [positional# ~positional
+                   return# ~return]
+               (struct-map function-realm
+                           function-realm-positional-argument-realms positional#
+                           function-realm-optional-arguments-realm nil
+                           function-realm-return-realm return#
+                           metadata {}
+                           description (str "function ("
+                                            (string/join ", "
+                                                         (map description positional#))
+                                            ") -> "
+                                            (description return#)))))
+          (&)
+          (if (empty? (rest list))
+            (throw (Exception. (str "function realm does not have an arrow: " shorthand)))
+
+            (let [list (rest list)
+                  f (first list)
+                  return `(compile ~(parse-function-return shorthand (rest list)))
+                  positional (persistent! positional)
+                  optional (cond
+                             (list? f)
+                             (do
+                               (when (empty? (rest list))
+                                 (throw (Exception. (str "in function realm, empty optional list realm: " shorthand))))
+                               (when (not (empty (rest (rest list))))
+                                 (throw (Exception. (str "in function realm, more than one optional list realm: " shorthand))))
+                               `(seq-of (compile ~(first f))))
+
+                             (vector? f)
+                             `(tuple ~@(mapv (fn [o]
+                                               `(compile ~o))
+                                             f))
+
+                             (map? f)
+                             `(map-with-keys ~(into {}
+                                                   (map (fn [[key realm]]
+                                                          [key `(compile ~realm)])
+                                                        f)))
+
+                             :else
+                             (throw (Exception. (str "function realm has garbage after &: " shorthand))))]
+              `(let [positional# ~positional
+                     optional# ~optional
+                     return# ~return]
+                 (struct-map function-realm
+                             function-realm-positional-argument-realms positional#
+                             function-realm-optional-arguments-realm optional#
+                             function-realm-return-realm return#
+                             metadata {}
+                             description (str "function ("
+                                              (string/join ", "
+                                                           (map description positional#))
+
+                                              " & "
+                                              (description optional#)
+                                              ") -> "
+                                              (description return#))))))
+
+          (recur (rest list)
+                 (conj! positional `(compile ~f))))))))
+
+(defmacro function
+  [& shorthand]
+  (compile-function-case-shorthand shorthand))
+
+(def-struct ^{:doc "Realm for function with multiple cases."}
+  function-cases-realm
+  :extends Realm
+  [function-cases-realm-cases])
+
+(defn function-cases
+  [& cases]
+  (let [cases (mapv compile cases)]
+    (struct-map function-cases-realm
+                function-cases-realm-cases cases
+                metadata {}
+                description
+                (str "function with cases " (string/join ", " (map description cases))))))
+
+(defn function?
+  [thing]
+  (or (instance? function-realm thing)
+      (instance? function-cases-realm thing)))
+
 (defn compile
   [shorthand]
   (if (realm? shorthand)
@@ -341,11 +468,11 @@
 
         (closed-struct/closed-struct? shorthand)
         (struct->record-realm shorthand)
-        
+
         :else (throw (ex-info (str "unknown realm shorthand: " shorthand)
                               {::unknown-realm-shorthand shorthand}))))))
 
-    
+
 (defn shallow-predicate
   "Return a shallow predicate for the realm.
 
@@ -389,7 +516,7 @@
       (fn [x]
         (some #(% x) predicates)))
     (enum? realm) (enum-realm-values realm)
-    (seq-of? realm) sequential? 
+    (seq-of? realm) sequential?
     (set-of? realm) set?
     (map-with-keys? realm) map?
     (map-of? realm) map?
@@ -404,4 +531,3 @@
     :else
     (throw (ex-info (str "unknown realm: " realm)
                     {::unknown-realm realm}))))
-  

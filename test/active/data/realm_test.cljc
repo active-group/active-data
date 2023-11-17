@@ -53,6 +53,22 @@
   (is (realm/tuple?
        (realm/compile [int double]))))
 
+(deftest function-test
+  (is (realm/function?
+       (realm/function int int -> boolean)))
+  (is (realm/function?
+       (realm/function int int & (realm/string) -> boolean)))
+  (is (realm/function?
+       (realm/function int int & [realm/string int boolean] -> boolean)))
+  (is (realm/function?
+       (realm/function int int & {:a realm/string :b int :c boolean} -> boolean))))
+
+(deftest function-cases-test
+  (is (realm/function?
+       (realm/function-cases
+        (realm/function int int -> boolean)
+        (realm/function int int & (realm/string) -> boolean)))))
+
 (defrecord Pare [kar kdr])
 
 (def pare-realm
@@ -77,6 +93,18 @@
          (realm/description (realm/map-with-keys {:a realm/int :b realm/double}))))
   (is (= "map of {int -> double}"
          (realm/description (realm/map-of realm/int realm/double))))
+  (is (= "function (int, int) -> boolean"
+         (realm/description (realm/function int int -> boolean))))
+  (is (= "function (int, int & sequence of string) -> boolean"
+         (realm/description (realm/function int int & (realm/string) -> boolean))))
+  (is (= "function (int, int & tuple of (string, int, boolean)) -> boolean"
+         (realm/description (realm/function int int & [realm/string int boolean] -> boolean))))
+  (is (= "function (int, int & map with keys {:a -> string, :b -> int, :c -> boolean}) -> boolean"
+         (realm/description (realm/function int int & {:a realm/string :b int :c boolean} -> boolean))))
+  (is (= "function with cases function (int, int) -> boolean, function (int, int & sequence of string) -> boolean"
+         (realm/description (realm/function-cases
+                             (realm/function int int -> boolean)
+                             (realm/function int int & (realm/string) -> boolean)))))
   (is (= "record Pare with fields kar from realm int, kdr from realm double"
          (realm/description pare-realm)))
   (is (= "record active.data.realm-test/Sare with fields sar from realm any, sdr from realm any"
