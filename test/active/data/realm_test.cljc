@@ -128,7 +128,9 @@
   (is (= "delayed realm"
          (realm/description (realm/delay (/ 1 0)))))
   (is (= "realm for protocol #'active.data.realm-test/Indexed"
-         (realm/description (realm/protocol Indexed)))))
+         (realm/description (realm/protocol Indexed))))
+  (is (= "realm named :a: int"
+         (realm/description (realm/named :a int)))))
 
 (deftest shallow-predicate-test
   (is ((realm/shallow-predicate realm/int) 5))
@@ -201,6 +203,15 @@
   (is ((realm/shallow-predicate (realm/compile Sare)) (struct/struct-map Sare sar 1 sdr 2)))
   (is (not ((realm/shallow-predicate (realm/compile Sare)) 5)))
 
+  (is ((realm/shallow-predicate (realm/function int boolean -> int)) (fn [a b] a)))
+  (is (not ((realm/shallow-predicate (realm/function int boolean -> int)) 5)))
+  
+  (is ((realm/shallow-predicate (realm/delay Sare)) (struct/struct-map Sare sar 1 sdr 2)))
+  (is (not ((realm/shallow-predicate (realm/delay Sare)) 5)))
+
+  (is ((realm/shallow-predicate (realm/named :a int)) 5))
+  (is (not ((realm/shallow-predicate (realm/named :a int)) "5")))
+  
   )
   
   

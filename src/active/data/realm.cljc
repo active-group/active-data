@@ -468,6 +468,26 @@
   [thing]
   (instance? protocol-realm thing))
 
+; for documenting polymorphism
+(def-struct ^{:doc "Named realm."}
+  named-realm
+  :extends Realm
+  [named-realm-name ; keyword
+   named-realm-realm])
+
+(defn named
+  [name realm]
+  (let [realm (compile realm)]
+    (struct-map named-realm
+                named-realm-name name
+                named-realm-realm realm
+                metadata {}
+                description (str "realm named " name ": " (description realm)))))
+
+(defn named?
+  [thing]
+  (instance? named-realm thing))
+
 (defn compile
   [shorthand]
   (if (realm? shorthand)
@@ -503,6 +523,9 @@
 
         (closed-struct/closed-struct? shorthand)
         (struct->record-realm shorthand)
+
+        (keyword? shorthand)
+        (named shorthand any)
 
         :else (throw (ex-info (str "unknown realm shorthand: " shorthand)
                               {::unknown-realm-shorthand shorthand}))))))
@@ -565,9 +588,11 @@
     (function? realm)
     fn?
     (delayed? realm)
-    (shallow-predicate (delayed-realm-delay realm))
+    (shallow-predicate (force (delayed-realm-delay realm)))
     (protocol? realm)
     (fn [thing] (clojure.core/satisfies? (protocol-realm-protocol realm) thing))
+    (named? realm)
+    (shallow-predicate (named-realm-realm realm))
 
     :else
     (throw (ex-info (str "unknown realm: " realm)
