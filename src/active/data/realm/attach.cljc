@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [def defn fn])
   (:require [clojure.core :as core]
             [active.data.realm :as realm]
-            [active.data.realm-schema :as realm-schema]
+            [active.data.realm.schema :as realm-schema]
             [schema.core :as schema]))
 
 ; TODO: sanitize options such as :always-validate
