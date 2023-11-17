@@ -46,6 +46,7 @@
 (def keyword (struct-map builtin-scalar-realm description "keyword" builtin-scalar-realm-id :keyword metadata {}))
 (def symbol (struct-map builtin-scalar-realm description "symbol" builtin-scalar-realm-id :symbol metadata {}))
 (def string (struct-map builtin-scalar-realm description "string" builtin-scalar-realm-id :string metadata {}))
+(def boolean (struct-map builtin-scalar-realm description "boolean" builtin-scalar-realm-id :boolean metadata {}))
 (def any (struct-map builtin-scalar-realm description "any" builtin-scalar-realm-id :any metadata {}))
 
 (def scalar-realms
@@ -314,6 +315,7 @@
       core/bigdec bigdec
       core/float float
       core/double double
+      core/boolean boolean
       core/keyword keyword
       core/symbol symbol
       core/str string

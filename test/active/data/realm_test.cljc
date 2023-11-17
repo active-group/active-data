@@ -15,6 +15,8 @@
          (realm/compile float)))
   (is (= realm/double
          (realm/compile double)))
+  (is (= realm/boolean
+         (realm/compile boolean)))
   (is (= realm/keyword
          (realm/compile keyword)))
   (is (= realm/symbol
