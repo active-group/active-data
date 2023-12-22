@@ -41,7 +41,16 @@
       (schema/constrained schema/Int
                           (fn [n]
                             (<= from n to))))
-                          
+
+    union?
+    (loop [realms (realm/union-realm-realms realm)
+           args (transient [])]
+      (if (empty? realms)
+        (apply schema/conditional (persistent! args))
+        (recur (rest realms)
+               (conj! (conj! args (realm/shallow-predicate (first realms)))
+                      (schema (first realms))))))
+    
     :else
     (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))
     

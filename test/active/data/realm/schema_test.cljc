@@ -90,7 +90,14 @@
     (is (some? (schema/validate s 5)))
     (is (some? (schema/validate s 10)))
 
-
     (is (thrown? Exception (schema/validate s 0)))
     (is (thrown? Exception (schema/validate s 11)))
     (is (thrown? Exception (schema/validate s "11")))))
+
+(deftest union-test
+  (let [s (schema (realm/union realm/string realm/keyword realm/int))]
+    (is (some? (schema/validate s "foo")))
+    (is (some? (schema/validate s :foo)))
+    (is (some? (schema/validate s 5)))
+
+    (is (thrown? Exception (schema/validate s 'foo)))))
