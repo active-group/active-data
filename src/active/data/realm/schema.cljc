@@ -31,6 +31,9 @@
     map-of?
     {(schema (realm/map-of-realm-key-realm realm))
      (schema (realm/map-of-realm-value-realm realm))}
+
+    protocol?
+    (schema/pred (fn [thing] (satisfies? (realm/protocol-realm-protocol realm) thing)))
     
     :else
     (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))

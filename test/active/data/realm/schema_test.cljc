@@ -64,4 +64,22 @@
     (is (thrown? Exception
                  (schema/validate s {"foo" "bar"
                                      :baz "blam"})))))
+
+(defprotocol Indexed
+  (index [x index]))
+
+(defrecord Pare [kar kdr]
+  Indexed
+  (index [_ index]
+    (case index
+      (0) kar
+      (1) kdr)))
+
+(deftest protocol-test
+  (let [s (schema (realm/compile Indexed))]
+    (is
+     (some?
+      (schema/validate s (->Pare :kar :kdr))))
   
+    (is (thrown? Exception
+                 (schema/validate s [:kar :kdr])))))
