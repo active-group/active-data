@@ -51,3 +51,17 @@
     (is (thrown? Exception
                  (schema/validate s ["foo" :bar 42 43])))))
 
+
+(deftest map-of-realm-test
+  (let [s (schema (realm/compile {realm/keyword realm/string}))]
+    (is
+     (some?
+      (schema/validate s {:foo "bar"
+                          :baz "blam"})))
+    (is (thrown? Exception
+                 (schema/validate s {:foo :bar
+                                     :baz "blam"})))
+    (is (thrown? Exception
+                 (schema/validate s {"foo" "bar"
+                                     :baz "blam"})))))
+  

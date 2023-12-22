@@ -27,6 +27,10 @@
     (vec (map-indexed (fn [index realm]
                         (schema/one (schema realm) (str index)))
                       (realm/tuple-realm-realms realm)))
+
+    map-of?
+    {(schema (realm/map-of-realm-key-realm realm))
+     (schema (realm/map-of-realm-value-realm realm))}
     
     :else
     (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))
