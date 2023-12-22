@@ -34,7 +34,14 @@
 
     protocol?
     (schema/pred (fn [thing] (satisfies? (realm/protocol-realm-protocol realm) thing)))
-    
+
+    integer-from-to?
+    (let [from (realm/integer-from-to-realm-from realm)
+          to (realm/integer-from-to-realm-to realm)]
+      (schema/constrained schema/Int
+                          (fn [n]
+                            (<= from n to))))
+                          
     :else
     (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))
     

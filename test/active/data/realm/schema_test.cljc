@@ -83,3 +83,14 @@
   
     (is (thrown? Exception
                  (schema/validate s [:kar :kdr])))))
+
+(deftest integer-from-to-test
+  (let [s (schema (realm/integer-from-to 1 10))]
+    (is (some? (schema/validate s 1)))
+    (is (some? (schema/validate s 5)))
+    (is (some? (schema/validate s 10)))
+
+
+    (is (thrown? Exception (schema/validate s 0)))
+    (is (thrown? Exception (schema/validate s 11)))
+    (is (thrown? Exception (schema/validate s "11")))))
