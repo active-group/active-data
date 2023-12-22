@@ -22,12 +22,16 @@
     `(do (struct/def-struct* ~t ~extends
            ~_meta
            [~@fields])
+
          (let [realms-map# (into {} (map (fn [[field# realm#]]
                                            [field# (realm/compile realm#)])
                                          [~@pairs]))]
            (closed-struct/alter-meta! ~t assoc
                                       closed-struct-meta/fields-realm-map-meta-key realms-map#
                                       closed-struct-meta/validator-meta-key (validator realms-map#)))
+         ;; we need to do this separately, as it accesses the metadata above
+         (closed-struct/alter-meta! ~t assoc
+                                    closed-struct-meta/record-realm-meta-key (realm/struct->record-realm ~t))
          
          ~t)))
 

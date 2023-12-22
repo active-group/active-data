@@ -300,7 +300,7 @@
               record-realm-fields fields
               metadata {}))
 
-(defn- struct->record-realm
+(defn struct->record-realm
   "Returns a realm for a struct with the given fields and their reals."
   [struct]
   (record (or (get (meta struct) closed-struct-meta/name-meta-key)
@@ -542,7 +542,8 @@
           (map-with-keys shorthand))
 
         (closed-struct/closed-struct? shorthand)
-        (struct->record-realm shorthand)
+        (or (get (meta shorthand) closed-struct-meta/record-realm-meta-key)
+            (struct->record-realm shorthand))
 
         (keyword? shorthand)
         (named shorthand any)

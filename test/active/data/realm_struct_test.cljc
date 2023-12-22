@@ -11,6 +11,9 @@
   [f1 realm/int
    f2 realm/string])
 
+(deftest realm
+  (is (realm/record? (realm/compile T))))
+
 (deftest simple-validation
   (is (struct/instance? T
                         (realm-validation/checking
