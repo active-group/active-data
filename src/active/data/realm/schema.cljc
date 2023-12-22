@@ -4,8 +4,9 @@
 
 (defn schema
   [realm]
-  (cond
-    (realm/builtin-scalar? realm)
+  (realm/dispatch
+      realm
+    builtin-scalar?
     (case (realm/builtin-scalar-realm-id realm)
       (:float) float
       (:double) double
@@ -16,9 +17,19 @@
       (:string) schema/Str
       (:any) schema/Any)
 
-    (realm/predicate? realm)
+    predicate?
     (schema/pred (realm/predicate-realm-predicate realm))
 
-    (realm/optional? realm)
-    (schema/maybe (schema (realm/optional-realm-realm realm)))))
+    optional?
+    (schema/maybe (schema (realm/optional-realm-realm realm)))
+
+    tuple?
+    (vec (map-indexed (fn [index realm]
+                        (schema/one (schema realm) (str index)))
+                      (realm/tuple-realm-realms realm)))
+    
+    :else
+    (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))
+    
+  ))
     

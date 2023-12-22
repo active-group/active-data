@@ -36,4 +36,18 @@
                                 "12"))))
 
 
+(deftest tuple-realm-test
+  (let [s (schema (realm/compile [realm/string realm/keyword realm/int]))]
+    (is (some?
+         (schema/validate s ["foo" :bar 42])))
+    (is (thrown? Exception
+                 (schema/validate s [:foo :bar 42])))
+    (is (thrown? Exception
+                 (schema/validate s ["foo" "bar" 42])))
+    (is (thrown? Exception
+                 (schema/validate s ["foo" :bar "42"])))
+    (is (thrown? Exception
+                 (schema/validate s ["foo" :bar])))
+    (is (thrown? Exception
+                 (schema/validate s ["foo" :bar 42 43])))))
 
