@@ -452,6 +452,14 @@
   [thing]
   (instance? delayed-realm thing))
 
+(defn core-protocol?
+  "Gross hack, as clojure.core/protocol? exists but is private?"
+  [thing]
+  (try
+    (core/satisfies? thing :nope)
+    true
+    (catch Exception exception false)))
+
 (def-struct ^{:doc "Realm for objects implementing a protocol."}
   protocol-realm
   :extends Realm
@@ -523,6 +531,9 @@
       core/str string
 
       (cond
+        (core-protocol? shorthand)
+        (protocol shorthand)
+        
         (fn? shorthand)
         (predicate "unknown predicate" shorthand)
 

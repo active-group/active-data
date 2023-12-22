@@ -74,7 +74,6 @@
 
 (defprotocol Indexed
   (index [x index]))
-  
 
 (defrecord Pare [kar kdr]
   Indexed
@@ -94,7 +93,7 @@
 
 (deftest protocol-test
   (is (realm/protocol?
-       (realm/protocol Indexed))))
+       (realm/compile Indexed))))
 
 (deftest named-test
   (is (realm/named?
