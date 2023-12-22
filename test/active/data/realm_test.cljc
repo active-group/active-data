@@ -28,11 +28,11 @@
   (is (realm/predicate?
        (realm/compile integer?))))
 
-(deftest seq-of-test
-  (is (realm/seq-of?
+(deftest sequence-of-test
+  (is (realm/sequence-of?
        (realm/compile [int])))
   (is (= realm/int
-         (realm/seq-of-realm-realm (realm/compile [int])))))
+         (realm/sequence-of-realm-realm (realm/compile [int])))))
 
 (deftest set-of-test
   (is (realm/set-of?
@@ -194,11 +194,11 @@
   (is ((realm/shallow-predicate (realm/enum 2 3 5)) 5))
   (is (not ((realm/shallow-predicate (realm/enum 2 3 5)) 7)))
 
-  (is ((realm/shallow-predicate (realm/seq-of realm/int)) [1 2 3]))
-  (is ((realm/shallow-predicate (realm/seq-of realm/int)) [:one :two :three]))
-  (is (not ((realm/shallow-predicate (realm/seq-of realm/int)) 5)))
-  (is (not ((realm/shallow-predicate (realm/seq-of realm/int)) #{5})))
-  (is (not ((realm/shallow-predicate (realm/seq-of realm/int)) {5 2})))
+  (is ((realm/shallow-predicate (realm/sequence-of realm/int)) [1 2 3]))
+  (is ((realm/shallow-predicate (realm/sequence-of realm/int)) [:one :two :three]))
+  (is (not ((realm/shallow-predicate (realm/sequence-of realm/int)) 5)))
+  (is (not ((realm/shallow-predicate (realm/sequence-of realm/int)) #{5})))
+  (is (not ((realm/shallow-predicate (realm/sequence-of realm/int)) {5 2})))
   
   (is ((realm/shallow-predicate (realm/set-of realm/int)) #{1 2 3}))
   (is ((realm/shallow-predicate (realm/set-of realm/int)) #{:one :two :three}))
