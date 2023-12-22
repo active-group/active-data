@@ -551,7 +551,77 @@
         :else (throw (ex-info (str "unknown realm shorthand: " shorthand)
                               {::unknown-realm-shorthand shorthand}))))))
 
+(def realm-predicates {'builtin-scalar? `builtin-scalar?
+                       'predicate? `predicate?
+                       'optional? `optional?
+                       'integer-from-to? `integer-from-to?
+                       'union? `union?
+                       'intersection? `intersection?
+                       'enum? `enum?
+                       'sequence-of? `sequence-of?
+                       'set-of? `set-of?
+                       'map-with-keys? `map-with-keys?
+                       'map-of? `map-of?
+                       'tuple? `tuple?
+                       'record? `record?
+                       'function? `function?
+                       'delayed? `delayed?
+                       'protocol? `protocol?
+                       'named? `named?
+                       'restricted? `restricted?})
 
+(defmacro dispatch
+  "(dispatch subject & cases)
+
+where each case has one of the following forms:
+
+predicate expr
+:else expr
+
+The predicate must be the unqalified name of a realm predicate, i.e.
+builtin-scalar?, optional?, etc.
+
+This will generate a dispatch on subject according to realm type,
+where each expr fires when the corresponding predicate returns true.
+
+If there is no explicit :else clause, this will throw an exception on
+non-realm values.
+
+This will throw compile-time errors if there are unknown or uncovered
+realm cases."
+  [?subject & ?clauses]
+  (let [pairs (partition 2 ?clauses)
+        subject-name `subject#]
+    (loop [pairs pairs
+           realm-predicates (transient realm-predicates)
+           cond-rest (transient [])]
+      (if (empty? pairs)
+        (let [realm-predicates (persistent! realm-predicates)]
+          (if (empty? realm-predicates)
+            `(let [~subject-name ~?subject]
+               (cond ~@(persistent! cond-rest)
+                     :else
+                     (throw (ex-info (str "unknown realm: " ~subject-name)
+                                     {::unknown-realm ~subject-name}))))
+            (let [missing (keys realm-predicates)]
+              (throw (ex-info (str "missing realm cases: " (string/join ", " missing))
+                              {::form &form ::missing-cases missing})))))
+
+        (let [[?predicate-name ?exp] (first pairs)]
+          (case ?predicate-name
+            :else
+            (if (empty? (rest pairs))
+              `(let [~subject-name ~?subject]
+                 (cond ~@(persistent! cond-rest)
+                       :else ~?exp))
+              (throw (ex-info ":else clause must be last" {:form &form})))
+
+            (if-let [?predicate (get realm-predicates ?predicate-name)]
+              (recur (rest pairs)
+                (dissoc! realm-predicates ?predicate-name)
+                (conj! (conj! cond-rest `(~?predicate ~subject-name)) ?exp))
+              (throw (ex-info (str "unknown realm case: " ?predicate-name) {::form &form})))))))))
+              
 (defn shallow-predicate
   "Return a shallow predicate for the realm.
 
@@ -564,8 +634,9 @@
 
   It does, however, distinguish tuples of different sizes."
   [realm]
-  (cond
-    (builtin-scalar? realm)
+  (dispatch
+      realm
+    builtin-scalar?
     (case (builtin-scalar-realm-id realm)
       (:int) int?
       (:bigdec) (fn [x] (core/instance? java.math.BigDecimal x))
@@ -577,55 +648,60 @@
       (:boolean) boolean?
       (:any) any?
       (throw (Exception. (str "unknown builtin scalar realm: " (builtin-scalar-realm-id realm)))))
-    (predicate? realm) (predicate-realm-predicate realm)
-    (optional? realm)
+
+    predicate? (predicate-realm-predicate realm)
+    
+    optional?
     (let [inner-predicate (shallow-predicate (optional-realm-realm realm))]
       (fn [x]
         (or (nil? x)
             (inner-predicate x))))
-    (integer-from-to? realm)
+    
+    integer-from-to?
     (let [from (integer-from-to-realm-from realm)
           to (integer-from-to-realm-to realm)]
       (fn [x]
         (and (integer? x)
              (>= x from)
              (<= x to))))
-    (union? realm)
+    
+    union?
     (let [predicates (map shallow-predicate (union-realm-realms realm))]
       (fn [x]
         (clojure.core/boolean (some #(% x) predicates))))
-    (intersection? realm)
+    
+    intersection?
     (let [predicates (map shallow-predicate (intersection-realm-realms realm))]
       (fn [x]
         (every? #(% x) predicates)))
-    (enum? realm) (enum-realm-values realm)
-    (sequence-of? realm) sequential?
-    (set-of? realm) set?
-    (map-with-keys? realm) map?
-    (map-of? realm) map?
-    (tuple? realm)
+    
+    enum? (enum-realm-values realm)
+    sequence-of? sequential?
+    set-of? set?
+    map-with-keys? map?
+    map-of? map?
+
+    tuple?
     (let [size (count (tuple-realm-realms realm))]
       (fn [x]
         (and (sequential? x)
              (= (count x) size))))
-    (record? realm)
-    (record-realm-predicate realm)
-    (function? realm)
-    fn?
-    (delayed? realm)
-    (shallow-predicate (force (delayed-realm-delay realm)))
-    (protocol? realm)
+
+    record? (record-realm-predicate realm)
+
+    function? fn?
+
+    delayed? (shallow-predicate (force (delayed-realm-delay realm)))
+
+    protocol?
     (fn [thing] (clojure.core/satisfies? (protocol-realm-protocol realm) thing))
-    (named? realm)
+
+    named?
     (shallow-predicate (named-realm-realm realm))
-    (restricted? realm) ; debatable
+
+    restricted? ; debatable
     (let [predicate (restricted-realm-predicate realm)
           realm-predicate (shallow-predicate (restricted-realm-realm realm))]
       (fn [thing]
         (and (realm-predicate thing)
-             (predicate thing))))
-             
-
-    :else
-    (throw (ex-info (str "unknown realm: " realm)
-                    {::unknown-realm realm}))))
+             (predicate thing))))))
