@@ -32,6 +32,9 @@
     {(schema (realm/map-of-realm-key-realm realm))
      (schema (realm/map-of-realm-value-realm realm))}
 
+    set-of?
+    :TODO
+    
     protocol?
     (schema/pred (fn [thing] (satisfies? (realm/protocol-realm-protocol realm) thing)))
 
@@ -50,6 +53,9 @@
         (recur (rest realms)
                (conj! (conj! args (realm/shallow-predicate (first realms)))
                       (schema (first realms))))))
+
+    sequence-of?
+    [(schema (realm/sequence-of-realm-realm realm))]
     
     :else
     (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))

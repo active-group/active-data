@@ -101,3 +101,16 @@
     (is (some? (schema/validate s 5)))
 
     (is (thrown? Exception (schema/validate s 'foo)))))
+
+(deftest sequence-of-test
+  (let [s (schema (realm/sequence-of realm/string))]
+    (is (some? (schema/validate s [])))
+    (is (some? (schema/validate s '())))
+    (is (some? (schema/validate s ["foo"])))
+    (is (some? (schema/validate s '("foo"))))
+    (is (some? (schema/validate s ["foo" "bar"])))
+
+    (is (thrown? Exception (schema/validate s 'foo)))
+    (is (thrown? Exception (schema/validate s [:foo :bar])))
+    (is (thrown? Exception (schema/validate s ["foo" :bar])))
+    (is (thrown? Exception (schema/validate s [:foo "bar"])))))
