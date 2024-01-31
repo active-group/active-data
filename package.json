@@ -8,6 +8,7 @@
     "test": "test"
   },
   "scripts": {
+    "compile": "shadow-cljs compile test",
     "test": "shadow-cljs compile test && karma start --single-run"
   },
   "devDependencies": {

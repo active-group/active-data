@@ -28,6 +28,6 @@ jobs:
     - name: Install npm dependencies
       run: npm install -y
     - name: Compile
-      run: shadow-cljs compile test
+      run: npm run compile
     - name: Run tests
       run: npm run test
