@@ -301,7 +301,7 @@
               metadata {}))
 
 (defn struct->record-realm
-  "Returns a realm for a struct with the given fields and their reals."
+  "Returns a realm for a struct with the given fields and their realms."
   [struct]
   (record (or (get (meta struct) closed-struct-meta/name-meta-key)
               'unnamed-struct)
@@ -312,10 +312,9 @@
                         realm
                         getter))
                (or (get (meta struct) closed-struct-meta/fields-realm-map-meta-key)
-                   (into {}
-                         (map (fn [key]
-                                [key any])
-                              (closed-struct/keys struct)))))))
+                   (map (fn [key]
+                          [key any])
+                        (closed-struct/keys struct))))))
 
 (def-struct ^{:doc "Realm for function."}
   function-realm
@@ -444,7 +443,7 @@
 (defmacro delay
   [realm-expression]
   `(struct-map delayed-realm
-               delayed-realm-delay (clojure.core/delay (compile ~realm-expression))
+               delayed-realm-delay (core/delay (compile ~realm-expression))
                metadata {}
                description "delayed realm"))
 
@@ -452,9 +451,9 @@
   [thing]
   (is-a? delayed-realm thing))
 
-(defn core-protocol?
-  "Gross hack, as clojure.core/protocol? exists but is private?"
+(defn- core-protocol?
   [thing]
+  ;; Gross hack, as clojure.core/protocol? exists but is private?
   (try
     (core/satisfies? thing :nope)
     true
@@ -679,7 +678,7 @@ realm cases."
     union?
     (let [predicates (map shallow-predicate (union-realm-realms realm))]
       (fn [x]
-        (clojure.core/boolean (some #(% x) predicates))))
+        (core/boolean (some #(% x) predicates))))
     
     intersection?
     (let [predicates (map shallow-predicate (intersection-realm-realms realm))]
