@@ -38,6 +38,9 @@
                  extends
                  (first args)))))))
 
+(declare struct-map)
+(declare to-struct-map)
+
 (defmacro ^:no-doc def-struct*
   [t extends _meta fields]
   (when (empty? fields)
@@ -55,6 +58,8 @@
      ;; Note that 'meta' is evaluated after the fields, so they may refer to them.
      (def ~t (closed-struct/create ~fields
                                    ~extends
+                                   struct-map
+                                   to-struct-map
                                    (assoc ~_meta closed-struct-meta/name-meta-key (symbol (str *ns*) (str '~t)))))
 
      ~@(for [f# fields]
@@ -67,6 +72,14 @@
 
   ```
   (def-struct T [field-1 ...])
+  ```
+
+  A corresponding struct map can be created by using the struct as a function:
+
+  ```
+  (T field-1 value-1 ...)
+
+  (T {field-1 value-1 ...})
   ```
 
   Other structs can be extended, too:

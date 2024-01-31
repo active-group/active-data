@@ -10,13 +10,13 @@
 (defprotocol IClosedStruct
   (-alter-meta! [this f args]))
 
-(deftype ^:private ClosedStruct [keys keyset index-map ^:unsynchronized-mutable _meta extended-struct]
+(deftype ^:private ClosedStruct [keys keyset index-map ctor ctor-m ^:unsynchronized-mutable _meta extended-struct]
   ;; Note: 'keys' is in original order; keyset the same as a set.
   IClosedStruct
   (-alter-meta! [this f args]
     (set! (.-_meta this) (apply f (.-_meta this) args))
     (.-_meta this))
-  
+
   ;; TODO: hashing.
   #?@(:clj
       [clojure.lang.IHashEq
@@ -28,15 +28,30 @@
 
        clojure.lang.IObj
        clojure.lang.IMeta
-       (withMeta [this meta] (ClosedStruct. keys keyset index-map meta extended-struct))
-       (meta [this] _meta)]
+       (withMeta [this meta] (ClosedStruct. keys keyset index-map ctor ctor-m meta extended-struct))
+       (meta [this] _meta)
+
+       clojure.lang.IFn
+       (applyTo [this arglist] (if (= 1 (count arglist)) (ctor-m this (first arglist)) (apply ctor this arglist)))
+       (invoke [this a] (ctor-m this a))
+       (invoke [this a b] (ctor this a b))
+       (invoke [this a b c d] (ctor this a b c d))
+       (invoke [this a b c d e f] (ctor this a b c d e f))
+       (invoke [this a b c d e f g h] (ctor this a b c d e f g h))
+       (invoke [this a b c d e f g h i j] (ctor this a b c d e f g h i j))
+       (invoke [this a b c d e f g h i j k l] (ctor this a b c d e f g h i j k l))
+       (invoke [this a b c d e f g h i j k l m n] (ctor this a b c d e f g h i j k l m n))
+       (invoke [this a b c d e f g h i j k l m n o p] (ctor this a b c d e f g h i j k l m n o p))
+       (invoke [this a b c d e f g h i j k l m n o p q r] (ctor this a b c d e f g h i j k l m n o p q r))
+       (invoke [this a b c d e f g h i j k l m n o p q r s t] (ctor this a b c d e f g h i j k l m n o p q r s t))
+       ]
 
       :cljs
       [Object
        (equiv [this other] (-equiv this other))
 
        IWithMeta
-       (-with-meta [this meta] (ClosedStruct. keys keyset index-map meta extended-struct))
+       (-with-meta [this meta] (ClosedStruct. keys keyset index-map ctor ctor-m meta extended-struct))
        IMeta
        (-meta [this] _meta)
 
@@ -46,6 +61,20 @@
 
        ;;IHash
        ;;(-hash [this] (caching-hash this hash-unordered-coll _hash))
+
+       IFn
+       (-invoke [this a] (ctor-m this a))
+       (-invoke [this a b] (ctor this a b))
+       (-invoke [this a b c d] (ctor this a b c d))
+       (-invoke [this a b c d e f] (ctor this a b c d e f))
+       (-invoke [this a b c d e f g h] (ctor this a b c d e f g h))
+       (-invoke [this a b c d e f g h i j] (ctor this a b c d e f g h i j))
+       (-invoke [this a b c d e f g h i j k l] (ctor this a b c d e f g h i j k l))
+       (-invoke [this a b c d e f g h i j k l m n] (ctor this a b c d e f g h i j k l m n))
+       (-invoke [this a b c d e f g h i j k l m n o p] (ctor this a b c d e f g h i j k l m n o p))
+       (-invoke [this a b c d e f g h i j k l m n o p q r] (ctor this a b c d e f g h i j k l m n o p q r))
+       (-invoke [this a b c d e f g h i j k l m n o p q r s t] (ctor this a b c d e f g h i j k l m n o p q r s t))
+       (-invoke [this a b c d e f g h i j k l m n o p q r s t rest] (apply ctor this a b c d e f g h i j k l m n o p q r s t rest))
        ]))
 
 (defn- equals? [^ClosedStruct struct other]
@@ -94,7 +123,7 @@
 (defn extended-struct [^ClosedStruct t]
   (.-extended-struct t))
 
-(defn create [fields ^ClosedStruct extended-struct meta]
+(defn create [fields ^ClosedStruct extended-struct ctor ctor-m meta]
   ;; Note: keys of the extended struct must come first! (for optimizations to work)
   (let [all-fields (vec (concat (when (some? extended-struct) (.-keys extended-struct)) fields))]
     (ClosedStruct. all-fields
@@ -107,6 +136,8 @@
                               (assoc! r (first fs) idx)
                               (rest fs))
                        (persistent! r)))
+                   ctor
+                   ctor-m
                    meta
                    extended-struct)))
 

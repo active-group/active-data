@@ -9,13 +9,22 @@
 (defmacro def-realm-struct
   "
   ```
+  Defines a struct and its keys, given a realm for each key:
+  
   (def-realm-struct T
     [f1 realm/int
      f2 realm/string])
+
+  A corresponding struct map can be created by using the struct as a function:
+
+  ```
+  (T f1 42 f2 \"foo\")
+
+  (T {f1 42 f2 \"foo\"})
+  ```
   "
-  
   [t & args]
-  ;; Note: our 'fields' are different than def-struct's, but 'parse-def-struct-args' ignored that.
+  ;; Note: our 'fields' are different than def-struct's, but 'parse-def-struct-args' ignores that.
   (let [[extends _meta fields*] (struct/parse-def-struct-args args)
         pairs (map vec (partition 2 fields*))
         fields (map first pairs)]

@@ -48,9 +48,18 @@
     (t/is (= v (sut/to-struct-map T [[t-b :foo]
                                      [t-a 42]]))))
 
-  ;; TODO? That takes some time so check, esp. when also allowing the same key multiple times.
+  (t/testing "IFn on struct"
+    (let [v (sut/struct-map T
+                            t-a 42
+                            t-b :foo)]
+      (t/is (= (T t-a 42
+                  t-b :foo) v))
+      (t/is (= (T {t-a 42
+                   t-b :foo}) v))))
+
+  ;; TODO? That takes some time to check, esp. when also allowing the same key multiple times.
   #_(t/is (some? (throws #(sut/struct-map T t-a 42)))
-        "Cannot construct with partial fields")
+          "Cannot construct with partial fields")
   
   (t/is (some? (throws #(sut/struct-map T :foo 42)))
         "Cannot construct with foreign fields")
