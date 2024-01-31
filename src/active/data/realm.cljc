@@ -7,6 +7,7 @@
    [active.data.struct :as struct]
    [active.data.struct.closed-struct :as closed-struct]
    [active.data.struct.closed-struct-meta :as closed-struct-meta]
+   [active.data.realm.realm-struct-meta :as realm-struct-meta]
    [clojure.set :as set]
    [clojure.string :as string]))
 
@@ -300,9 +301,7 @@
               record-realm-fields fields
               metadata {}))
 
-(defn struct->record-realm
-  "Returns a realm for a struct with the given fields and their realms."
-  [struct]
+(defn ^:no-doc create-realm-struct-realm [struct field-realm-pairs]
   (record (or (get (meta struct) closed-struct-meta/name-meta-key)
               'unnamed-struct)
           (struct/constructor struct)
@@ -311,10 +310,16 @@
                  (field (core/symbol (str getter))
                         realm
                         getter))
-               (or (get (meta struct) closed-struct-meta/fields-realm-map-meta-key)
-                   (map (fn [key]
-                          [key any])
-                        (closed-struct/keys struct))))))
+               field-realm-pairs)))
+
+(defn- struct->record-realm
+  "Returns a realm for a struct with the given fields and their realms."
+  [struct]
+  (or (get (meta struct) realm-struct-meta/record-realm-meta-key)
+      (create-realm-struct-realm struct
+                                 (map (fn [key]
+                                        [key any])
+                                      (closed-struct/keys struct)))))
 
 (def-struct ^{:doc "Realm for function."}
   function-realm
@@ -552,8 +557,7 @@
           (map-with-keys shorthand))
 
         (struct/struct? shorthand)
-        (or (get (meta shorthand) closed-struct-meta/record-realm-meta-key)
-            (struct->record-realm shorthand))
+        (struct->record-realm shorthand)
 
         (keyword? shorthand)
         (named shorthand any)

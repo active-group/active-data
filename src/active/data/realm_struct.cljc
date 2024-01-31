@@ -2,6 +2,7 @@
   (:require [active.data.struct :as struct #?@(:cljs [:include-macros true])]
             [active.data.struct.closed-struct :as closed-struct]
             [active.data.struct.closed-struct-meta :as closed-struct-meta]
+            [active.data.realm.realm-struct-meta :as realm-struct-meta]
             [active.data.struct.validator :as struct-validator]
             [active.data.realm :as realm]
             [active.data.realm.validation :as realm-validation]))
@@ -32,16 +33,15 @@
            ~_meta
            [~@fields])
 
-         (let [realms-map# (into {} (map (fn [[field# realm#]]
-                                           [field# (realm/compile realm#)])
-                                         [~@pairs]))]
-           (closed-struct/alter-meta! ~t assoc
-                                      closed-struct-meta/fields-realm-map-meta-key realms-map#
-                                      closed-struct-meta/validator-meta-key (validator realms-map#)))
-         ;; we need to do this separately, as it accesses the metadata above
-         (closed-struct/alter-meta! ~t assoc
-                                    closed-struct-meta/record-realm-meta-key (realm/struct->record-realm ~t))
-         
+         ;; FIXME: include extended fields:
+         (let [field-realms# (map (fn [[field# realm#]]
+                                    [field# (realm/compile realm#)])
+                                  [~@pairs])]
+           (closed-struct/alter-meta!
+            ~t assoc
+            closed-struct-meta/validator-meta-key (validator field-realms#)
+            realm-struct-meta/record-realm-meta-key (realm/create-realm-struct-realm ~t field-realms#)))
+
          ~t)))
 
 (defrecord ^:private RealmStructValidator [validators]
@@ -52,7 +52,7 @@
 
   (-validate-map! [this m] nil))
 
-(defn validator [field-realm-pairs]
+(defn ^:no-doc validator [field-realm-pairs]
   (RealmStructValidator.
    (into {}
          (map (fn [[field realm]]
