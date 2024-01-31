@@ -1,0 +1,19 @@
+{
+  "name": "active-data",
+  "version": "0.1.0",
+  "description": "The goal of this library is to provide facilities for systematic data modelling in the style of design recipes.",
+  "main": "index.js",
+  "directories": {
+    "doc": "doc",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "shadow-cljs compile test && karma start --single-run"
+  },
+  "devDependencies": {
+    "karma": "^6.4.2",
+    "karma-chrome-launcher": "^3.2.0",
+    "karma-cljs-test": "^0.1.0",
+    "shadow-cljs": "^2.27.1"
+  }
+}
