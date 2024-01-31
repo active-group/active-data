@@ -1,9 +1,9 @@
 (ns active.data.realm
   (:refer-clojure :exclude [int bigdec float double keyword symbol boolean seq compile record? delay delayed?
-                            struct-map satisfies? set-validator!])
+                            struct-map set-validator!])
   (:require
    [clojure.core :as core]
-   [active.data.struct :refer [def-struct struct-map satisfies? is-a?]]
+   [active.data.struct :refer [def-struct struct-map is-a?]]
    [active.data.struct :as struct]
    [active.data.struct.closed-struct :as closed-struct]
    [active.data.struct.closed-struct-meta :as closed-struct-meta]
@@ -15,7 +15,7 @@
 
 (defn realm?
   [thing]
-  (satisfies? Realm thing))
+  (struct/is-extension-of? Realm thing))
 
 ;; FIXME: should there be a fold/generic dispatch?
 ;; FIXME: realm realm ...
@@ -460,7 +460,7 @@
   [thing]
   ;; Gross hack, as clojure.core/protocol? exists but is private?
   (try
-    (core/satisfies? thing :nope)
+    (satisfies? thing :nope)
     true
     (catch Exception exception false)))
 
@@ -562,7 +562,7 @@
         (keyword? shorthand)
         (named shorthand any)
 
-        :else (throw (ex-info (str "unknown realm shorthand: " shorthand)
+        :else (throw (ex-info (str "unknown realm shorthand: " (pr-str shorthand))
                               {::unknown-realm-shorthand shorthand}))))))
 
 (def realm-predicates {'builtin-scalar? `builtin-scalar?
@@ -708,7 +708,7 @@ realm cases."
     delayed? (shallow-predicate (force (delayed-realm-delay realm)))
 
     protocol?
-    (fn [thing] (core/satisfies? (protocol-realm-protocol realm) thing))
+    (fn [thing] (satisfies? (protocol-realm-protocol realm) thing))
 
     named?
     (shallow-predicate (named-realm-realm realm))

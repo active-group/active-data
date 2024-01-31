@@ -4,7 +4,7 @@
             [active.data.struct.closed-struct-map :as closed-struct-map]
             [active.data.struct.closed-struct-meta :as closed-struct-meta]
             #_[active.clojure.lens :as lens])
-  (:refer-clojure :exclude [struct-map instance? satisfies?
+  (:refer-clojure :exclude [struct-map
                             set-validator! get-validator
                             accessor]))
 
@@ -180,10 +180,12 @@
   [struct v]
   (closed-struct-map/exact-instance? struct v))
 
-;; TODO add has-exact-keys?
+(defn is-extension-of? [struct v]
+  "Tests if `v` is a struct map that extends the given `struct`."
+  (closed-struct-map/derived-instance? struct v))
 
-(defn satisfies? ;; TODO rename has-keys?
-  "Tests if `v` is a map and contains at least the keys defined for `struct`."
+(defn has-keys?
+  "Tests if `v` is a map that contains at least the keys defined for `struct`."
   [struct v]
   ;; Note: also checks the validity, if a validator is defined for struct.
   (closed-struct-map/satisfies? struct v))

@@ -217,14 +217,15 @@
       (t/is (not (sut/is-a? T 42)))
       (t/is (not (sut/is-a? T {}))))
 
-    (t/testing "satisfies?"
-      (t/is (not (sut/satisfies? T 42)))
+    (t/testing "has-keys?"
+      (t/is (not (sut/has-keys? T 42)))
+      (t/is (not (sut/has-keys? T {})))
       
-      (t/is (sut/satisfies? T {t-a nil
-                               t-b :foo
-                               :x :y}))
+      (t/is (sut/has-keys? T {t-a nil
+                              t-b :foo
+                              :x :y}))
 
-      (t/is (not (sut/satisfies? T {t-a 42}))))
+      (t/is (not (sut/has-keys? T {t-a 42}))))
     ))
 
 (t/deftest reflection-test
@@ -308,9 +309,9 @@
       (t/is (throws #(into valid {vt-a :foo})))
       (t/is (throws #(empty valid))))
 
-    (t/testing "satisfies? checks for validity"  
-      (t/is (sut/satisfies? ValidatedT {vt-a 11 vt-b 22}))
-      (t/is (not (sut/satisfies? ValidatedT {vt-a :foo vt-b :bar})))))
+    (t/testing "has-keys? checks for validity"  
+      (t/is (sut/has-keys? ValidatedT {vt-a 11 vt-b 22}))
+      (t/is (not (sut/has-keys? ValidatedT {vt-a :foo vt-b :bar})))))
   )
 
 (t/deftest number-of-fields-test
@@ -385,7 +386,7 @@
 
 (t/deftest extends-test
   (let [v (sut/struct-map ExT t-a 42 t-b :test t-c "xxx")]
-    (t/is (sut/satisfies? T v))
+    (t/is (sut/is-extension-of? T v))
 
     (t/is (not (sut/is-a? T v)))
     (t/is (sut/is-a? ExT v))
@@ -450,10 +451,10 @@
         (reset! base-validations [])
         (reset! derived-validations [])
 
-        (t/testing "satisfies? does not check base validity if derived struct-map"
-          ;; Note: although it is not an instance? of base, the base validity must have been checked on construction already.
+        (t/testing "has-keys? does not check base validity if derived struct-map"
+          ;; Note: although it is not an is-a? base, the base validity must have been checked on construction already.
           
-          (t/is (sut/satisfies? VBase valid))
+          (t/is (sut/has-keys? VBase valid))
           (t/is (empty? @base-validations))
           )))
     )

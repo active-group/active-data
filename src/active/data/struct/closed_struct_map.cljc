@@ -478,6 +478,12 @@
   (and (clj-instance? PersistentClosedStructMap v)
        (= t (.-struct v))))
 
+(defn derived-instance? [t v]
+  ;; Note: false if 'exact-instance?'
+  (assert (closed-struct/closed-struct? t)) ;; TODO: exception?
+  (and (clj-instance? PersistentClosedStructMap v)
+       (derived-struct? t (.-struct v))))
+
 #_(defn instance-or-derived? [t v]
   (assert (closed-struct/closed-struct? t)) ;; TODO: exception?
   (and (clj-instance? PersistentClosedStructMap v)
