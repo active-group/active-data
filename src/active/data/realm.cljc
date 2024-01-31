@@ -15,7 +15,7 @@
 
 (defn realm?
   [thing]
-  (struct/is-extension-of? Realm thing))
+  (struct/is-a? Realm thing))
 
 ;; FIXME: should there be a fold/generic dispatch?
 ;; FIXME: realm realm ...

@@ -176,13 +176,10 @@
   (closed-struct/closed-struct? v))
 
 (defn is-a?
-  "Tests if `v` is a struct map created from the given `struct`."
+  "Tests if `v` is a struct map created from the given `struct` or an extension of it."
   [struct v]
-  (closed-struct-map/exact-instance? struct v))
-
-(defn is-extension-of? [struct v]
-  "Tests if `v` is a struct map that extends the given `struct`."
-  (closed-struct-map/derived-instance? struct v))
+  (or (closed-struct-map/exact-instance? struct v)
+      (closed-struct-map/derived-instance? struct v)))
 
 (defn has-keys?
   "Tests if `v` is a map that contains at least the keys defined for `struct`."

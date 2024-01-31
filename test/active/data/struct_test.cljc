@@ -386,10 +386,9 @@
 
 (t/deftest extends-test
   (let [v (sut/struct-map ExT t-a 42 t-b :test t-c "xxx")]
-    (t/is (sut/is-extension-of? T v))
 
-    (t/is (not (sut/is-a? T v)))
     (t/is (sut/is-a? ExT v))
+    (t/is (sut/is-a? T v))
     
     (t/is (= 10 (t-a (assoc v t-a 10))))
     (t/is (= "yyy" (t-c (assoc v t-c "yyy"))))
