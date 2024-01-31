@@ -13,10 +13,11 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
     - name: Install dependencies
       run: lein deps
+      run: npm install -y
     - name: Run Clojure tests
       run: lein test
-    - uses: actions/setup-node@v3
     - name: Run ClojureScript tests
       run: npm run test
