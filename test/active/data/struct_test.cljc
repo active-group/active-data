@@ -43,7 +43,10 @@
 
     (t/is (= v (sut/struct-map T
                                t-b :foo
-                               t-a 42)) "order does not matter"))
+                               t-a 42)) "order does not matter")
+
+    (t/is (= v (sut/to-struct-map T [[t-b :foo]
+                                     [t-a 42]]))))
 
   ;; TODO? That takes some time so check, esp. when also allowing the same key multiple times.
   #_(t/is (some? (throws #(sut/struct-map T t-a 42)))

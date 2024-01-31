@@ -96,7 +96,17 @@
   ;; TODO: hash-map are quite complex macros in cljs - check that out.
   (closed-struct-map/build-map struct keys-vals))
 
-;; TODO: construct from map; either arity 1 of struct-map, or (also) IFn on struct, or separate?
+(defn to-struct-map
+  "Returns a new struct map with the keys of the struct, from a collection of key-value tuples. All keys of the
+  stuct must be given.
+
+  ```
+  (def-struct T [field-1 ...])
+  (to-struct-map T {field-1 42})
+  ```
+  "
+  [struct keys-vals]
+  (closed-struct-map/from-coll struct keys-vals))
 
 (defn constructor
   "Returns an optimized positional constructor function for struct-maps

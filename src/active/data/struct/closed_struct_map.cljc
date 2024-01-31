@@ -521,6 +521,10 @@
                 nil)
         (validate-map-only struct))))
 
+(defn from-coll [struct coll]
+  (assert (= (set (map first coll)) (closed-struct/keyset struct))) ;; TODO: 'key not in struct' exception? or assert and ignore?
+  (build-map* struct coll))
+
 (defn from-map [struct m]
   #_(build-map* struct (seq m))
   
@@ -534,7 +538,7 @@
   #_(build-map* struct
                 (partition 2 keys-vals))
 
-  ;; Note: this already removes duplicated.
+  ;; Note: this already removes duplicates.
   (from-map struct (apply hash-map keys-vals)))
 
 (defn struct-of-map [m]
