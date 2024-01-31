@@ -7,7 +7,18 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  clj-test:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: lein deps
+    - name: Run tests
+      run: lein test
+
+  cljs-test:
 
     runs-on: ubuntu-latest
 
@@ -15,9 +26,6 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
     - name: Install dependencies
-      run: lein deps
       run: npm install -y
-    - name: Run Clojure tests
-      run: lein test
-    - name: Run ClojureScript tests
+    - name: Run tests
       run: npm run test
