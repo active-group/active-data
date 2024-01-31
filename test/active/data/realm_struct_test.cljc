@@ -15,9 +15,9 @@
   (is (realm/record? (realm/compile T))))
 
 (deftest simple-validation
-  (is (struct/instance? T
-                        (realm-validation/checking
-                         (struct/struct-map T f1 5 f2 "foo"))))
+  (is (struct/is-a? T
+                    (realm-validation/checking
+                     (struct/struct-map T f1 5 f2 "foo"))))
   (is (thrown? Exception
                (realm-validation/checking
                 (struct/struct-map T f1 "bar" f2 "foo")))))

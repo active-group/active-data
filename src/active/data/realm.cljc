@@ -1,9 +1,9 @@
 (ns active.data.realm
   (:refer-clojure :exclude [int bigdec float double keyword symbol boolean seq compile record? delay delayed?
-                            struct-map instance? satisfies? set-validator!])
+                            struct-map satisfies? set-validator!])
   (:require
    [clojure.core :as core]
-   [active.data.struct :refer [def-struct struct-map satisfies? instance?]]
+   [active.data.struct :refer [def-struct struct-map satisfies? is-a?]]
    [active.data.struct :as struct]
    [active.data.struct.closed-struct :as closed-struct]
    [active.data.struct.closed-struct-meta :as closed-struct-meta]
@@ -27,7 +27,7 @@
 
 (defn builtin-scalar?
   [thing]
-  (satisfies? builtin-scalar-realm thing))
+  (is-a? builtin-scalar-realm thing))
 
 ; FIXME: natural positive-int
 (def int (struct-map builtin-scalar-realm description "int" builtin-scalar-realm-id :int metadata {}))
@@ -56,7 +56,7 @@
 
 (defn predicate?
   [thing]
-  (instance? predicate-realm thing))
+  (is-a? predicate-realm thing))
 
 (defn predicate
   [desc predicate]
@@ -72,7 +72,7 @@
 
 (defn optional?
   [thing]
-  (instance? optional-realm thing))
+  (is-a? optional-realm thing))
 
 (declare compile)
 
@@ -91,7 +91,7 @@
 
 (defn integer-from-to?
   [thing]
-  (instance? integer-from-to-realm thing))
+  (is-a? integer-from-to-realm thing))
 
 (defn integer-from-to
   [from to]
@@ -115,7 +115,7 @@
 
 (defn union?
   [thing]
-  (instance? union-realm thing))
+  (is-a? union-realm thing))
 
 (defn union
   [& realms]
@@ -131,7 +131,7 @@
 
 (defn enum?
   [thing]
-  (instance? enum-realm thing))
+  (is-a? enum-realm thing))
 
 (defn enum
   [& values]
@@ -148,7 +148,7 @@
 
 (defn intersection?
   [thing]
-  (instance? intersection-realm thing))
+  (is-a? intersection-realm thing))
 
 (defn intersection
   [& realms]
@@ -164,7 +164,7 @@
 
 (defn sequence-of?
   [thing]
-  (instance? sequence-of-realm thing))
+  (is-a? sequence-of-realm thing))
 
 (defn sequence-of
   [realm]
@@ -181,7 +181,7 @@
 
 (defn set-of?
   [thing]
-  (instance? set-of-realm thing))
+  (is-a? set-of-realm thing))
 
 (defn set-of
   [realm]
@@ -201,7 +201,7 @@
 
 (defn map-with-keys?
   [thing]
-  (instance? map-with-keys-realm thing))
+  (is-a? map-with-keys-realm thing))
 
 (defn map-with-keys
   [keys-realm-map]
@@ -226,7 +226,7 @@
 
 (defn map-of?
   [thing]
-  (instance? map-of-realm thing))
+  (is-a? map-of-realm thing))
 
 (defn map-of
   [key-realm value-realm]
@@ -249,7 +249,7 @@
 
 (defn tuple?
   [thing]
-  (instance? tuple-realm thing))
+  (is-a? tuple-realm thing))
 
 (defn tuple
   [& realms]
@@ -282,7 +282,7 @@
 
 (defn record?
   [thing]
-  (instance? record-realm thing))
+  (is-a? record-realm thing))
 
 (defn record
   [name constructor predicate fields]
@@ -306,7 +306,7 @@
   (record (or (get (meta struct) closed-struct-meta/name-meta-key)
               'unnamed-struct)
           (struct/constructor struct)
-          (partial struct/instance? struct)
+          (partial is-a? struct)
           (map (fn [[getter realm]]
                  (field (core/symbol (str getter))
                         realm
@@ -433,8 +433,8 @@
 
 (defn function?
   [thing]
-  (or (instance? function-realm thing)
-      (instance? function-cases-realm thing)))
+  (or (is-a? function-realm thing)
+      (is-a? function-cases-realm thing)))
 
 (def-struct ^{:doc "Lazy realm."}
   delayed-realm
@@ -450,7 +450,7 @@
 
 (defn delayed?
   [thing]
-  (instance? delayed-realm thing))
+  (is-a? delayed-realm thing))
 
 (defn core-protocol?
   "Gross hack, as clojure.core/protocol? exists but is private?"
@@ -475,7 +475,7 @@
 
 (defn protocol?
   [thing]
-  (instance? protocol-realm thing))
+  (is-a? protocol-realm thing))
 
 ; for documenting polymorphism
 (def-struct ^{:doc "Named realm."}
@@ -495,7 +495,7 @@
 
 (defn named?
   [thing]
-  (instance? named-realm thing))
+  (is-a? named-realm thing))
 
 (def-struct ^{:doc "Realm restricted by a predicate"}
   restricted-realm
@@ -514,7 +514,7 @@
 
 (defn restricted?
   [thing]
-  (instance? restricted-realm thing))
+  (is-a? restricted-realm thing))
 
 (defn compile
   [shorthand]
@@ -552,7 +552,7 @@
             (map-of key value))
           (map-with-keys shorthand))
 
-        (closed-struct/closed-struct? shorthand)
+        (struct/struct? shorthand)
         (or (get (meta shorthand) closed-struct-meta/record-realm-meta-key)
             (struct->record-realm shorthand))
 
@@ -650,7 +650,7 @@ realm cases."
     builtin-scalar?
     (case (builtin-scalar-realm-id realm)
       (:int) int?
-      (:bigdec) (fn [x] (core/instance? java.math.BigDecimal x))
+      (:bigdec) (fn [x] (instance? java.math.BigDecimal x))
       (:float) float?
       (:double) double?
       (:keyword) keyword?
@@ -705,7 +705,7 @@ realm cases."
     delayed? (shallow-predicate (force (delayed-realm-delay realm)))
 
     protocol?
-    (fn [thing] (clojure.core/satisfies? (protocol-realm-protocol realm) thing))
+    (fn [thing] (core/satisfies? (protocol-realm-protocol realm) thing))
 
     named?
     (shallow-predicate (named-realm-realm realm))

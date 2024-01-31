@@ -162,13 +162,14 @@
   [v]
   (closed-struct/closed-struct? v))
 
-(defn instance?
+(defn is-a?
   "Tests if `v` is a struct map created from the given `struct`."
   [struct v]
-  ;; TODO: should a struct-map of a derived struct be an instance of the extended struct? (it currently isn't; only satisfies? allows that)
-  (closed-struct-map/instance? struct v))
+  (closed-struct-map/exact-instance? struct v))
 
-(defn satisfies?
+;; TODO add has-exact-keys?
+
+(defn satisfies? ;; TODO rename has-keys?
   "Tests if `v` is a map and contains at least the keys defined for `struct`."
   [struct v]
   ;; Note: also checks the validity, if a validator is defined for struct.

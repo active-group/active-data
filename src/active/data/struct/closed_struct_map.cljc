@@ -467,26 +467,29 @@
        ;; OPT: direct access to map printer? reimplement?
        (-pr-writer (into {} s) writer x))))
 
-(defn instance? [t v]
+(defn- derived-struct? [t vt]
+  ;; if vt extends t
+  (when-let [p (closed-struct/extended-struct vt)]
+    (or (= t p)
+        (derived-struct? t p))))
+
+(defn exact-instance? [t v]
   (assert (closed-struct/closed-struct? t)) ;; TODO: exception?
   (and (clj-instance? PersistentClosedStructMap v)
-       (= (.-struct v)
-          t)))
+       (= t (.-struct v))))
 
-(defn transient-instance? [t v]
+#_(defn instance-or-derived? [t v]
   (assert (closed-struct/closed-struct? t)) ;; TODO: exception?
-  (and (clj-instance? TransientClosedStructMap v)
-       (= (.-struct v)
-          t)))
-
-(defn- derived-instance? [t vt]
-  (or (= t vt)
-      (when-let [p (closed-struct/extended-struct vt)]
-        (derived-instance? t p))))
+  (and (clj-instance? PersistentClosedStructMap v)
+       (or (= t (.-struct v))
+           (derived-struct? t (.-struct v)))))
 
 (defn satisfies? [t v]
+  (assert (closed-struct/closed-struct? t)) ;; TODO: exception?
   (or (and (clj-instance? PersistentClosedStructMap v)
-           (derived-instance? t (.-struct v)))
+           (or (= t (.-struct v))
+               (derived-struct? t (.-struct v))))
+      ;; OPT: don't do this is v is a (different) struct-map
       (and (map? v)
            (and (every? #(contains? v %) (closed-struct/keys t))
                 ;; Note: passes v to validator, which may contain more keys. (validators should allow that)
