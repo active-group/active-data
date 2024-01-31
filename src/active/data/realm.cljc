@@ -3,7 +3,8 @@
                             struct-map set-validator!])
   (:require
    [clojure.core :as core]
-   [active.data.struct :refer [def-struct struct-map is-a?]]
+   #?(:clj [active.data.struct :refer [def-struct struct-map is-a?]]
+      :cljs [active.data.struct :refer [struct-map is-a?] :refer-macros [def-struct]])
    [active.data.struct :as struct]
    [active.data.struct.closed-struct :as closed-struct]
    [active.data.struct.closed-struct-meta :as closed-struct-meta]
