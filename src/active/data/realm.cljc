@@ -301,25 +301,25 @@
               record-realm-fields fields
               metadata {}))
 
-(defn ^:no-doc create-realm-struct-realm [struct field-realm-pairs]
+(defn ^:no-doc create-realm-struct-realm
+  "Creates and returns a record-realm for the given struct.
+  If field-realm-map does not specify a realm for a field, [[any]] is used."
+  [struct field-realm-map]
   (record (or (get (meta struct) closed-struct-meta/name-meta-key)
               'unnamed-struct)
           (struct/constructor struct)
           (partial is-a? struct)
-          (map (fn [[getter realm]]
+          (map (fn [getter]
                  (field (core/symbol (str getter))
-                        realm
+                        (get field-realm-map getter any)
                         getter))
-               field-realm-pairs)))
+               (closed-struct/keys struct))))
 
 (defn- struct->record-realm
   "Returns a realm for a struct with the given fields and their realms."
   [struct]
   (or (get (meta struct) realm-struct-meta/record-realm-meta-key)
-      (create-realm-struct-realm struct
-                                 (map (fn [key]
-                                        [key any])
-                                      (closed-struct/keys struct)))))
+      (create-realm-struct-realm struct {})))
 
 (def-struct ^{:doc "Realm for function."}
   function-realm

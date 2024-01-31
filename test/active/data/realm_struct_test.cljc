@@ -11,6 +11,10 @@
   [f1 realm/int
    f2 realm/string])
 
+(def-realm-struct ExtT
+  :extends T
+  [f3 realm/keyword])
+
 (deftest realm
   (is (realm/record? (realm/compile T))))
 
@@ -22,3 +26,13 @@
                (realm-validation/checking
                 (struct/struct-map T f1 "bar" f2 "foo")))))
 
+(deftest extended-realm-structs
+  (is (realm/record? (realm/compile ExtT)))
+
+  (is (struct/is-a? ExtT
+                    (realm-validation/checking
+                     (struct/struct-map ExtT f1 5 f2 "foo" f3 :bar))))
+
+  (is (thrown? Exception
+               (realm-validation/checking
+                (struct/struct-map ExtT f1 f1 5 f2 "foo" f3 "test")))))
