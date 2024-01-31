@@ -1,0 +1,22 @@
+name: Clojure CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install dependencies
+      run: lein deps
+    - name: Run Clojure tests
+      run: lein test
+    - uses: actions/setup-node@v3
+    - name: Run ClojureScript tests
+      run: npm run test
