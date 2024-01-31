@@ -33,7 +33,9 @@
            ~_meta
            [~@fields])
 
-         (set-realm-struct-meta! ~t [~@pairs])
+         (set-realm-struct-meta! ~t (map (fn [[field# realm#]]
+                                           [field# (realm/compile realm#)])
+                                         [~@pairs]))
 
          ~t)))
 
@@ -47,18 +49,15 @@
                              (validator value)))]))
               field-realm-pairs))))
 
-(defn ^:no-doc set-realm-struct-meta! [struct field-shortcut-pairs]
-  (let [own-field-realms (map (fn [[field realm]]
-                                [field (realm/compile realm)])
-                              field-shortcut-pairs)
-        all-field-realms-map (into {} (concat own-field-realms
+(defn ^:no-doc set-realm-struct-meta! [struct own-field-realm-pairs]
+  (let [all-field-realms-map (into {} (concat own-field-realm-pairs
                                               (when-let [ext (closed-struct/extended-struct struct)]
                                                 (get (meta ext) realm-struct-meta/fields-realm-map-meta-key))))]
     (closed-struct/alter-meta!
      struct assoc
      ;; Note: record-realm don't have inheritance, which is why we need to pass all field realms to it;
      ;; validators of extended structs are already considered by struct-maps; thus we only need to validate our own fields:
-     closed-struct-meta/validator-meta-key (validator own-field-realms)
+     closed-struct-meta/validator-meta-key (validator own-field-realm-pairs)
      ;; Note: fields-realm-map is redundand - could be reconstructed from record-realm
      realm-struct-meta/fields-realm-map-meta-key all-field-realms-map
      realm-struct-meta/record-realm-meta-key (realm/create-realm-struct-realm struct all-field-realms-map))))
