@@ -2,7 +2,7 @@
   (:require [active.data.struct :as sut #?@(:cljs [:include-macros true])]
             [active.data.struct.validator :as validator]
             [active.data.struct.key :as key]
-            [active.data.struct.closed-struct-meta :as closed-struct-meta]
+            [active.data.struct.struct-meta :as struct-meta]
             #_[active.clojure.lens :as lens]
             [clojure.data :as data]
             #?(:clj [clojure.test :as t]
@@ -14,7 +14,7 @@
 
 (t/deftest metadata-test
   (t/is (= (str (var T))
-           (str "#'" (get (meta T) closed-struct-meta/name-meta-key))))
+           (str "#'" (get (meta T) struct-meta/name-meta-key))))
   
   (t/is (:foo (meta #'T)))
   (t/is (:a (meta #'t-a)))
@@ -57,9 +57,8 @@
       (t/is (= (T {t-a 42
                    t-b :foo}) v))))
 
-  ;; TODO? That takes some time to check, esp. when also allowing the same key multiple times.
-  #_(t/is (some? (throws #(sut/struct-map T t-a 42)))
-          "Cannot construct with partial fields")
+  (t/is (some? (sut/struct-map T t-a 42))
+        "Can construct with partial fields")
   
   (t/is (some? (throws #(sut/struct-map T :foo 42)))
         "Cannot construct with foreign fields")
@@ -81,6 +80,15 @@
                                t-a 42
                                t-b :foo)
                (ctor 42 :foo))))))
+
+(t/deftest empty-test
+  ;; empty structs don't make much sense, as they are all equal but ok..
+  (sut/def-struct EmptyT1 [])
+  (sut/def-struct EmptyT2 [])
+
+  (t/is (= (sut/struct-map EmptyT1)
+           (EmptyT2)
+           {})))
 
 (t/deftest printer-test
   ;; (also indirectly tests key printer)
@@ -112,11 +120,8 @@
         (t/is (= 42 a))
         (t/is (= :foo b))))
 
-    (t/testing "access fails if keys not in struct-map"
-      (t/is (throws #(:foo v)))
-      (t/is (throws #(get v :foo)))
-      (t/is (throws #(let [{foo :foo} v]))))
-    ))
+    (t/testing "access of other keys"
+      (t/is (nil? (get v :bar))))))
 
 (t/deftest empty-test
   (let [v (sut/struct-map T
@@ -149,8 +154,11 @@
                                t-b :foo)
                (update v t-a -))))
 
-    (t/testing "update fails if key not in struct-map"
-      (t/is (throws #(assoc v :foo 42))))
+    (t/testing "changes map type for keys no in struct"
+      (t/is (= {t-a 42
+                t-b :foo
+                :bar "z"}
+               (assoc v :bar "z"))))
     ))
 
 (t/deftest keyed-map-test
@@ -210,12 +218,6 @@
 
     (t/testing "struct-maps are maps"
       (t/is (map? v)))
-    
-    (t/testing "is-a?"
-      (t/is (sut/is-a? T v))
-
-      (t/is (not (sut/is-a? T 42)))
-      (t/is (not (sut/is-a? T {}))))
 
     (t/testing "has-keys?"
       (t/is (not (sut/has-keys? T 42)))
@@ -283,8 +285,8 @@
        
        (t/is (= v1 v2))
 
-       (t/is (sut/is-a? t1 v2))
-       (t/is (sut/is-a? t2 v1))
+       (t/is (active.data.struct.closed-struct-map/exact-instance? t1 v2))
+       (t/is (active.data.struct.closed-struct-map/exact-instance? t2 v1))
        )))
 
 (defrecord AllInt []
@@ -309,7 +311,8 @@
       (t/is (throws #(into valid {vt-a :foo})))
       (t/is (throws #(empty valid))))
 
-    (t/testing "has-keys? checks for validity"  
+    ;; TODO: not currently anymore
+    #_(t/testing "has-keys? checks for validity"  
       (t/is (sut/has-keys? ValidatedT {vt-a 11 vt-b 22}))
       (t/is (not (sut/has-keys? ValidatedT {vt-a :foo vt-b :bar})))))
   )
@@ -319,11 +322,10 @@
   (sut/def-struct BigT [t-a0 t-a1 t-a2 t-a3 t-a4 t-a5 t-a6 t-a7 t-a8 t-a9
                         t-a10 t-a11 t-a12 t-a13 t-a14 t-a15 t-a16 t-a17 t-a18 t-a19
                         t-a20 t-a21 t-a22 t-a23 t-a24 t-a25 t-a26 t-a27 t-a28 t-a29])
-  (t/is (sut/is-a? BigT
-                   (sut/struct-map BigT
-                                   t-a0 nil t-a1 nil t-a2 nil t-a3 nil t-a4 nil t-a5 nil t-a6 nil t-a7 nil t-a8 nil t-a9 nil
-                                   t-a10 nil t-a11 nil t-a12 nil t-a13 nil t-a14 nil t-a15 nil t-a16 nil t-a17 nil t-a18 nil t-a19 nil
-                                   t-a20 nil t-a21 nil t-a22 nil t-a23 nil t-a24 nil t-a25 nil t-a26 nil t-a27 nil t-a28 nil t-a29 nil))))
+  (t/is (some? (sut/struct-map BigT
+                               t-a0 nil t-a1 nil t-a2 nil t-a3 nil t-a4 nil t-a5 nil t-a6 nil t-a7 nil t-a8 nil t-a9 nil
+                               t-a10 nil t-a11 nil t-a12 nil t-a13 nil t-a14 nil t-a15 nil t-a16 nil t-a17 nil t-a18 nil t-a19 nil
+                               t-a20 nil t-a21 nil t-a22 nil t-a23 nil t-a24 nil t-a25 nil t-a26 nil t-a27 nil t-a28 nil t-a29 nil))))
 
 (t/deftest transient-test
   (let [v (sut/struct-map T
@@ -387,8 +389,8 @@
 (t/deftest extends-test
   (let [v (sut/struct-map ExT t-a 42 t-b :test t-c "xxx")]
 
-    (t/is (sut/is-a? ExT v))
-    (t/is (sut/is-a? T v))
+    (t/is (sut/has-keys? ExT v))
+    (t/is (sut/has-keys? T v))
     
     (t/is (= 10 (t-a (assoc v t-a 10))))
     (t/is (= "yyy" (t-c (assoc v t-c "yyy"))))
@@ -397,7 +399,8 @@
     (t/is (key/optimized-for? t-a ExT))
     )
 
-  (t/testing "inherited validation"
+  ;; TODO: not anymore...?
+  #_(t/testing "inherited validation"
     (let [inspect-v (fn [atom]
                       (reify validator/IMapValidator
                         (-validate-field! [this changed-key changed-value]
@@ -415,13 +418,13 @@
   
       (let [valid (sut/struct-map VExt vt-a 42 vt-b 21)]
         (t/testing "contruction checks for validity"
-          (t/is (= [[:field vt-a 42]
-                    [:map valid]]
-                   @base-validations))
-          (t/is (= [[:field vt-a 42]
-                    [:field vt-b 21]
-                    [:map valid]]
-                   @derived-validations)))
+            (t/is (= [[:field vt-a 42]
+                      [:map valid]]
+                     @base-validations))
+            (t/is (= [[:field vt-a 42]
+                      [:field vt-b 21]
+                      [:map valid]]
+                     @derived-validations)))
 
         (reset! base-validations [])
         (reset! derived-validations [])

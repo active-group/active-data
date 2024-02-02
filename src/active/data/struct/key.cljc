@@ -1,26 +1,20 @@
 (ns ^:no-doc active.data.struct.key
-  (:require [active.data.struct.closed-struct :as closed-struct])
+  (:require [active.data.struct.struct-type :as struct-type])
   (:refer-clojure :exclude (set)))
 
 (defprotocol ^:private IKey
   (-optimize-for! [this struct])
   (-optimized-for? [this struct] "Returns the index in struct or nil."))
 
-(defn- same-or-extended? [tstruct struct]
-  (or (= tstruct struct)
-      ;; Note: for the same indices to work, the fields of the parent struct must come first in the child struct!
-      (when-let [ex (closed-struct/extended-struct tstruct)]
-        (same-or-extended? ex struct))))
-
-(deftype ^:private Key [^clojure.lang.Symbol sym ^:unsynchronized-mutable struct ^:unsynchronized-mutable index]
+(deftype ^:private Key [^clojure.lang.Symbol sym ^:unsynchronized-mutable index]
   IKey
   (-optimize-for! [this s]
-    (let [idx (closed-struct/index-of s this)]
-      (set! (.-struct this) s)
-      (set! (.-index this) idx)))
+    (if-let [idx (struct-type/maybe-index-of s this nil)]
+      (set! (.-index this) idx)
+      (throw (ex-info (str "Unknown key: " this) {:key this :struct s}))))
   (-optimized-for? [this s]
-    (when (and (some? struct)
-               (same-or-extended? s struct))
+    (when (and index
+               (struct-type/is-index-of? s this index))
       index))
   
   #?@(:clj
@@ -46,7 +40,7 @@
                  (name sym))])
 
   #?@(:clj
-      ;; Note: the struct-map implementation of get and assoc will look for 'struct' and 'index', and use it if set.
+      ;; Note: the struct-map implementation of get and assoc will use 'optimized-for' info
       [clojure.lang.IFn
        (invoke [this m] (get m this))
        (invoke [this m v] (assoc m this v))]
@@ -72,9 +66,14 @@
        (write-all writer (name (.-sym sk))))))
 
 (defn make [sym]
-  (Key. sym nil nil))
+  (Key. sym nil))
+
+(defmacro def-key [name]
+  `(def ~name (make (symbol ~(str *ns*) ~(str name)))))
 
 (defn optimize-for! [^Key key struct]
+  (assert (instance? Key key))
+  (assert (struct-type/struct-type? struct))
   ;; Note: should only be called once and immediately after construction/during definition;
   ;; therefor it's ok to just use :unsynchronized-mutable fields.
   (-optimize-for! key struct))

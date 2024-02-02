@@ -1,21 +1,12 @@
 (ns active.data.struct
-  (:require [active.data.struct.key :as key]
-            [active.data.struct.closed-struct :as closed-struct]
-            [active.data.struct.closed-struct-map :as closed-struct-map]
-            [active.data.struct.closed-struct-meta :as closed-struct-meta]
+  (:require [active.data.struct.key :as key #?@(:cljs [:include-macros true])]
+            [active.data.struct.struct-type :as struct-type]
+            [active.data.struct.closed-struct-map :as struct-map]
+            [active.data.struct.struct-meta :as struct-meta]
             #_[active.clojure.lens :as lens])
-  (:refer-clojure :exclude [struct-map
+  (:refer-clojure :exclude [struct-map struct
                             set-validator! get-validator
                             accessor]))
-
-;; Note: there is no positional constructor on purpose; although they
-;; can be handy for small structs, they quickly become hard to read
-;; and hard to refactor when getting larger. And defining a positional
-;; constructor for small structs is much easier than the other way
-;; round.
-
-(defmacro ^:no-doc def-key [name]
-  `(def ~name (key/make (symbol ~(str *ns*) ~(str name)))))
 
 (defn ^:no-doc parse-def-struct-args [args]
   ;; ...could use spec for that.
@@ -41,26 +32,41 @@
 (declare struct-map)
 (declare to-struct-map)
 
-(defmacro ^:no-doc def-struct*
-  [t extends _meta fields]
-  (when (empty? fields)
-    ;; Note: all empty structs would be equal (and all struct-map instances of all)
-    ;; And unique values should probably be created differently anyway.
-    (throw (ex-info "Cannot define an empty struct." {:name t})))
+(defrecord ^:no-doc StructVariant []
+  struct-type/IStructTypeVariant
+    (-variant-name [this] "active.data.struct.Struct")
+    (-construct-from [this struct-type m]
+      (to-struct-map struct-type m))
+    (-identifier [this struct-type] nil)
+    (-print-map-prefix [this struct-type] "")
+    (-locked-maps? [this] false))
 
+(def ^:no-doc struct-variant (StructVariant.))
+
+(defn struct [keys]
+  (struct-type/create keys
+                      struct-variant
+                      nil))
+
+(defmacro ^:no-doc def-struct-type*
+  [t extends _meta fields variant]
   `(do
      ~@(for [f# fields]
-         `(def-key ~(cond-> f#
-                      (and (contains? (meta t) :private)
-                           (not (contains? (meta f#) :private)))
-                      (vary-meta assoc :private (:private (meta t))))))
+         `(key/def-key ~(cond-> f#
+                          (and (contains? (meta t) :private)
+                               (not (contains? (meta f#) :private)))
+                          (vary-meta assoc :private (:private (meta t))))))
 
-     ;; Note that 'meta' is evaluated after the fields, so they may refer to them.
-     (def ~t (closed-struct/create ~fields
-                                   ~extends
-                                   struct-map
-                                   to-struct-map
-                                   (assoc ~_meta closed-struct-meta/name-meta-key (symbol (str *ns*) (str '~t)))))
+     ;; Note that 'meta' is evaluated after the keys are defined, so they may refer to them.
+     (def ~t (let [e# ~extends]
+               (struct-type/create (cond->> ~fields
+                                     ;; Note: extended fields should come first
+                                     ;; TODO: are extended keys still 'optimized'?
+                                     e# (concat (struct-type/keys e#)))
+                                   ~variant
+                                   (assoc ~_meta
+                                          struct-meta/name-meta-key (symbol (str *ns*) (str '~t))
+                                          struct-meta/extends-meta-key e#))))
 
      ~@(for [f# fields]
          `(key/optimize-for! ~f# ~t))
@@ -91,12 +97,12 @@
   ```
   "
   ([t & args]
+   ;; Note: extends only takes the keys from the other struct; variant and validators are ignored.
    (let [[extends _meta fields] (parse-def-struct-args args)]
-     `(def-struct* ~t ~extends ~_meta ~fields))))
+     `(def-struct-type* ~t ~extends ~_meta ~fields struct-variant))))
 
 (defn struct-map
-  "Returns a new struct map with the keys of the struct. All keys of the
-  stuct must be given.
+  "Returns a new struct map with the keys of the struct.
 
   ```
   (def-struct T [field-1 ...])
@@ -104,14 +110,10 @@
   ```
   "
   [struct & keys-vals]
-  ;; TODO: reject the same key given twice? Or offer that explicitly as an easy way to specify default values?
-  ;; TODO: actually require all keys? If duplicates are allowed, that is costly to check.
-  ;; TODO: hash-map are quite complex macros in cljs - check that out.
-  (closed-struct-map/build-map struct keys-vals))
+  (struct-map/build-map struct keys-vals))
 
 (defn to-struct-map
-  "Returns a new struct map with the keys of the struct, from a collection of key-value tuples. All keys of the
-  stuct must be given.
+  "Returns a new struct map with the keys of the struct, from a collection of key-value tuples.
 
   ```
   (def-struct T [field-1 ...])
@@ -119,7 +121,7 @@
   ```
   "
   [struct keys-vals]
-  (closed-struct-map/from-coll struct keys-vals))
+  (struct-map/from-coll struct keys-vals))
 
 (defn constructor
   "Returns an optimized positional constructor function for struct-maps
@@ -127,7 +129,7 @@
   must match that of the definition of the struct, with additional
   fields from extended structs first."
   [struct]
-  (closed-struct-map/positional-constructor struct))
+  (struct-map/positional-constructor struct))
 
 (defn accessor
   "Returns an optimized accessor function for the value associated with
@@ -136,7 +138,7 @@
   ;; Note: (key m) and even (get m key) is already very
   ;; efficient. This is slightly more efficient; but only use it if
   ;; needed.
-  (closed-struct-map/accessor struct key))
+  (struct-map/accessor struct key))
 
 (defn mutator
   "Returns an optimized mutator function for the value associated with
@@ -145,7 +147,7 @@
   ;; Note: (key m v) and even (assoc m key v) is already very
   ;; efficient. This is slightly more efficient; but only use it if
   ;; needed.
-  (closed-struct-map/mutator struct key))
+  (struct-map/mutator struct key))
 
 (defn mutator!
   "Returns an optimized mutator function for the value associated with
@@ -154,10 +156,10 @@
   ;; Note: (assoc! m key v) and even (assoc m key v) is already very
   ;; efficient. This is slightly more efficient; but only use it if
   ;; needed.
-  (closed-struct-map/mutator! struct key))
+  (struct-map/mutator! struct key))
 
 (defn struct-of "Returns the struct the given struct-map was created from." [m]
-  (closed-struct-map/struct-of-map m))
+  (struct-map/struct-of-map m))
 
 (defn ^{:no-doc true
         :doc "Replace validator of struct. Unsynchronized side effect; use only if you know what you are doing."}
@@ -165,27 +167,24 @@
   ;; Note: the validator is not an argument to 'def-struct', because
   ;; you usually want to use the defined keys in the validator
   ;; implementation; that would make for a weird macro.
-  (closed-struct/set-validator! struct validator))
+  (struct-type/set-validator! struct validator))
 
 (defn ^:no-doc get-validator [struct]
-  (closed-struct/get-validator struct))
+  (struct-type/get-validator struct))
 
 (defn struct?
   "Tests if v is a struct defined by [[def-struct]]."
   [v]
-  (closed-struct/closed-struct? v))
+  (struct-type/struct-type? v))
 
-(defn is-a?
-  "Tests if `v` is a struct map created from the given `struct` or an extension of it."
-  [struct v]
-  (or (closed-struct-map/exact-instance? struct v)
-      (closed-struct-map/derived-instance? struct v)))
+(defn struct-map? [v]
+  (struct-map/struct-map? v))
 
 (defn has-keys?
   "Tests if `v` is a map that contains at least the keys defined for `struct`."
   [struct v]
-  ;; Note: also checks the validity, if a validator is defined for struct.
-  (closed-struct-map/satisfies? struct v))
+  ;; Note: also checks the validity, if a validator is defined for struct.  (TODO: really do validate?)
+  (struct-map/satisfies? struct v))
 
 ;; TODO: here?
 #_(let [from-struct-1 (fn [v struct field-lens-map]
