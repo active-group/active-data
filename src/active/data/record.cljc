@@ -1,30 +1,67 @@
 (ns active.data.record
-  (:require [active.data.struct :as struct #?@(:cljs [:include-macros true])]
-            [active.data.struct.struct-type :as struct-type]
-            [active.data.struct.struct-meta :as struct-meta])
+  (:require [active.data.struct.key :as key #?@(:cljs [:include-macros true])]
+            [active.data.struct :as struct #?@(:cljs [:include-macros true])]
+            [active.data.struct.struct-type :as struct-type])
   (:refer-clojure :exclude [record?]))
 
 (declare to-record-map record?)
 
-(defrecord ^:no-doc RecordVariant [print-prefix]
+(defrecord ^:no-doc RecordVariant [record-name extends]
   struct-type/IStructTypeVariant
     (-variant-name [this] "active.data.record.Record")
     (-construct-from [this struct-type m]
       (to-record-map struct-type m))
     (-identifier [this struct-type]
-      struct-type)
+      record-name)
     (-print-map-prefix [this struct-type]
-      print-prefix)
+      (str "#" record-name))
     (-locked-maps? [this] true))
 
-(defn ^:no-doc record-variant [var]
-  (RecordVariant. (str "#" (symbol var))))
+(defn ^:no-doc record-variant [name extends]
+  (RecordVariant. name extends))
+
+(defn ^:no-doc parse-def-record-args [args]
+  ;; TODO: not actually checking possible errors... use spec for that?
+  (loop [args args
+         options {}
+         fields nil]
+    (if (empty? args)
+      [options fields]
+      (cond
+        (keyword? (first args))
+        (recur (rest (rest args))
+               (assoc options (first args) (second args))
+               nil)
+        
+        :else
+        (recur (rest args)
+               options
+               (first args))))))
 
 (defmacro def-record
   [t & args]
-  (let [[options fields] (struct/parse-def-struct-args args)]
-    ;; TODO: translate our options to struct-type options; move 'extends' into variant?
-    `(struct/def-struct-type* ~t ~options ~fields (record-variant (var ~t)))))
+  (let [[options fields] (parse-def-record-args args)]
+    `(do
+       ~@(for [f# fields]
+           `(key/def-key ~(cond-> f#
+                            (and (contains? (meta t) :private)
+                                 (not (contains? (meta f#) :private)))
+                            (vary-meta assoc :private (:private (meta t))))))
+
+
+       (def ~t
+         (let [e# ~(:extends options)]
+           (struct-type/create (cond->> ~fields
+                                 e# (concat (record-keys e#)))
+                               (record-variant (symbol (str *ns*) (str '~t)) e#)
+                               ;; TODO: extend validator?
+                               ~(:validator options)
+                               nil)))
+
+       ~@(for [f# fields]
+           `(key/optimize-for! ~f# ~t))
+
+       ~t)))
 
 (defn ^:no-doc to-record-map [t m]
   ;; Note: 'private' - use record as fn to construct
@@ -37,6 +74,19 @@
   [m]
   (struct/struct-of m))
 
+(defn record-name [t]
+  (.-record-name ^RecordVariant (struct-type/variant t)))
+
+(defn record?
+  "Tests if `v` is a record, defined via [[def-record]].
+
+  Note: use [[is-a?]] to test for instances of a particular record instead."
+  [v]
+  (and (struct-type/struct-type? v)
+       (instance? RecordVariant (struct-type/variant v))))
+
+(def constructor struct/constructor)
+
 (defn record-keys
   "Returns the keys of a record as a vector, including those added via extension.
 
@@ -44,14 +94,6 @@
   [t]
   (assert (record? t))
   (struct-type/keys t))
-
-(defn record?
-  "Tests if `v` is a record, defined via [[def-record]].
-
-  Note: use [[is-a?]] to test for instances of a particular record instead."
-  [v]
-  (and (struct/struct? v)
-       (instance? RecordVariant (struct-type/-variant v))))
 
 (defn- is-exactly-a?-0 [t m]
   (= t (struct/struct-of m)))
@@ -64,7 +106,7 @@
        (= t (struct/struct-of v))))
 
 (defn- is-extension-of?-0 [parent-t child-t]
-  (when-let [et (get (meta child-t) struct-meta/extends-meta-key)]
+  (when-let [et (.-extends ^RecordVariant (struct-type/variant child-t))]
     (or (= parent-t et)
         (is-extension-of?-0 parent-t et))))
 

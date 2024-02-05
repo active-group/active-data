@@ -1,5 +1,4 @@
 (ns ^:no-doc active.data.struct.struct-type
-  (:require [active.data.struct.struct-meta :as struct-meta])
   (:refer-clojure :exclude [alter-meta!
                             get-validator set-validator!
                             #?@(:cljs [contains? keys])]
@@ -25,6 +24,9 @@
     )
   (-locked-maps? [this] "If dissoc/assoc with other keys is an error, or transforms this into a hash-map otherwise.")
   )
+
+(defn variant [struct-type]
+  (-variant struct-type))
 
 (defn print-map-prefix [struct-type]
   (-print-map-prefix (-variant struct-type) struct-type))

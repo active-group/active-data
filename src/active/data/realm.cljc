@@ -7,7 +7,6 @@
       :cljs [active.data.record :refer [is-a?] :refer-macros [def-record]])
    [active.data.struct :as struct]
    [active.data.record :as record]
-   [active.data.struct.struct-meta :as struct-meta]
    [active.data.realm.realm-struct-meta :as realm-struct-meta]
    [clojure.set :as set]
    [clojure.string :as string]))
@@ -293,8 +292,7 @@
   "Creates and returns a record-realm for the given struct.
   If field-realm-map does not specify a realm for a field, [[any]] is used."
   [struct field-realm-map]
-  (record (or (get (meta struct) struct-meta/name-meta-key)
-              'unnamed-struct)
+  (record 'unnamed-struct
           (struct/constructor struct)
           (partial struct/has-keys? struct)
           (map (fn [getter]
@@ -307,10 +305,8 @@
   "Creates and returns a record-realm for the given struct.
   If field-realm-map does not specify a realm for a field, [[any]] is used."
   [rec field-realm-map]
-  (record (or (get (meta rec) struct-meta/name-meta-key)
-              ;; TODO: move out of meta - all record should be named.
-              'unnamed-record)
-          (struct/constructor rec) ;; TODO: add alias to record/
+  (record (record/record-name rec)
+          (record/constructor rec)
           (partial is-a? rec)
           (map (fn [getter]
                  (field (core/symbol (str getter))

@@ -1,30 +1,10 @@
 (ns active.data.struct
-  (:require [active.data.struct.key :as key #?@(:cljs [:include-macros true])]
-            [active.data.struct.struct-type :as struct-type]
+  (:require [active.data.struct.struct-type :as struct-type]
             [active.data.struct.closed-struct-map :as struct-map]
-            [active.data.struct.struct-meta :as struct-meta]
             #_[active.clojure.lens :as lens])
   (:refer-clojure :exclude [struct-map struct
                             set-validator! get-validator
                             accessor]))
-
-(defn ^:no-doc parse-def-struct-args [args]
-  ;; TODO: not actually checking possible errors... use spec for that?
-  (loop [args args
-         options {}
-         fields nil]
-    (if (empty? args)
-      [options fields]
-      (cond
-        (keyword? (first args))
-        (recur (rest (rest args))
-               (assoc options (first args) (second args))
-               nil)
-        
-        :else
-        (recur (rest args)
-               options
-               (first args))))))
 
 (declare struct-map)
 (declare to-struct-map)
@@ -48,60 +28,11 @@
                       nil
                       nil))
 
-(defmacro ^:no-doc def-struct-type*
-  [t options fields variant]
-  ;; TODO assert options only contains? :extends and :validator
-  `(do
-     ~@(for [f# fields]
-         `(key/def-key ~(cond-> f#
-                          (and (contains? (meta t) :private)
-                               (not (contains? (meta f#) :private)))
-                          (vary-meta assoc :private (:private (meta t))))))
-
-     ;; Note that validator is evaluated after the keys are defined, so they may refer to them.
-     (def ~t (let [e# ~(:extends options)]
-               (struct-type/create (cond->> ~fields
-                                     ;; Note: extended fields should come first
-                                     ;; TODO: are extended keys still 'optimized'?
-                                     e# (concat (struct-type/keys e#)))
-                                   ~variant
-                                   ~(:validator options)
-                                   (assoc {}
-                                          struct-meta/name-meta-key (symbol (str *ns*) (str '~t))
-                                          struct-meta/extends-meta-key e#))))
-
-     ~@(for [f# fields]
-         `(key/optimize-for! ~f# ~t))
-     
-     ~t))
-
-(defmacro def-struct ;; TODO: remove?
-  "Defines a struct and its keys:
-
-  ```
-  (def-struct T [field-1 ...])
-  ```
-
-  A corresponding struct map can be created by using the struct as a function:
-
-  ```
-  (T field-1 value-1 ...)
-
-  (T {field-1 value-1 ...})
-  ```
-
-  ```
-  "
-  ([t & args]
-   (let [[options fields] (parse-def-struct-args args)]
-     `(def-struct-type* ~t ~options ~fields struct-variant))))
-
 (defn struct-map
   "Returns a new struct map with the keys of the struct.
 
   ```
-  (def-struct T [field-1 ...])
-  (struct-map T field-1 42 ...)
+  (struct-map (struct [field-1 ...]) field-1 42 ...)
   ```
   "
   [struct & keys-vals]
@@ -111,7 +42,7 @@
   "Returns a new struct map with the keys of the struct, from a collection of key-value tuples.
 
   ```
-  (def-struct T [field-1 ...])
+  (def T (struct [field-1 ...]))
   (to-struct-map T {field-1 42})
   ```
   "
@@ -163,11 +94,10 @@
   (struct-type/get-validator struct))
 
 (defn struct?
-  "Tests if v is a struct defined by [[def-struct]]."
+  "Tests if v is a struct as returned by [[struct]]."
   [v]
   (and (struct-type/struct-type? v)
-       ;; TODO + variant
-       ))
+       (= struct-variant (struct-type/variant v))))
 
 (defn struct-map? [v]
   (struct-map/struct-map? v))
