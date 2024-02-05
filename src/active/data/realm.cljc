@@ -7,7 +7,7 @@
       :cljs [active.data.record :refer [is-a?] :refer-macros [def-record]])
    [active.data.struct :as struct]
    [active.data.record :as record]
-   [active.data.realm.realm-struct-meta :as realm-struct-meta]
+   [active.data.realm.realm-record-meta :as realm-record-meta]
    [clojure.set :as set]
    [clojure.string :as string]))
 
@@ -322,7 +322,7 @@
 (defn ^:no-doc record->record-realm
   "Returns a realm for a record."
   [record]
-  (or (get (meta record) realm-struct-meta/record-realm-meta-key)
+  (or (get (meta record) realm-record-meta/record-realm-meta-key)
       (create-realm-record-realm record {})))
 
 (def-record ^{:doc "Realm for function."}

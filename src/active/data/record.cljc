@@ -54,7 +54,7 @@
            (struct-type/create (cond->> ~fields
                                  e# (concat (record-keys e#)))
                                (record-variant (symbol (str *ns*) (str '~t)) e#)
-                               ;; TODO: extend validator?
+                               ;; TODO: extend validator or not?
                                ~(:validator options)
                                nil)))
 
@@ -76,6 +76,9 @@
 
 (defn record-name [t]
   (.-record-name ^RecordVariant (struct-type/variant t)))
+
+(defn record-extends [t]
+  (.-extends ^RecordVariant (struct-type/variant t)))
 
 (defn record?
   "Tests if `v` is a record, defined via [[def-record]].
