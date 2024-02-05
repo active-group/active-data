@@ -32,11 +32,8 @@
 (defn locked-maps? [struct-type]
   (-locked-maps? (-variant struct-type)))
 
-(defn set-validator! [struct-type v]
-  (-alter-meta! struct-type assoc [struct-meta/validator-meta-key v]))
-
 (defn get-validator [struct-type]
-  (get (meta struct-type) struct-meta/validator-meta-key))
+  (.-validator struct-type))
 
 (defn get-current-validator! [struct-type]
   ;; TODO: resolve 'dynamic' validators here
@@ -45,7 +42,7 @@
 (defn- ctor [struct-type m]
   (-construct-from (-variant struct-type) struct-type m))
 
-(deftype ^:private StructType [keys keyset index-map variant ^:unsynchronized-mutable _meta]
+(deftype ^:private StructType [keys keyset index-map variant validator ^:unsynchronized-mutable _meta]
   ;; Note: 'keys' is in original order; keyset the same as a set. index-map {key => index in raw data}
   IStructType
   (-variant [this] (.-variant this))
@@ -64,7 +61,7 @@
 
        clojure.lang.IObj
        clojure.lang.IMeta
-       (withMeta [this meta] (StructType. keys keyset index-map variant meta))
+       (withMeta [this meta] (StructType. keys keyset index-map variant validator meta))
        (meta [this] _meta)
 
        clojure.lang.IFn
@@ -158,7 +155,7 @@
 (defn struct-type? [v]
   (instance? StructType v))
 
-(defn create ^StructType [fields variant meta]
+(defn create ^StructType [fields variant validator meta]
   (StructType. (vec fields)
                (set fields)
                (loop [idx 0
@@ -170,6 +167,7 @@
                           (rest fs))
                    (persistent! r)))
                variant
+               validator
                meta))
 
 (defn size [^StructType t]

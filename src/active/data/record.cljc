@@ -22,17 +22,14 @@
 
 (defmacro def-record
   [t & args]
-  (let [[extends _meta fields] (struct/parse-def-struct-args args)]
-    `(struct/def-struct-type* ~t ~extends ~_meta ~fields (record-variant (var ~t)))))
+  (let [[options fields] (struct/parse-def-struct-args args)]
+    `(struct/def-struct-type* ~t ~options ~fields (record-variant (var ~t)))))
 
 (defn ^:no-doc to-record-map [t m]
   ;; Note: 'private' - use record as fn to construct
   (assert (record? t))
   (assert (= (struct-type/keyset t) (set (map first m))))
   (struct/to-struct-map t m))
-
-;; TODO
-#_(set-validator   (combined extended-validator this-validator))
 
 (defn record-of
   "Returns the record defined via [[def-record]] for the given instance of it."

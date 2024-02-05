@@ -9,25 +9,22 @@
                             accessor]))
 
 (defn ^:no-doc parse-def-struct-args [args]
-  ;; ...could use spec for that.
-  ;; TODO: not super tight on possible errors...
+  ;; TODO: not actually checking possible errors... use spec for that?
   (loop [args args
-         extends nil
+         options {}
          fields nil]
     (if (empty? args)
-      [extends nil fields]
+      [options fields]
       (cond
-        (true? extends) (recur (rest args)
-                               (first args)
-                               fields)
+        (keyword? (first args))
+        (recur (rest (rest args))
+               (assoc options (first args) (second args))
+               nil)
+        
         :else
-        (case (first args)
-          :extends (recur (rest args)
-                          true
-                          fields)
-          (recur (rest args)
-                 extends
-                 (first args)))))))
+        (recur (rest args)
+               options
+               (first args))))))
 
 (declare struct-map)
 (declare to-struct-map)
@@ -43,13 +40,17 @@
 
 (def ^:no-doc struct-variant (StructVariant.))
 
-(defn struct [keys]
+(defn struct
+  "Returns the description of a structure, i.e. maps with the given keys."
+  [keys]
   (struct-type/create keys
                       struct-variant
+                      nil
                       nil))
 
 (defmacro ^:no-doc def-struct-type*
-  [t extends _meta fields variant]
+  [t options fields variant]
+  ;; TODO assert options only contains? :extends and :validator
   `(do
      ~@(for [f# fields]
          `(key/def-key ~(cond-> f#
@@ -57,14 +58,15 @@
                                (not (contains? (meta f#) :private)))
                           (vary-meta assoc :private (:private (meta t))))))
 
-     ;; Note that 'meta' is evaluated after the keys are defined, so they may refer to them.
-     (def ~t (let [e# ~extends]
+     ;; Note that validator is evaluated after the keys are defined, so they may refer to them.
+     (def ~t (let [e# ~(:extends options)]
                (struct-type/create (cond->> ~fields
                                      ;; Note: extended fields should come first
                                      ;; TODO: are extended keys still 'optimized'?
                                      e# (concat (struct-type/keys e#)))
                                    ~variant
-                                   (assoc ~_meta
+                                   ~(:validator options)
+                                   (assoc {}
                                           struct-meta/name-meta-key (symbol (str *ns*) (str '~t))
                                           struct-meta/extends-meta-key e#))))
 
@@ -73,7 +75,7 @@
      
      ~t))
 
-(defmacro def-struct
+(defmacro def-struct ;; TODO: remove?
   "Defines a struct and its keys:
 
   ```
@@ -88,18 +90,11 @@
   (T {field-1 value-1 ...})
   ```
 
-  Other structs can be extended, too:
-
-  ``
-  (def-struct X
-    :extends T
-    [field-2])
   ```
   "
   ([t & args]
-   ;; Note: extends only takes the keys from the other struct; variant and validators are ignored.
-   (let [[extends _meta fields] (parse-def-struct-args args)]
-     `(def-struct-type* ~t ~extends ~_meta ~fields struct-variant))))
+   (let [[options fields] (parse-def-struct-args args)]
+     `(def-struct-type* ~t ~options ~fields struct-variant))))
 
 (defn struct-map
   "Returns a new struct map with the keys of the struct.
@@ -161,14 +156,6 @@
 (defn struct-of "Returns the struct the given struct-map was created from." [m]
   (struct-map/struct-of-map m))
 
-(defn ^{:no-doc true
-        :doc "Replace validator of struct. Unsynchronized side effect; use only if you know what you are doing."}
-  set-validator! [struct validator]
-  ;; Note: the validator is not an argument to 'def-struct', because
-  ;; you usually want to use the defined keys in the validator
-  ;; implementation; that would make for a weird macro.
-  (struct-type/set-validator! struct validator))
-
 (defn ^:no-doc get-validator [struct]
   (struct-type/get-validator struct))
 
@@ -179,6 +166,15 @@
 
 (defn struct-map? [v]
   (struct-map/struct-map? v))
+
+(defn lock [struct-map]
+  (assert (struct-map? struct-map))
+  (struct-map/lock-struct-map struct-map))
+
+(defn unlock [struct-map]
+  (assert (struct-map? struct-map))
+  (struct-map/unlock-struct-map struct-map))
+
 
 (defn has-keys?
   "Tests if `v` is a map that contains at least the keys defined for `struct`."

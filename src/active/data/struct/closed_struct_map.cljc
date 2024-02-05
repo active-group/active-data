@@ -501,6 +501,11 @@
   #?(:clj (PersistentClosedStructMap. struct data locked? meta 0 0)
      :cljs (PersistentClosedStructMap. struct data locked? meta nil)))
 
+(defn lock-struct-map [m]
+  (create (.-struct m) (.-data m) true (.-meta m)))
+
+(defn unlock-struct-map [m]
+  (create (.-struct m) (.-data m) false (.-meta m)))
 
 #?(:clj
    ;; seems already implemented for all IPersistentMap, but we override it

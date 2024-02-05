@@ -69,3 +69,25 @@
 
       (t/is (not (sut/is-exactly-a? R v)))
       (t/is (sut/is-exactly-a? ExtR v)))))
+
+;; TODO
+#_(t/deftest validator-test
+
+  (sut/def-struct ValidatedT [vt-a vt-b])
+  (sut/set-validator! ValidatedT (AllInt.))
+  
+  (let [valid (sut/struct-map ValidatedT vt-a 42 vt-b 21)]
+    (t/testing "contruction checks for validity"
+      (t/is (throws #(sut/struct-map ValidatedT vt-a :foo vt-b 21))))
+
+    (t/testing "modification checks for validity"
+      (t/is (throws #(assoc valid vt-a :foo)))
+      (t/is (throws #(into valid {vt-a :foo})))
+      (t/is (throws #(empty valid))))
+
+    ;; TODO: not currently anymore
+    #_(t/testing "has-keys? checks for validity"  
+      (t/is (sut/has-keys? ValidatedT {vt-a 11 vt-b 22}))
+      (t/is (not (sut/has-keys? ValidatedT {vt-a :foo vt-b :bar})))))
+  )
+

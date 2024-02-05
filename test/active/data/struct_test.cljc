@@ -83,12 +83,11 @@
 
 (t/deftest empty-test
   ;; empty structs don't make much sense, as they are all equal but ok..
-  (sut/def-struct EmptyT1 [])
-  (sut/def-struct EmptyT2 [])
-
-  (t/is (= (sut/struct-map EmptyT1)
-           (EmptyT2)
-           {})))
+  (let [EmptyT1 (sut/struct [])
+        EmptyT2 (sut/struct [])]
+    (t/is (= (sut/struct-map EmptyT1)
+             (EmptyT2)
+             {}))))
 
 (t/deftest printer-test
   ;; (also indirectly tests key printer)
@@ -296,26 +295,6 @@
       (throw (ex-info "Not an int" {:v changed-value}))))
   (-validate-map! [this m]
     nil))
-
-(t/deftest validator-test
-
-  (sut/def-struct ValidatedT [vt-a vt-b])
-  (sut/set-validator! ValidatedT (AllInt.))
-  
-  (let [valid (sut/struct-map ValidatedT vt-a 42 vt-b 21)]
-    (t/testing "contruction checks for validity"
-      (t/is (throws #(sut/struct-map ValidatedT vt-a :foo vt-b 21))))
-
-    (t/testing "modification checks for validity"
-      (t/is (throws #(assoc valid vt-a :foo)))
-      (t/is (throws #(into valid {vt-a :foo})))
-      (t/is (throws #(empty valid))))
-
-    ;; TODO: not currently anymore
-    #_(t/testing "has-keys? checks for validity"  
-      (t/is (sut/has-keys? ValidatedT {vt-a 11 vt-b 22}))
-      (t/is (not (sut/has-keys? ValidatedT {vt-a :foo vt-b :bar})))))
-  )
 
 (t/deftest number-of-fields-test
   ;; more than 21 fields works.
