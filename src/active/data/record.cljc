@@ -23,6 +23,7 @@
 (defmacro def-record
   [t & args]
   (let [[options fields] (struct/parse-def-struct-args args)]
+    ;; TODO: translate our options to struct-type options; move 'extends' into variant?
     `(struct/def-struct-type* ~t ~options ~fields (record-variant (var ~t)))))
 
 (defn ^:no-doc to-record-map [t m]
@@ -37,12 +38,12 @@
   (struct/struct-of m))
 
 (defn record-keys
-  "Returns the keys of a record as a set, including those added via extension.
+  "Returns the keys of a record as a vector, including those added via extension.
 
   Note: use [[keys]] to get the keys of an instance of a particular record instead."
   [t]
   (assert (record? t))
-  (struct-type/keyset t))
+  (struct-type/keys t))
 
 (defn record?
   "Tests if `v` is a record, defined via [[def-record]].

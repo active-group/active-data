@@ -118,6 +118,9 @@
   [struct keys-vals]
   (struct-map/from-coll struct keys-vals))
 
+(defn struct-keys [struct]
+  (struct-type/keys struct))
+
 (defn constructor
   "Returns an optimized positional constructor function for struct-maps
   of the given struct. The order of the arguments to the constructor
@@ -162,7 +165,9 @@
 (defn struct?
   "Tests if v is a struct defined by [[def-struct]]."
   [v]
-  (struct-type/struct-type? v))
+  (and (struct-type/struct-type? v)
+       ;; TODO + variant
+       ))
 
 (defn struct-map? [v]
   (struct-map/struct-map? v))

@@ -1,28 +1,28 @@
 (ns active.data.realm
   (:refer-clojure :exclude [int bigdec float double keyword symbol boolean seq compile record? delay delayed?
-                            struct-map set-validator!])
+                            struct])
   (:require
    [clojure.core :as core]
-   #?(:clj [active.data.struct :refer [def-struct struct-map is-a?]]
-      :cljs [active.data.struct :refer [struct-map is-a?] :refer-macros [def-struct]])
+   #?(:clj [active.data.record :refer [def-record is-a?]]
+      :cljs [active.data.record :refer [is-a?] :refer-macros [def-record]])
    [active.data.struct :as struct]
-   [active.data.struct.closed-struct :as closed-struct]
-   [active.data.struct.closed-struct-meta :as closed-struct-meta]
+   [active.data.record :as record]
+   [active.data.struct.struct-meta :as struct-meta]
    [active.data.realm.realm-struct-meta :as realm-struct-meta]
    [clojure.set :as set]
    [clojure.string :as string]))
 
-(def-struct Realm [description metadata])
+(def-record Realm [description metadata])
 
 (defn realm?
   [thing]
-  (struct/is-a? Realm thing))
+  (is-a? Realm thing))
 
 ;; FIXME: should there be a fold/generic dispatch?
 ;; FIXME: realm realm ...
 ;; FIXME: put predicate into builtin
 
-(def-struct ^{:doc "Builtin scalar realm."}
+(def-record ^{:doc "Builtin scalar realm."}
   builtin-scalar-realm
   :extends Realm
   [builtin-scalar-realm-id])
@@ -32,16 +32,16 @@
   (is-a? builtin-scalar-realm thing))
 
 ; FIXME: natural positive-int
-(def int (struct-map builtin-scalar-realm description "int" builtin-scalar-realm-id :int metadata {}))
+(def int (builtin-scalar-realm description "int" builtin-scalar-realm-id :int metadata {}))
 ; FIXME? long? number?
-(def bigdec (struct-map builtin-scalar-realm description "big decimal" builtin-scalar-realm-id :bigdec metadata {}))
-(def float (struct-map builtin-scalar-realm description  "float" builtin-scalar-realm-id :float metadata {}))
-(def double (struct-map builtin-scalar-realm description "double" builtin-scalar-realm-id :double metadata {}))
-(def keyword (struct-map builtin-scalar-realm description "keyword" builtin-scalar-realm-id :keyword metadata {}))
-(def symbol (struct-map builtin-scalar-realm description "symbol" builtin-scalar-realm-id :symbol metadata {}))
-(def string (struct-map builtin-scalar-realm description "string" builtin-scalar-realm-id :string metadata {}))
-(def boolean (struct-map builtin-scalar-realm description "boolean" builtin-scalar-realm-id :boolean metadata {}))
-(def any (struct-map builtin-scalar-realm description "any" builtin-scalar-realm-id :any metadata {}))
+(def bigdec (builtin-scalar-realm description "big decimal" builtin-scalar-realm-id :bigdec metadata {}))
+(def float (builtin-scalar-realm description  "float" builtin-scalar-realm-id :float metadata {}))
+(def double (builtin-scalar-realm description "double" builtin-scalar-realm-id :double metadata {}))
+(def keyword (builtin-scalar-realm description "keyword" builtin-scalar-realm-id :keyword metadata {}))
+(def symbol (builtin-scalar-realm description "symbol" builtin-scalar-realm-id :symbol metadata {}))
+(def string (builtin-scalar-realm description "string" builtin-scalar-realm-id :string metadata {}))
+(def boolean (builtin-scalar-realm description "boolean" builtin-scalar-realm-id :boolean metadata {}))
+(def any (builtin-scalar-realm description "any" builtin-scalar-realm-id :any metadata {}))
 
 (def scalar-realms
   (into {}
@@ -51,7 +51,7 @@
               keyword symbol string
               any])))
 
-(def-struct ^{:doc "Realm only defined through a predicate."}
+(def-record ^{:doc "Realm only defined through a predicate."}
   predicate-realm
   :extends Realm
   [predicate-realm-predicate])
@@ -62,12 +62,11 @@
 
 (defn predicate
   [desc predicate]
-  (struct-map predicate-realm
-              description desc
-              predicate-realm-predicate predicate
-              metadata {}))
+  (predicate-realm description desc
+                   predicate-realm-predicate predicate
+                   metadata {}))
 
-(def-struct ^{:doc "Realm of optional values."}
+(def-record ^{:doc "Realm of optional values."}
   optional-realm
   :extends Realm
   [optional-realm-realm])
@@ -81,12 +80,11 @@
 (defn optional
   [realm]
   (let [realm (compile realm)]
-    (struct-map optional-realm
-                description (str "optional " (description realm))
-                optional-realm-realm realm
-                metadata {})))
+    (optional-realm description (str "optional " (description realm))
+                    optional-realm-realm realm
+                    metadata {})))
 
-(def-struct ^{:doc "Realm for integer ranges."}
+(def-record ^{:doc "Realm for integer ranges."}
   integer-from-to-realm
   :extends Realm
   [integer-from-to-realm-from integer-from-to-realm-to])
@@ -97,11 +95,10 @@
 
 (defn integer-from-to
   [from to]
-  (struct-map integer-from-to-realm
-              description (str "integer from " from " to " to)
-              integer-from-to-realm-from from
-              integer-from-to-realm-to to
-              metadata {}))
+  (integer-from-to-realm description (str "integer from " from " to " to)
+                         integer-from-to-realm-from from
+                         integer-from-to-realm-to to
+                         metadata {}))
 
 (defn realm-seq-description
   [realms]
@@ -109,7 +106,7 @@
        (string/join ", " (map description realms))
        "]"))
 
-(def-struct ^{:doc "Realm for unions."}
+(def-record ^{:doc "Realm for unions."}
   union-realm
   :extends Realm
   ;; the shallow predicates of these should identify pairwise disjoint sets
@@ -121,12 +118,11 @@
 
 (defn union
   [& realms]
-  (struct-map union-realm
-              description (str "union of " (realm-seq-description realms))
-              union-realm-realms (map compile realms)
-              metadata {}))
+  (union-realm description (str "union of " (realm-seq-description realms))
+               union-realm-realms (map compile realms)
+               metadata {}))
 
-(def-struct^{:doc "Realm for enumerations."}
+(def-record^{:doc "Realm for enumerations."}
   enum-realm
   :extends Realm
   [enum-realm-values]) ; set
@@ -137,12 +133,11 @@
 
 (defn enum
   [& values]
-  (struct-map enum-realm
-              description (str "enumeration of [" (string/join ", " (map str values)) "]")
+  (enum-realm description (str "enumeration of [" (string/join ", " (map str values)) "]")
               enum-realm-values (set values)
               metadata {}))
 
-(def-struct ^{:doc "Realm for intersections."}
+(def-record ^{:doc "Realm for intersections."}
   intersection-realm
   :extends Realm
   ;; the shallow predicates of these should identify pairwise disjoint sets
@@ -154,12 +149,11 @@
 
 (defn intersection
   [& realms]
-  (struct-map intersection-realm
-              description (str "intersection of " (realm-seq-description realms))
-              intersection-realm-realms (map compile realms)
-              metadata {}))
+  (intersection-realm description (str "intersection of " (realm-seq-description realms))
+                      intersection-realm-realms (map compile realms)
+                      metadata {}))
 
-(def-struct ^{:doc "Realm for sequences."}
+(def-record ^{:doc "Realm for sequences."}
   sequence-of-realm
   :extends Realm
   [sequence-of-realm-realm])
@@ -171,12 +165,11 @@
 (defn sequence-of
   [realm]
   (let [realm (compile realm)]
-    (struct-map sequence-of-realm
-                description (str "sequence of " (description realm))
-                sequence-of-realm-realm realm
-                metadata {})))
+    (sequence-of-realm description (str "sequence of " (description realm))
+                       sequence-of-realm-realm realm
+                       metadata {})))
 
-(def-struct ^{:doc "Realm for sets."}
+(def-record ^{:doc "Realm for sets."}
   set-of-realm
   :extends Realm
   [set-of-realm-realm])
@@ -188,15 +181,14 @@
 (defn set-of
   [realm]
   (let [realm (compile realm)]
-    (struct-map set-of-realm
-                description (str "set of " (description realm))
-                set-of-realm-realm realm
-                metadata {})))
+    (set-of-realm description (str "set of " (description realm))
+                  set-of-realm-realm realm
+                  metadata {})))
 
 ;; FIXME: always all the keys, or are certain keys optional?
 ;; maybe do that with optional realms?
 
-(def-struct ^{:doc "Realm for maps with certain constant keys."}
+(def-record ^{:doc "Realm for maps with certain constant keys."}
   map-with-keys-realm
   :extends Realm
   [map-with-keys-realm-map])
@@ -211,17 +203,16 @@
                              (map (fn [[key realm]]
                                     [key (compile realm)])
                                   keys-realm-map))]
-    (struct-map map-with-keys-realm
-                description (str "map with keys {"
-                                 (string/join ", "
-                                              (core/map (fn [[key realm]]
-                                                          (str key " -> " (description realm)))
-                                                        keys-realm-map))
-                                 "}")
-                map-with-keys-realm-map keys-realm-map
-                metadata {})))
+    (map-with-keys-realm description (str "map with keys {"
+                                          (string/join ", "
+                                                       (core/map (fn [[key realm]]
+                                                                   (str key " -> " (description realm)))
+                                                                 keys-realm-map))
+                                          "}")
+                         map-with-keys-realm-map keys-realm-map
+                         metadata {})))
 
-(def-struct ^{:doc "Realm for maps with realms for keys and values respectively."}
+(def-record ^{:doc "Realm for maps with realms for keys and values respectively."}
   map-of-realm
   :extends Realm
   [map-of-realm-key-realm map-of-realm-value-realm])
@@ -234,17 +225,16 @@
   [key-realm value-realm]
   (let [key-realm (compile key-realm)
         value-realm (compile value-realm)]
-    (struct-map map-of-realm
-                description (str "map of {"
-                                 (description key-realm)
-                                 " -> "
-                                 (description value-realm)
-                                 "}")
-                map-of-realm-key-realm key-realm
-                map-of-realm-value-realm value-realm
-                metadata {})))
+    (map-of-realm description (str "map of {"
+                                   (description key-realm)
+                                   " -> "
+                                   (description value-realm)
+                                   "}")
+                  map-of-realm-key-realm key-realm
+                  map-of-realm-value-realm value-realm
+                  metadata {})))
 
-(def-struct ^{:doc "Realm for tuples, i.e. sequences with a fixed number of elements, each of which has a realm."}
+(def-record ^{:doc "Realm for tuples, i.e. sequences with a fixed number of elements, each of which has a realm."}
   tuple-realm
   :extends Realm
   [tuple-realm-realms])
@@ -256,25 +246,23 @@
 (defn tuple
   [& realms]
   (let [realms (mapv compile realms)]
-    (struct-map tuple-realm
-                description (str "tuple of ("
-                                 (string/join ", " (map description realms))
-                                 ")")
-                tuple-realm-realms realms
-                metadata {})))
+    (tuple-realm description (str "tuple of ("
+                                  (string/join ", " (map description realms))
+                                  ")")
+                 tuple-realm-realms realms
+                 metadata {})))
 
-(def-struct ^{:doc "Description of the field of a record."}
+(def-record ^{:doc "Description of the field of a record."}
   record-realm-field
   [record-realm-field-name record-realm-field-realm record-realm-field-getter])
 
 (defn field
   [name realm getter]
-  (struct-map record-realm-field
-              record-realm-field-name name
-              record-realm-field-realm (compile realm)
-              record-realm-field-getter getter))
+  (record-realm-field record-realm-field-name name
+                      record-realm-field-realm (compile realm)
+                      record-realm-field-getter getter))
 
-(def-struct ^{:doc "Realm for records."}
+(def-record ^{:doc "Realm for records."}
   record-realm
   :extends Realm
   [record-realm-name
@@ -288,41 +276,60 @@
 
 (defn record
   [name constructor predicate fields]
-  (struct-map record-realm
-              description (str "record " name
-                               " with fields "
-                               (string/join ", "
-                                            (map (fn [field]
-                                                   (str (record-realm-field-name field) " from realm "
-                                                        (description (record-realm-field-realm field))))
-                                                 fields)))
-              record-realm-name name
-              record-realm-constructor constructor
-              record-realm-predicate predicate
-              record-realm-fields fields
-              metadata {}))
+  (record-realm description (str "record " name
+                                 " with fields "
+                                 (string/join ", "
+                                              (map (fn [field]
+                                                     (str (record-realm-field-name field) " from realm "
+                                                          (description (record-realm-field-realm field))))
+                                                   fields)))
+                record-realm-name name
+                record-realm-constructor constructor
+                record-realm-predicate predicate
+                record-realm-fields fields
+                metadata {}))
 
 (defn ^:no-doc create-realm-struct-realm
   "Creates and returns a record-realm for the given struct.
   If field-realm-map does not specify a realm for a field, [[any]] is used."
   [struct field-realm-map]
-  (record (or (get (meta struct) closed-struct-meta/name-meta-key)
+  (record (or (get (meta struct) struct-meta/name-meta-key)
               'unnamed-struct)
           (struct/constructor struct)
-          (partial is-a? struct)
+          (partial struct/has-keys? struct)
           (map (fn [getter]
                  (field (core/symbol (str getter))
                         (get field-realm-map getter any)
                         getter))
-               (closed-struct/keys struct))))
+               (struct/struct-keys struct))))
 
-(defn- struct->record-realm
-  "Returns a realm for a struct with the given fields and their realms."
+(defn ^:no-doc create-realm-record-realm
+  "Creates and returns a record-realm for the given struct.
+  If field-realm-map does not specify a realm for a field, [[any]] is used."
+  [rec field-realm-map]
+  (record (or (get (meta rec) struct-meta/name-meta-key)
+              ;; TODO: move out of meta - all record should be named.
+              'unnamed-record)
+          (struct/constructor rec) ;; TODO: add alias to record/
+          (partial is-a? rec)
+          (map (fn [getter]
+                 (field (core/symbol (str getter))
+                        (get field-realm-map getter any)
+                        getter))
+               (record/record-keys rec))))
+
+(defn ^:no-doc struct->record-realm
+  "Returns a realm for a struct."
   [struct]
-  (or (get (meta struct) realm-struct-meta/record-realm-meta-key)
-      (create-realm-struct-realm struct {})))
+  (create-realm-struct-realm struct {}))
 
-(def-struct ^{:doc "Realm for function."}
+(defn ^:no-doc record->record-realm
+  "Returns a realm for a record."
+  [record]
+  (or (get (meta record) realm-struct-meta/record-realm-meta-key)
+      (create-realm-record-realm record {})))
+
+(def-record ^{:doc "Realm for function."}
   function-realm
   :extends Realm
   [function-realm-positional-argument-realms ; seq of realms
@@ -358,16 +365,15 @@
                 return `(compile ~(parse-function-return shorthand list))]
             `(let [positional# ~positional
                    return# ~return]
-               (struct-map function-realm
-                           function-realm-positional-argument-realms positional#
-                           function-realm-optional-arguments-realm nil
-                           function-realm-return-realm return#
-                           metadata {}
-                           description (str "function ("
-                                            (string/join ", "
-                                                         (map description positional#))
-                                            ") -> "
-                                            (description return#)))))
+               (function-realm function-realm-positional-argument-realms positional#
+                               function-realm-optional-arguments-realm nil
+                               function-realm-return-realm return#
+                               metadata {}
+                               description (str "function ("
+                                                (string/join ", "
+                                                             (map description positional#))
+                                                ") -> "
+                                                (description return#)))))
           (&)
           (if (empty? (rest list))
             (throw (Exception. (str "function realm does not have an arrow: " shorthand)))
@@ -392,28 +398,27 @@
 
                              (map? f)
                              `(map-with-keys ~(into {}
-                                                   (map (fn [[key realm]]
-                                                          [key `(compile ~realm)])
-                                                        f)))
+                                                    (map (fn [[key realm]]
+                                                           [key `(compile ~realm)])
+                                                         f)))
 
                              :else
                              (throw (Exception. (str "function realm has garbage after &: " shorthand))))]
               `(let [positional# ~positional
                      optional# ~optional
                      return# ~return]
-                 (struct-map function-realm
-                             function-realm-positional-argument-realms positional#
-                             function-realm-optional-arguments-realm optional#
-                             function-realm-return-realm return#
-                             metadata {}
-                             description (str "function ("
-                                              (string/join ", "
-                                                           (map description positional#))
+                 (function-realm function-realm-positional-argument-realms positional#
+                                 function-realm-optional-arguments-realm optional#
+                                 function-realm-return-realm return#
+                                 metadata {}
+                                 description (str "function ("
+                                                  (string/join ", "
+                                                               (map description positional#))
 
-                                              " & "
-                                              (description optional#)
-                                              ") -> "
-                                              (description return#))))))
+                                                  " & "
+                                                  (description optional#)
+                                                  ") -> "
+                                                  (description return#))))))
 
           (recur (rest list)
                  (conj! positional `(compile ~f))))))))
@@ -422,7 +427,7 @@
   [& shorthand]
   (compile-function-case-shorthand shorthand))
 
-(def-struct ^{:doc "Realm for function with multiple cases."}
+(def-record ^{:doc "Realm for function with multiple cases."}
   function-cases-realm
   :extends Realm
   [function-cases-realm-cases])
@@ -430,28 +435,26 @@
 (defn function-cases
   [& cases]
   (let [cases (mapv compile cases)]
-    (struct-map function-cases-realm
-                function-cases-realm-cases cases
-                metadata {}
-                description
-                (str "function with cases " (string/join ", " (map description cases))))))
+    (function-cases-realm function-cases-realm-cases cases
+                          metadata {}
+                          description
+                          (str "function with cases " (string/join ", " (map description cases))))))
 
 (defn function?
   [thing]
   (or (is-a? function-realm thing)
       (is-a? function-cases-realm thing)))
 
-(def-struct ^{:doc "Lazy realm."}
+(def-record ^{:doc "Lazy realm."}
   delayed-realm
   :extends Realm
   [delayed-realm-delay])
 
 (defmacro delay
   [realm-expression]
-  `(struct-map delayed-realm
-               delayed-realm-delay (core/delay (compile ~realm-expression))
-               metadata {}
-               description "delayed realm"))
+  `(delayed-realm delayed-realm-delay (core/delay (compile ~realm-expression))
+                  metadata {}
+                  description "delayed realm"))
 
 (defn delayed?
   [thing]
@@ -465,17 +468,16 @@
     true
     (catch Exception exception false)))
 
-(def-struct ^{:doc "Realm for objects implementing a protocol."}
+(def-record ^{:doc "Realm for objects implementing a protocol."}
   protocol-realm
   :extends Realm
   [protocol-realm-protocol])
 
 (defn protocol
   [protocol]
-  (struct-map protocol-realm
-              protocol-realm-protocol protocol
-              metadata {}
-              description (str "realm for protocol " (:var protocol))))
+  (protocol-realm protocol-realm-protocol protocol
+                  metadata {}
+                  description (str "realm for protocol " (:var protocol))))
 
 
 (defn protocol?
@@ -483,7 +485,7 @@
   (is-a? protocol-realm thing))
 
 ; for documenting polymorphism
-(def-struct ^{:doc "Named realm."}
+(def-record ^{:doc "Named realm."}
   named-realm
   :extends Realm
   [named-realm-name ; keyword
@@ -492,17 +494,16 @@
 (defn named
   [name realm]
   (let [realm (compile realm)]
-    (struct-map named-realm
-                named-realm-name name
-                named-realm-realm realm
-                metadata {}
-                description (str "realm named " name ": " (description realm)))))
+    (named-realm named-realm-name name
+                 named-realm-realm realm
+                 metadata {}
+                 description (str "realm named " name ": " (description realm)))))
 
 (defn named?
   [thing]
   (is-a? named-realm thing))
 
-(def-struct ^{:doc "Realm restricted by a predicate"}
+(def-record ^{:doc "Realm restricted by a predicate"}
   restricted-realm
   :extends Realm
   [restricted-realm-realm
@@ -511,11 +512,10 @@
 (defn restricted
   [realm predicate predicate-description]
   (let [realm (compile realm)]
-    (struct-map restricted-realm
-                restricted-realm-realm realm
-                restricted-realm-predicate predicate
-                metadata {}
-                description (str (description realm) " restricted to " predicate-description))))
+    (restricted-realm restricted-realm-realm realm
+                      restricted-realm-predicate predicate
+                      metadata {}
+                      description (str (description realm) " restricted to " predicate-description))))
 
 (defn restricted?
   [thing]
@@ -557,6 +557,9 @@
             (map-of key value))
           (map-with-keys shorthand))
 
+        (record/record? shorthand)
+        (record->record-realm shorthand)
+        
         (struct/struct? shorthand)
         (struct->record-realm shorthand)
 
