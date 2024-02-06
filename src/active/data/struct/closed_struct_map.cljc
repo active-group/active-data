@@ -554,7 +554,7 @@
 (defn satisfies? [t v]
   (assert (struct-type/struct-type? t))
   (or (and (clj-instance? PersistentClosedStructMap v)
-           (= t (.-struct v)))
+           (= t (.-struct ^PersistentClosedStructMap v)))
       ;; OPT: don't do this is v is a (different) struct-map
       (and (map? v)
            (and (every? #(contains? v %) (struct-type/keys t))
@@ -591,7 +591,7 @@
   (build-map* struct
               (partition 2 keys-vals)))
 
-(defn struct-of-map [m]
+(defn struct-of-map [^PersistentClosedStructMap m]
   (assert (clj-instance? PersistentClosedStructMap m))
   (.-struct m))
 
