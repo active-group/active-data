@@ -34,8 +34,8 @@
 (t/deftest construction-test
   (t/is (some? (R r-a 42 r-b "foo")))
 
-  (t/is (some? (throws #(R r-a 42)))
-        "Cannot construct with partial fields")
+  (t/is (some? (throws #(R :bar 42)))
+        "Cannot construct with foreign fields")
 
   (t/testing "predicates"
     (let [v (R r-a 42 r-b "foo")]

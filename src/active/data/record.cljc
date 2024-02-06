@@ -139,7 +139,6 @@
 (defn ^:no-doc to-record-map [t m]
   ;; Note: 'private' - use record as fn to construct
   (assert (record? t))
-  (assert (= (struct-type/keyset t) (set (map first m))))
   (struct/to-struct-map t m))
 
 (defn record-of
