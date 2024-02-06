@@ -5,6 +5,7 @@
             [active.data.struct.validator :as v]
             [clojure.set :as set])
   #?(:clj (:import (clojure.lang Util)))
+  #?(:cljs (:require-macros [active.data.struct.closed-struct-map :refer [gen-positional]]))
   (:refer-clojure :rename {instance? clj-instance?
                            satisfies? clj-satisfies?}
                   :exclude [#?@(:cljs [satisfies? instance?])
@@ -625,31 +626,32 @@
                   nil)
           (validate-map-only struct)))))
 
-(defmacro gen-positional [n]
-  (let [keys (repeatedly n #(gensym "k"))
-        vars (repeatedly n #(gensym "v"))
-        struct (gensym "struct")
-        data (gensym "data")]
-    ;; TODO: optimize/fix validator calls
-    `(fn [~struct]
-       (let [[~@keys] (struct-type/keys ~struct)
-             has-validation?# (some? (struct-type/get-validator ~struct))]
-         (fn [~@vars]
-           (when has-validation?#
-             (do ~@(map (fn [k v]
-                          `(validate-single! ~struct ~k ~v))
-                        keys
-                        vars)))
-           (cond-> (create ~struct
-                           (let [~data (data/create ~struct)]
-                             (do
-                               ~@(map-indexed (fn [idx v]
-                                                `(data/unsafe-mutate! ~data ~idx ~v))
-                                              vars))
-                             ~data)
-                           (struct-type/locked-maps? ~struct)
-                           nil)
-             has-validation?# (validate-map-only ~struct)))))))
+#?(:clj
+   (defmacro gen-positional [n]
+     (let [keys (repeatedly n #(gensym "k"))
+           vars (repeatedly n #(gensym "v"))
+           struct (gensym "struct")
+           data (gensym "data")]
+       ;; TODO: optimize/fix validator calls
+       `(fn [~struct]
+          (let [[~@keys] (struct-type/keys ~struct)
+                has-validation?# (some? (struct-type/get-validator ~struct))]
+            (fn [~@vars]
+              (when has-validation?#
+                (do ~@(map (fn [k v]
+                             `(validate-single! ~struct ~k ~v))
+                           keys
+                           vars)))
+              (cond-> (create ~struct
+                              (let [~data (data/create ~struct)]
+                                (do
+                                  ~@(map-indexed (fn [idx v]
+                                                   `(data/unsafe-mutate! ~data ~idx ~v))
+                                                 vars))
+                                ~data)
+                              (struct-type/locked-maps? ~struct)
+                              nil)
+                has-validation?# (validate-map-only ~struct))))))))
 
 (def positional-1 (gen-positional 1))
 (def positional-2 (gen-positional 2))
