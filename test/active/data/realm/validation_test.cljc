@@ -1,9 +1,9 @@
 (ns active.data.realm.validation-test
     (:require [active.data.realm :as realm]
-              [active.data.realm.attach :as realm-attach]
-              [active.data.realm.validation :as realm-validation]
-              #?(:cljs [cljs.test :as t])
-              #?(:clj [clojure.test :refer :all])))
+              [active.data.realm.attach :as realm-attach #?@(:cljs [:include-macros true])]
+              [active.data.realm.validation :as realm-validation #?@(:cljs [:include-macros true])]
+              #?(:cljs [cljs.test :refer-macros (deftest is testing)])
+              #?(:clj [clojure.test :refer (deftest is testing)])))
 
 (realm-attach/defn realm/int
   twoify

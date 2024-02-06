@@ -1,10 +1,9 @@
 (ns active.data.realm-test
-  (:require [active.data.realm :as realm]
+  (:require [active.data.realm :as realm #?@(:cljs [:include-macros true])]
             [active.data.struct :refer [def-struct]]
             [active.data.struct :as struct]
-            #?(:cljs [cljs.test :as t])
-            #?(:clj [clojure.test :refer :all]))
-  #?(:cljs (:require-macros [cljs.test :refer (is deftest run-tests testing)])))
+            #?(:cljs [cljs.test :refer-macros (is deftest testing)])
+            #?(:clj [clojure.test :refer (is deftest testing)]))
 
 (deftest builtin-scalar-realms-test
   (is (= realm/int
