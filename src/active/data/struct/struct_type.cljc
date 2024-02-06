@@ -6,6 +6,7 @@
                            keys clj-keys}))
 
 (declare equals?)
+(declare calc-hash)
 
 (defprotocol IStructType
   (-variant [this])
@@ -34,6 +35,9 @@
 (defn locked-maps? [struct-type]
   (-locked-maps? (-variant struct-type)))
 
+(defn identifier [struct-type]
+  (-identifier (-variant struct-type) struct-type))
+
 (defn get-validator [struct-type]
   (.-validator struct-type))
 
@@ -52,11 +56,10 @@
     (set! (.-_meta this) (apply f (.-_meta this) args))
     (.-_meta this))
 
-  ;; TODO: variant identifier in hashing.
   #?@(:clj
       [clojure.lang.IHashEq
        (hasheq [this]
-               (hash index-map))
+               (calc-hash this))
        Object
        (equals [this other]
                (equals? this other))
@@ -95,9 +98,8 @@
        (-equiv [this other]
                (equals? this other))
 
-       ;; TODO
-       ;;IHash
-       ;;(-hash [this] (caching-hash this hash-unordered-coll _hash))
+       IHash
+       (-hash [this] (caching-hash this calc-hash _hash))
 
        IFn
        (-invoke [this a] (ctor this a))
@@ -114,6 +116,13 @@
        (-invoke [this a b c d e f g h i j k l m n o p q r s t] (ctor this (array-map a b c d e f g h i j k l m n o p q r s t)))
        (-invoke [this a b c d e f g h i j k l m n o p q r s t rest] (ctor this (apply array-map a b c d e f g h i j k l m n o p q r s t rest)))
        ]))
+
+(defn- calc-hash [^StructType struct]
+  (+ (let [id (identifier struct)]
+       (if (some? id)
+         (hash id)
+         0))
+     (hash (.-index-map struct))))
 
 (defn- equals? [^StructType struct other]
   (if (instance? StructType other)

@@ -252,7 +252,9 @@
   (do-assoc-multi [this changed-keys-vals])
   (do-transient [this])
   (do-empty [this])
-  (do-struct-equiv [this other]))
+  (do-struct-equiv [this other])
+  (do-optional-struct-type= [this other])
+  (do-optional-struct-type-hash [this]))
 
 (deftype ^:private PersistentClosedStructMap [struct data locked? _meta
                                               #?(:clj ^:unsynchronized-mutable ^int _hasheq) ;; only clj!
@@ -319,12 +321,24 @@
           (-> (create struct new-data locked? _meta)
               (validate struct changed-keys changed-vals))))))
 
+  (do-optional-struct-type= [this other]
+    ;; if an 'identifier' is defined for the struct-type, then other
+    ;; must be a struct-map with the same identifier.
+    (let [id (struct-type/identifier (.-struct this))]
+      (or (nil? id)
+          (and (clj-instance? PersistentClosedStructMap other)
+               (= id (struct-type/identifier (.-struct other)))))))
+
+  (do-optional-struct-type-hash [this]
+    (let [id (struct-type/identifier (.-struct this))]
+      (if (some? id)
+        (hash id)
+        0)))
+  
   (do-struct-equiv [this other]
     (and (= struct (.-struct ^PersistentClosedStructMap other))
          (data/equiv data (.-data ^PersistentClosedStructMap other))))
 
-  ;; TODO: consider type variant/identifier in equality/hashing?
-  
   ;; TODO: Ifn taking key.
   #?@(:clj
       ;; TODO: IKVReduce ? (looks like an optimization)
@@ -358,11 +372,13 @@
        clojure.lang.IHashEq
        (hasheq [this] ;; called by (hash x)
                (when (= 0 (.-_hasheq this))
-                 (set! (.-_hasheq this) (clojure.lang.APersistentMap/mapHasheq this)))
+                 (set! (.-_hasheq this) (+ (do-optional-struct-type-hash this)
+                                           (clojure.lang.APersistentMap/mapHasheq this))))
                (.-_hasheq this))
        (hashCode [this] ;; Java's hashCode
                  (when (= 0 ^int (.-_hash this))
-                   (set! (.-_hash this) (clojure.lang.APersistentMap/mapHash this)))
+                   (set! (.-_hash this) (+ (do-optional-struct-type-hash this)
+                                           (clojure.lang.APersistentMap/mapHash this))))
                  (.-_hash this))
 
        ;; MapEquivalence marks that other maps should try to compare with this.
@@ -370,19 +386,21 @@
 
        clojure.lang.IPersistentMap
        (equiv [this other]
-              (condp clj-instance? other
-                PersistentClosedStructMap
-                (do-struct-equiv this ^PersistentClosedStructMap other)
+              (and (do-optional-struct-type= this other)
+                   (condp clj-instance? other
+                     PersistentClosedStructMap
+                     (do-struct-equiv this ^PersistentClosedStructMap other)
                 
 
-                clojure.lang.IPersistentMap
-                ;; let other map implementations do the work.
-                (.equiv ^clojure.lang.IPersistentMap other this)
+                     clojure.lang.IPersistentMap
+                     ;; let other map implementations do the work.
+                     (.equiv ^clojure.lang.IPersistentMap other this)
 
-                ;; else java maps, or anything else.
-                (clojure.lang.APersistentMap/mapEquals this other)))
+                     ;; else java maps, or anything else.
+                     (clojure.lang.APersistentMap/mapEquals this other))))
        (equals [this other] ;; Java's equals
-               (clojure.lang.APersistentMap/mapEquals this other))
+               (and (do-optional-struct-type= this other)
+                    (clojure.lang.APersistentMap/mapEquals this other)))
 
        (cons [this o]
              ;; Note: 'into' uses this if IEditableCollection is not implemented (and that otherwise)
@@ -435,17 +453,21 @@
 
        IEquiv
        (-equiv [this other]
-               (cond
-                 (clj-instance? PersistentClosedStructMap other)
-                 (do-struct-equiv this ^PersistentClosedStructMap other)
+               (and (do-optional-struct-type= this other)
+                    (cond
+                      (clj-instance? PersistentClosedStructMap other)
+                      (do-struct-equiv this ^PersistentClosedStructMap other)
 
-                 (clj-satisfies? IEquiv other)
-                 (-equiv other this) ;; fingers crossed they don't do the same.
+                      (clj-satisfies? IEquiv other)
+                      (-equiv other this) ;; fingers crossed they don't do the same.
 
-                 :else false))
+                      :else false)))
 
        IHash
-       (-hash [this] (caching-hash this hash-unordered-coll _hash))
+       (-hash [this] (caching-hash this (fn [v]
+                                          (+ (do-optional-struct-type-hash v)
+                                             (hash-unordered-coll v)))
+                                   _hash))
 
        IIterable
        (-iterator [this] (data/js-iterator struct data))

@@ -63,7 +63,7 @@
                                :t-b :foo)
                (ctor 42 :foo))))))
 
-(t/deftest empty-test
+(t/deftest empty-struct-test
   ;; empty structs don't make much sense, as they are all equal but ok..
   (let [EmptyT1 (sut/struct [])
         EmptyT2 (sut/struct [])]
@@ -104,7 +104,7 @@
     (t/testing "access of other keys"
       (t/is (nil? (get v :bar))))))
 
-(t/deftest empty-test
+(t/deftest empty-fn-test
   (let [v (sut/struct-map T
                           :t-a 42
                           :t-b :foo)]
@@ -137,7 +137,7 @@
     ))
 
 
-(t/deftest compare-test
+(t/deftest equality-test
   (let [v (sut/struct-map T
                           :t-a 42
                           :t-b :foo)
