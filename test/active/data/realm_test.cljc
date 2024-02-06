@@ -3,7 +3,7 @@
             [active.data.struct :refer [def-struct]]
             [active.data.struct :as struct]
             #?(:cljs [cljs.test :refer-macros (is deftest testing)])
-            #?(:clj [clojure.test :refer (is deftest testing)]))
+            #?(:clj [clojure.test :refer (is deftest testing)])))
 
 (deftest builtin-scalar-realms-test
   (is (= realm/int

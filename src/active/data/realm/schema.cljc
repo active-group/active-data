@@ -1,5 +1,5 @@
 (ns active.data.realm.schema
-  (:require [active.data.realm :as realm]
+  (:require [active.data.realm :as realm #?@(:cljs [:include-macros true])]
             [schema.core :as schema]))
 
 (defn schema
