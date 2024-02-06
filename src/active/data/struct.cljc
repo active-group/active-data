@@ -1,4 +1,53 @@
 (ns active.data.struct
+  "Structs describe structured data and offer an optimized way to work with such data.
+
+  ```
+  (def person (struct [:name :age]))
+  ```
+
+  Values can be tested to see if they conform with the struct:
+
+  ```
+  (has-keys? person {:name \"Huge\", :age 37})
+
+  (not (has-keys? person {}))
+  ```
+
+  A special kind of optimized struct-maps can be created,
+  using [[struct-map]] and [[to-struct-map]] or using the struct as a function:
+
+  ```
+  (def p1 (person :name \"Hugo\" :age 27))
+
+  (def p2 (person {:name \"Tina\" :age 31}))
+  ```
+
+  Struct-maps support all standard map functions like [[assoc]] and
+  [[get]], as well as [[transient]] and [[assoc!]].
+
+  But adding keys not defined in the record, or removing any key will
+  change a struct-map into a hash-map! That behaviour can be changed
+  using [[lock]] and [[unlock]]. Locked struct maps throw an error in
+  these cases.
+  
+  You can test if something is an actual struct-map:
+  
+  ```
+  (struct-map? p1)
+
+  (not (struct-map? (dissoc p1 :name)))
+  ```
+
+  Structs support some reflection at runtime:
+
+  ```
+  (= person (struct-of p1))
+
+  (= [:name :age] (struct-keys person))
+
+  (struct? person)
+  ```
+  "
   (:require [active.data.struct.struct-type :as struct-type]
             [active.data.struct.closed-struct-map :as struct-map]
             #_[active.clojure.lens :as lens])

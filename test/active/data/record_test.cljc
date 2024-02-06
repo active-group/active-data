@@ -37,12 +37,6 @@
   (t/is (some? (throws #(R r-a 42)))
         "Cannot construct with partial fields")
 
-  (t/testing "reflection"
-    (let [v (R r-a 42 r-b "foo")]
-      (t/is (= R (sut/record-of v))))
-
-    (t/is (= #{r-a r-b} (set (sut/record-keys R)))))
-  
   (t/testing "predicates"
     (let [v (R r-a 42 r-b "foo")]
       (t/is (sut/is-a? R v))
@@ -64,6 +58,13 @@
        (t/is (sut/is-exactly-a? t1 v2))
        (t/is (sut/is-exactly-a? t2 v1))
        )))
+
+(t/deftest reflection-test
+  (t/is (= R (sut/record-of (R r-a 42 r-b :foo))))
+
+  (t/is (=  [r-a r-b] (sut/record-keys R)))
+
+  (t/is (= 'active.data.record-test/R (sut/record-name R))))
 
 (t/deftest keys-test
   (t/is (= 42 (r-a (R r-a 42 r-b "foo"))))
