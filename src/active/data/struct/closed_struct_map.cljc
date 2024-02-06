@@ -328,7 +328,7 @@
     (let [id (struct-type/identifier (.-struct this))]
       (or (nil? id)
           (and (clj-instance? PersistentClosedStructMap other)
-               (= id (struct-type/identifier (.-struct other)))))))
+               (= id (struct-type/identifier (.-struct ^PersistentClosedStructMap other)))))))
 
   (do-optional-struct-type-hash [this]
     (let [id (struct-type/identifier (.-struct this))]
@@ -524,12 +524,6 @@
   #?(:clj (PersistentClosedStructMap. struct data locked? meta 0 0)
      :cljs (PersistentClosedStructMap. struct data locked? meta nil)))
 
-(defn lock-struct-map [m]
-  (create (.-struct m) (.-data m) true (.-meta m)))
-
-(defn unlock-struct-map [m]
-  (create (.-struct m) (.-data m) false (.-meta m)))
-
 #?(:clj
    ;; seems already implemented for all IPersistentMap, but we override it
    (defmethod print-method PersistentClosedStructMap [^PersistentClosedStructMap s ^java.io.Writer writer]
@@ -550,7 +544,7 @@
 (defn exact-instance? [t v]
   (assert (struct-type/struct-type? t))
   (and (clj-instance? PersistentClosedStructMap v)
-       (= t (.-struct v))))
+       (= t (.-struct ^PersistentClosedStructMap v))))
 
 (defn satisfies? [t v]
   (assert (struct-type/struct-type? t))
@@ -595,6 +589,12 @@
 (defn struct-of-map [^PersistentClosedStructMap m]
   (assert (clj-instance? PersistentClosedStructMap m))
   (.-struct m))
+
+(defn lock-struct-map [m]
+  (create (struct-of-map m) (.-data m) true (meta m)))
+
+(defn unlock-struct-map [m]
+  (create (struct-of-map m) (.-data m) false (meta m)))
 
 (defn accessor [struct key]
   ;; TODO: actually optimize it, e.g by looking at key beforehand.

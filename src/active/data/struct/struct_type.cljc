@@ -38,13 +38,6 @@
 (defn identifier [struct-type]
   (-identifier (-variant struct-type) struct-type))
 
-(defn get-validator [struct-type]
-  (.-validator struct-type))
-
-(defn get-current-validator! [struct-type]
-  ;; TODO: resolve 'dynamic' validators here
-  (get-validator struct-type))
-
 (defn- ctor [struct-type m]
   (-construct-from (-variant struct-type) struct-type m))
 
@@ -90,7 +83,7 @@
        (equiv [this other] (-equiv this other))
 
        IWithMeta
-       (-with-meta [this meta] (StructType. keys keyset index-map ctor ctor-m meta))
+       (-with-meta [this meta] (StructType. keys keyset index-map variant validator meta))
        IMeta
        (-meta [this] _meta)
 
@@ -99,7 +92,7 @@
                (equals? this other))
 
        IHash
-       (-hash [this] (caching-hash this calc-hash _hash))
+       (-hash [this] (calc-hash this))
 
        IFn
        (-invoke [this a] (ctor this a))
@@ -116,6 +109,13 @@
        (-invoke [this a b c d e f g h i j k l m n o p q r s t] (ctor this (array-map a b c d e f g h i j k l m n o p q r s t)))
        (-invoke [this a b c d e f g h i j k l m n o p q r s t rest] (ctor this (apply array-map a b c d e f g h i j k l m n o p q r s t rest)))
        ]))
+
+(defn get-validator [^StructType struct-type]
+  (.-validator struct-type))
+
+(defn get-current-validator! [struct-type]
+  ;; TODO: resolve 'dynamic' validators here
+  (get-validator struct-type))
 
 (defn- calc-hash [^StructType struct]
   (+ (let [id (identifier struct)]
