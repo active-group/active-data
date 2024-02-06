@@ -1,5 +1,5 @@
 (ns active.data.realm-test
-  (:require [active.data.realm :as realm]
+  (:require [active.data.realm :as realm #?@(:cljs [:include-macros true])]
             [active.data.struct :as struct #?@(:cljs [:include-macros true])]
             [active.data.record :as record #?@(:cljs [:include-macros true])]
             #?(:cljs [cljs.test :refer-macros (is deftest testing)])

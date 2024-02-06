@@ -1,8 +1,8 @@
 (ns active.data.realm.attach-test
   (:require [active.data.realm :as realm]
             [active.data.realm.attach :as realm-attach]
-            #?(:cljs [cljs.test :as t])
-            #?(:clj [clojure.test :refer :all])))
+            #?(:cljs [cljs.test :refer-macros (deftest is testing)])
+            #?(:clj [clojure.test :refer (deftest is testing)])))
 
 (realm-attach/defn realm/int
   twoify
