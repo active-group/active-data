@@ -6,10 +6,12 @@
   `(do (println "***" ~what "construct")
        (c/bench (~construct 42))
 
-       (let [v# (println "***" ~what "access")]
+       (println "***" ~what "access")
+       (let [v# (~construct 42)]
          (c/bench (~access v#)))
 
-       (let [v# (println "***" ~what "modify")]
+       (println "***" ~what "modify")
+       (let [v# (~construct 42)]
          (c/bench (~modify v#)))))
 
 (r/def-record ADRecord [r-a r-b r-c r-d r-e])
@@ -17,7 +19,13 @@
 
 (defrecord JRecord [a b c d e])
 
+(r/def-record Spec [r-a])
+(def spec (r/constructor Spec))
+
 (defn -main []
+  (println "active.data.record create size 1")
+  (c/bench ((fn [v] (spec v)) 42))
+  
   (bench "active.data.record"
          (fn [x] (mk-ad :bla x :c :d :e))
          (fn [v]
@@ -38,5 +46,5 @@
          (fn [v]
            (:a v))
          (fn [v]
-           (assoc v :a 10)))
+           (assoc v :b 10)))
   )
