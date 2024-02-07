@@ -2,13 +2,13 @@
   "Mutable data structure backing struct maps."
   (:require [active.data.struct.struct-type :as struct-type]))
 
-(defn unsafe-create [size]
+(defn unsafe-create ^objects [size]
   (object-array size))
 
 (defn create
-  ([struct]
+  (^objects [struct]
    (unsafe-create (struct-type/size struct)))
-  ([struct values]
+  (^objects [struct values]
    (when-not (= (struct-type/size struct) (count values))
      (throw (ex-info (str "Wrong number of values to create closed-struct-data. Expected " (struct-type/size struct) ", but got " (count values))
                      {:struct struct})))
@@ -32,7 +32,7 @@
 (defn unsafe-mutate! [^objects data ^long index value]
   (aset data index value))
 
-(defn copy [^objects data]
+(defn copy ^objects [^objects data]
   (aclone data))
 
 (defn equiv [^objects v1 ^objects v2]
