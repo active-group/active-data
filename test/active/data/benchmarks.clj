@@ -4,7 +4,7 @@
 
 (defmacro bench [what construct access modify]
   `(do (println "***" ~what "construct")
-       (c/bench (~construct))
+       (c/bench (~construct 42))
 
        (let [v# (println "***" ~what "access")]
          (c/bench (~access v#)))
@@ -12,31 +12,29 @@
        (let [v# (println "***" ~what "modify")]
          (c/bench (~modify v#)))))
 
-(r/def-record ADRecord [r-a r-b])
+(r/def-record ADRecord [r-a r-b r-c r-d r-e])
 (def mk-ad (r/constructor ADRecord))
 
-(defrecord JRecord [a b])
+(defrecord JRecord [a b c d e])
 
 (defn -main []
   (bench "active.data.record"
-         (fn [] (mk-ad :bla 42))
+         (fn [x] (mk-ad :bla x :c :d :e))
          (fn [v]
            (r-a v))
          (fn [v]
            (r-b v 10)))
 
   (bench "hash-maps"
-         (fn []
-           ;; Note: {:a :bla :b 42} about 100 times faster - because it's a compile time constant?
-           ;; {:a :bla :b 42}
-           (hash-map :a :bla :b 42))
+         (fn [x]
+           {:a :bla :b x :c :c :d :d :e :e})
          (fn [v]
            (:a v))
          (fn [v]
            (assoc v :b 10)))
 
   (bench "native record"
-         (fn [] (JRecord. :bla 42))
+         (fn [x] (JRecord. :bla x :c :d :e))
          (fn [v]
            (:a v))
          (fn [v]
