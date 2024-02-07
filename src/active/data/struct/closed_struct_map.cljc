@@ -636,7 +636,7 @@
            vars (repeatedly n #(gensym "v"))
            struct (gensym "struct")
            data (gensym "data")]
-       ;; TODO: optimize/fix validator calls
+       ;; TODO: optimize/fix validator calls - fetch 'current-validator' only once.
        `(fn [~struct]
           (let [[~@keys] (struct-type/keys ~struct)
                 has-validation?# (some? (struct-type/get-validator ~struct))

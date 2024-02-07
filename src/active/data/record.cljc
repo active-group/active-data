@@ -127,7 +127,6 @@
            (struct-type/create (cond->> ~fields
                                  e# (concat (record-keys e#)))
                                (record-variant (symbol (str *ns*) (str '~t)) e#)
-                               ;; TODO: extend validator or not?
                                ~(:validator options)
                                nil)))
 

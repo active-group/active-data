@@ -37,6 +37,7 @@
         fields (map first pairs)]
     `(do (record/def-record ~t
            ~@(apply concat options)
+           ;; TODO: validate extended fields too
            :validator (validator (map (fn [[field# realm#]]
                                            [field# (realm/compile realm#)])
                                          [~@pairs]))
