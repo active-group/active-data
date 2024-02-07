@@ -616,7 +616,8 @@
 
 (defn positional-n [struct]
   (let [keys (struct-type/keys struct)
-        nkeys (count keys)]
+        nkeys (count keys)
+        locked? (struct-type/locked-maps? struct)]
     (fn [& args]
       (assert (= (count args) nkeys))
       (validate-multi! struct (map vector keys args))
@@ -625,7 +626,7 @@
                     (doseq [[idx v] (map-indexed vector args)]
                       (data/unsafe-mutate! data idx v))
                     data)
-                  (struct-type/locked-maps? struct)
+                  locked?
                   nil)
           (validate-map-only struct)))))
 
