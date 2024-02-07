@@ -122,16 +122,15 @@
        (if (some? id)
          (hash id)
          0))
-     (hash (.-index-map struct))))
+     (hash (.-keys struct))))
 
 (defn- equals? [^StructType struct other]
   (if (instance? StructType other)
     ;; Note: this makes sure keys are in the same order (required because of the internal representation as an array)
     (let [other ^StructType other]
-      (and (= (.-variant struct) (.-variant other))
-           (= (-identifier (.-variant struct) struct) (-identifier (.-variant other) other))
-           ;; OPT: maybe faster to compare only the key vector?
-           (= (.-index-map struct) (.-index-map other))))
+      ;; Note: different variants with same identifier are equal - but that's more like an optimization; not a feature.
+      (and (= (-identifier (.-variant struct) struct) (-identifier (.-variant other) other))
+           (= (.-keys struct) (.-keys other))))
     false))
 
 (defn alter-meta! [^StructType struct f & args]
