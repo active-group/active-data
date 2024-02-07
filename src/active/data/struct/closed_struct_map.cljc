@@ -281,7 +281,9 @@
   (do-assoc [this key val]
     ;; OPT: check if current associated value is identical?
     (if-let [index (find-index-of this key)]
-      (-> (create struct (data/unsafe-mutate! (data/copy data) index val)
+      (-> (create struct (let [d (data/copy data)]
+                           (data/unsafe-mutate! d index val)
+                           d)
                   locked? _meta)
           (validate struct (list key) (list val)))
       (if locked?
@@ -311,7 +313,8 @@
       (let [[new-data irritant]
             (reduce (fn [[data _] [k v]]
                       (if-let [index (find-index-of this k)]
-                        [(data/unsafe-mutate! data index v) nil]
+                        (do (data/unsafe-mutate! data index v)
+                            [data nil])
                         (reduced [nil k])))
                     [(data/copy data) nil]
                     changed-keys-vals)]
@@ -635,7 +638,9 @@
        ;; TODO: optimize/fix validator calls
        `(fn [~struct]
           (let [[~@keys] (struct-type/keys ~struct)
-                has-validation?# (some? (struct-type/get-validator ~struct))]
+                has-validation?# (some? (struct-type/get-validator ~struct))
+                locked?# (struct-type/locked-maps? ~struct)
+                size# (struct-type/size ~struct)]
             (fn [~@vars]
               (when has-validation?#
                 (do ~@(map (fn [k v]
@@ -643,13 +648,13 @@
                            keys
                            vars)))
               (cond-> (create ~struct
-                              (let [~data (data/create ~struct)]
+                              (let [~data (data/unsafe-create size#)]
                                 (do
                                   ~@(map-indexed (fn [idx v]
                                                    `(data/unsafe-mutate! ~data ~idx ~v))
                                                  vars))
                                 ~data)
-                              (struct-type/locked-maps? ~struct)
+                              locked?#
                               nil)
                 has-validation?# (validate-map-only ~struct))))))))
 
