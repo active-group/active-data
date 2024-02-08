@@ -136,9 +136,6 @@
   ;; needed.
   (struct-map/mutator! struct key))
 
-(defn struct-of "Returns the struct the given struct-map was created from." [m]
-  (struct-map/struct-of-map m))
-
 (defn ^:no-doc get-validator [struct]
   (struct-type/get-validator struct))
 
@@ -149,7 +146,12 @@
        (= struct-variant (struct-type/variant v))))
 
 (defn struct-map? [v]
+  ;; TODO: check variant?
   (struct-map/struct-map? v))
+
+(defn struct-of "Returns the struct the given struct-map was created from." [m]
+  (assert (struct-map? m))
+  (struct-map/struct-of-map m))
 
 (defn lock [struct-map]
   (assert (struct-map? struct-map))

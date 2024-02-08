@@ -73,11 +73,12 @@
   "
   
   (:require [active.data.struct.key :as key #?@(:cljs [:include-macros true])]
-            [active.data.struct :as struct #?@(:cljs [:include-macros true])]
+            [active.data.struct.closed-struct-map :as struct-map]
             [active.data.struct.struct-type :as struct-type])
   (:refer-clojure :exclude [record?]))
 
-(declare to-record-map record?)
+(declare to-record-map)
+(declare record?)
 
 (defrecord ^:no-doc RecordVariant [record-name extends]
   struct-type/IStructTypeVariant
@@ -138,18 +139,24 @@
 (defn ^:no-doc to-record-map [t m]
   ;; Note: 'private' - use record as fn to construct
   (assert (record? t))
-  (struct/to-struct-map t m))
+  (struct-map/from-coll t m))
 
 (defn record-of
   "Returns the record defined via [[def-record]] for the given instance of it."
   [m]
-  (struct/struct-of m))
+  (assert (struct-map/struct-map? m))
+  ;; TODO (assert (instance? RecordVariant x))
+  (struct-map/struct-of-map m))
 
 (defn record-name [t]
-  (.-record-name ^RecordVariant (struct-type/variant t)))
+  (let [v (struct-type/variant t)]
+    (assert (instance? RecordVariant v))
+    (:record-name v)))
 
 (defn record-extends [t]
-  (.-extends ^RecordVariant (struct-type/variant t)))
+  (let [v (struct-type/variant t)]
+    (assert (instance? RecordVariant v))
+    (:extends v)))
 
 (defn record?
   "Tests if `v` is a record, defined via [[def-record]].
@@ -159,7 +166,7 @@
   (and (struct-type/struct-type? v)
        (instance? RecordVariant (struct-type/variant v))))
 
-(def constructor struct/constructor)
+(def constructor struct-map/positional-constructor)
 
 (defn record-keys
   "Returns the keys of a record as a vector, including those added via extension.
@@ -170,17 +177,18 @@
   (struct-type/keys t))
 
 (defn- is-exactly-a?-0 [t m]
-  (= t (struct/struct-of m)))
+  (= t (struct-map/struct-of-map m)))
 
 (defn is-exactly-a?
   "Tests if `v` is an instance of the given record `t`."
   [t v]
   (assert (record? t))
-  (and (struct/struct-map? v)
-       (= t (struct/struct-of v))))
+  (and (struct-map/struct-map? v)
+       (= t (struct-map/struct-of-map v))))
 
 (defn- is-extension-of?-0 [parent-t child-t]
-  (when-let [et (.-extends ^RecordVariant (struct-type/variant child-t))]
+  ;; is the record child-t a direct or indirect extension of parent-t?
+  (when-let [et (record-extends child-t)]
     (or (= parent-t et)
         (is-extension-of?-0 parent-t et))))
 
@@ -188,13 +196,13 @@
   "Tests if `v` is an instance of an extension of the given record `t`."
   [t v]
   (assert (record? t))
-  (and (struct/struct-map? v)
-       (is-extension-of?-0 t (struct/struct-of v))))
+  (and (struct-map/struct-map? v)
+       (is-extension-of?-0 t (struct-map/struct-of-map v))))
 
 (defn is-a?
   "Tests if `v` is an instance of the given record `t`, or an extension of it."
   [t v]
   (assert (record? t))
-  (and (struct/struct-map? v)
+  (and (struct-map/struct-map? v)
        (or (is-exactly-a?-0 t v)
-           (is-extension-of?-0 t (struct/struct-of v)))))
+           (is-extension-of?-0 t (struct-map/struct-of-map v)))))
