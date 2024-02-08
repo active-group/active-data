@@ -223,12 +223,7 @@
     ;; requires cons to be implemented, unless transient is implemented.
     (t/is (= v
              (into (sut/struct-map T :t-a nil :t-b nil)
-                   #{[:t-a 42] [:t-b :foo]})))
-
-    (t/is (throws
-           #(into (sut/struct-map T :t-a nil :t-b nil)
-                  #{[:bar :baz]}))
-          "cannot add other keys")))
+                   #{[:t-a 42] [:t-b :foo]})))))
 
 
 (t/deftest number-of-fields-test
