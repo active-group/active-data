@@ -129,7 +129,7 @@
          (let [e# ~(:extends options)]
            (struct-type/create (cond->> ~fields
                                  e# (concat (record-keys e#)))
-                               (record-variant (symbol (str *ns*) (str '~t)) e#)
+                               (record-variant (symbol ~(str *ns*) (str '~t)) e#)
                                ~(:validator options)
                                nil)))
 
