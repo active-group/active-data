@@ -1,6 +1,7 @@
 (ns active.data.record-test
   (:require [active.data.record :as sut #?@(:cljs [:include-macros true])]
             [active.data.struct :as struct]
+            [active.data.struct.key :as key]
             [active.data.struct.validator :as validator]
             #?(:clj [clojure.test :as t]
                :cljs [cljs.test :as t :include-macros true])))
@@ -14,6 +15,9 @@
 (sut/def-record R
   [r-a r-b])
 
+(sut/def-record OtherR
+  [or-a or-b])
+
 ;; TODO
 #_#_(sut/def-struct ^:private PrivT [pt-a ^{:private false} pt-b])
 (t/testing "private inheritance"
@@ -21,15 +25,12 @@
     (t/is (:private (meta #'pt-a)) "Privateness is inherited")
     (t/is (not (:private (meta #'pt-b))) "Privateness is inherited only as a default"))
 
-;; TODO
-#_(t/deftest optimization-test
-  (t/is (key/optimized-for? t-a T))
-  (t/is (not (key/optimized-for? t-a PrivT)))
+(t/deftest optimization-test
+  (t/is (key/optimized-for? r-a R))
+  (t/is (not (key/optimized-for? r-a OtherR)))
 
   ;; Note: ClosedStructMap must also make use of that, but that cannot be tested extrinsicly.
   )
-
-
 
 (t/deftest construction-test
   (t/is (some? (R r-a 42 r-b "foo")))

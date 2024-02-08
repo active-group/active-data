@@ -111,7 +111,6 @@
   (transient (export (persistent! tmap))))
 
 (defprotocol ^:private TransientUtil ;; to share some code between clj/cljs, with hopefully little runtime overhead.
-  (t-find-index-of [this key])
   (t-assoc [this key val])
   (t-assoc-multi [this keys-vals])
   (t-dissoc [this key])
@@ -119,17 +118,17 @@
   (t-get [this key])
   (t-get-with-default [this key not-found]))
 
+(defn- t-find-index-of [struct key]
+  (or (struct-key/optimized-for? key struct)
+      (struct-type/maybe-index-of struct key nil)))
+
 (deftype ^:private TransientClosedStructMap [struct data locked? #?(:clj ^:unsynchronized-mutable owner :cljs ^:mutable owner)]
   ;; Note: does 'single field' validation immediately, but full map validation only on persistence.
 
   TransientUtil
-  (t-find-index-of [this key]
-    (or (struct-key/optimized-for? key struct)
-        (struct-type/maybe-index-of struct key nil)))
-  
   (t-assoc [this key val]
     (ensure-editable! owner)
-    (if-let [index (t-find-index-of this key)]
+    (if-let [index (t-find-index-of struct key)]
       (do (validate-single! struct key val)
           (data/unsafe-mutate! data index val)
           this)
@@ -140,10 +139,10 @@
   (t-assoc-multi [this keys-vals]
     (ensure-editable! owner)
     (let [keys (map first keys-vals)
-          indices (map #(t-find-index-of this %1) keys)]
+          indices (map #(t-find-index-of struct %1) keys)]
       (if (not (every? some? indices))
         (if locked?
-          (throw (unknown-key (first (remove #(t-find-index-of this %1) keys)) struct))
+          (throw (unknown-key (first (remove #(t-find-index-of struct %1) keys)) struct))
           (reduce (fn [res [k v]]
                     (assoc! res k v))
                 (export-transient! this)))
@@ -168,12 +167,12 @@
 
   (t-get [this key]
     (ensure-editable! owner)
-    (if-let [index (t-find-index-of this key)]
+    (if-let [index (t-find-index-of struct key)]
       (data/unsafe-access data index)
       (throw (unknown-key key struct))))
   (t-get-with-default [this key not-found]
     (ensure-editable! owner)
-    (if-let [index (t-find-index-of this key)]
+    (if-let [index (t-find-index-of struct key)]
       (data/unsafe-access data index)
       not-found))
   
@@ -245,7 +244,6 @@
        ]))
 
 (defprotocol ^:private PersistentUtil ;; to share some code between clj/cljs, with hopefully little runtime overhead.
-  (find-index-of [this key])
   (do-get [this key])
   (do-get-with-default [this key not-found])
   (do-assoc [this key val])
@@ -257,30 +255,31 @@
   (do-optional-struct-type= [this other])
   (do-optional-struct-type-hash [this]))
 
+(defn- find-index-of [struct key]
+  ;; OPT: test if the index is right, and do the alternative lookup at once.
+  (or (struct-key/optimized-for? key struct)
+      (struct-type/maybe-index-of struct key nil)))
+
 (deftype ^:private PersistentClosedStructMap [struct data locked? _meta
                                               #?(:clj ^:unsynchronized-mutable ^int _hasheq) ;; only clj!
                                               #?(:clj ^:unsynchronized-mutable ^int _hash :cljs ^:mutable _hash)]
 
   PersistentUtil
-  (find-index-of [this key]
-    (or (struct-key/optimized-for? key struct)
-        (struct-type/maybe-index-of struct key nil)))
-
   (do-get [this key]
-    (if-let [index (find-index-of this key)]
+    (if-let [index (find-index-of struct key)]
       (data/unsafe-access data index)
       (if locked?
         (throw (unknown-key key struct))
         nil)))
 
   (do-get-with-default [this key not-found]
-    (if-let [index (find-index-of this key)]
+    (if-let [index (find-index-of struct key)]
       (data/unsafe-access data index)
       not-found))
 
   (do-assoc [this key val]
     ;; OPT: check if current associated value is identical?
-    (if-let [index (find-index-of this key)]
+    (if-let [index (find-index-of struct key)]
       (-> (create struct (let [d (data/copy data)]
                            (data/unsafe-mutate! d index val)
                            d)
@@ -312,7 +311,7 @@
 
       (let [[new-data irritant]
             (reduce (fn [[data _] [k v]]
-                      (if-let [index (find-index-of this k)]
+                      (if-let [index (find-index-of struct k)]
                         (do (data/unsafe-mutate! data index v)
                             [data nil])
                         (reduced [nil k])))
@@ -420,7 +419,7 @@
        (assocEx [this key val]
                 ;; the semantic should be 'assoc unless already present, throw otherwise'
                 ;; all actual keys are always set though.
-                (if (or locked? (find-index-of this key))
+                (if (or locked? (find-index-of struct key))
                   (throw (cannot-add key))
                   (assoc (export this) key val)))
        (without [this key]
@@ -590,7 +589,6 @@
               (partition 2 keys-vals)))
 
 (defn struct-of-map [^PersistentClosedStructMap m]
-  (assert (clj-instance? PersistentClosedStructMap m))
   (.-struct m))
 
 (defn lock-struct-map [m]
