@@ -8,8 +8,8 @@
 (deftest builtin-scalar-realms-test
   (is (= realm/int
          (realm/compile int)))
-  (is (= realm/bigdec
-         (realm/compile bigdec)))
+  #?(:clj (is (= realm/bigdec
+                 (realm/compile bigdec))))
   (is (= realm/float
          (realm/compile float)))
   (is (= realm/double
@@ -147,8 +147,8 @@
 (deftest shallow-predicate-test
   (is ((realm/shallow-predicate realm/int) 5))
   (is (not ((realm/shallow-predicate realm/int) "5")))
-  (is ((realm/shallow-predicate realm/bigdec) (bigdec 5)))
-  (is (not ((realm/shallow-predicate realm/bigdec) "5")))
+  #?(:clj [(is ((realm/shallow-predicate realm/bigdec) (bigdec 5)))
+           (is (not ((realm/shallow-predicate realm/bigdec) "5")))])
   (is ((realm/shallow-predicate realm/float) 5.0))
   (is (not ((realm/shallow-predicate realm/float) 5)))
   (is ((realm/shallow-predicate realm/double) 5.0))

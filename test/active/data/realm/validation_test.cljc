@@ -12,7 +12,7 @@
 
 (deftest checking-checks
   (is (= 14 (twoify 7)))
-  (is (thrown? Exception
+  (is (thrown? #?(:clj Exception :cljs js/Error)
                (realm-validation/checking
                 (twoify "7")))))
 

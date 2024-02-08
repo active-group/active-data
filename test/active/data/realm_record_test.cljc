@@ -21,17 +21,17 @@
   (is (record/is-a? T
                     (realm-validation/checking
                      (T f1 5 f2 "foo"))))
-  (is (thrown? Exception
+  (is (thrown? #?(:clj Exception :cljs js/Error)
                (realm-validation/checking
                 (T f1 "bar" f2 "foo")))))
 
 (deftest extended-realm-structs
   (is (realm/record? (realm/compile ExtT)))
-
+  
   (is (record/is-a? ExtT
                     (realm-validation/checking
                      (ExtT f1 5 f2 "foo" f3 :bar))))
-
-  (is (thrown? Exception
+   
+  (is (thrown? #?(:clj Exception :cljs js/Error)
                (realm-validation/checking
                 (ExtT f1 5 f2 "foo" f3 "test")))))

@@ -536,9 +536,9 @@
    (extend-protocol IPrintWithWriter
      PersistentClosedStructMap
      (-pr-writer [^PersistentClosedStructMap s writer x]
-       (-pr-writer (struct-type/print-map-prefix (.-struct s)) writer x)
-       ;; OPT: direct access to map printer? reimplement?
-       (-pr-writer (into {} s) writer x))))
+       (pr-writer (struct-type/print-map-prefix (.-struct s)) writer x)
+       ;; OPT: direct access to map printer? reimplement? print-prefix-map
+       (pr-writer (into {} s) writer x))))
 
 (defn struct-map? [v]
   (clj-instance? PersistentClosedStructMap v))

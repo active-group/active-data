@@ -11,7 +11,7 @@
       (:float) float
       (:double) double
       (:int) schema/Int
-      (:bigdec) java.math.BigDecimal
+      #?@(:clj [(:bigdec) java.math.BigDecimal])
       (:keyword) schema/Keyword
       (:symbol) schema/Symbol
       (:string) schema/Str

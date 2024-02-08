@@ -9,7 +9,7 @@
 (deftest builtin-scalar-realm-test
   (is (some? (schema/validate (schema realm/int)
                               12)))
-  (is (thrown? Exception
+  (is (thrown? #?(:clj Exception :cljs js/Error)
                (schema/validate (schema realm/int)
                                 "12"))))
 
@@ -17,7 +17,7 @@
   (is (some?
        (schema/validate (schema (realm/predicate "odd integer" odd?))
                         11)))
-  (is (thrown? Exception
+  (is (thrown? #?(:clj Exception :cljs js/Error)
                (schema/validate (schema (realm/predicate "odd integer" odd?))
                                 12))))
 
@@ -31,7 +31,7 @@
        (schema/validate (schema (realm/optional realm/int))
                         nil)))
 
-  (is (thrown? Exception
+  (is (thrown? #?(:clj Exception :cljs js/Error)
                (schema/validate (schema (realm/optional (realm/int)))
                                 "12"))))
 
@@ -40,15 +40,15 @@
   (let [s (schema (realm/compile [realm/string realm/keyword realm/int]))]
     (is (some?
          (schema/validate s ["foo" :bar 42])))
-    (is (thrown? Exception
+    (is (thrown? #?(:clj Exception :cljs js/Error)
                  (schema/validate s [:foo :bar 42])))
-    (is (thrown? Exception
+    (is (thrown? #?(:clj Exception :cljs js/Error)
                  (schema/validate s ["foo" "bar" 42])))
-    (is (thrown? Exception
+    (is (thrown? #?(:clj Exception :cljs js/Error)
                  (schema/validate s ["foo" :bar "42"])))
-    (is (thrown? Exception
+    (is (thrown? #?(:clj Exception :cljs js/Error)
                  (schema/validate s ["foo" :bar])))
-    (is (thrown? Exception
+    (is (thrown? #?(:clj Exception :cljs js/Error)
                  (schema/validate s ["foo" :bar 42 43])))))
 
 
@@ -58,10 +58,10 @@
      (some?
       (schema/validate s {:foo "bar"
                           :baz "blam"})))
-    (is (thrown? Exception
+    (is (thrown? #?(:clj Exception :cljs js/Error)
                  (schema/validate s {:foo :bar
                                      :baz "blam"})))
-    (is (thrown? Exception
+    (is (thrown? #?(:clj Exception :cljs js/Error)
                  (schema/validate s {"foo" "bar"
                                      :baz "blam"})))))
 
@@ -81,9 +81,9 @@
     (is (some? (schema/validate s 5)))
     (is (some? (schema/validate s 10)))
 
-    (is (thrown? Exception (schema/validate s 0)))
-    (is (thrown? Exception (schema/validate s 11)))
-    (is (thrown? Exception (schema/validate s "11")))))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 0)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 11)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s "11")))))
 
 (deftest union-test
   (let [s (schema (realm/union realm/string realm/keyword realm/int))]
@@ -91,7 +91,7 @@
     (is (some? (schema/validate s :foo)))
     (is (some? (schema/validate s 5)))
 
-    (is (thrown? Exception (schema/validate s 'foo)))))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 'foo)))))
 
 (deftest sequence-of-test
   (let [s (schema (realm/sequence-of realm/string))]
@@ -101,7 +101,7 @@
     (is (some? (schema/validate s '("foo"))))
     (is (some? (schema/validate s ["foo" "bar"])))
 
-    (is (thrown? Exception (schema/validate s 'foo)))
-    (is (thrown? Exception (schema/validate s [:foo :bar])))
-    (is (thrown? Exception (schema/validate s ["foo" :bar])))
-    (is (thrown? Exception (schema/validate s [:foo "bar"])))))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 'foo)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [:foo :bar])))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s ["foo" :bar])))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [:foo "bar"])))))

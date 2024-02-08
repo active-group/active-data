@@ -2,14 +2,16 @@
   (:refer-clojure :exclude [int bigdec float double keyword symbol boolean seq compile record? delay delayed?
                             struct])
   (:require
-   [clojure.core :as core]
+   #?(:clj [clojure.core :as core]
+      :cljs [cljs.core :as core])
    #?(:clj [active.data.record :refer [def-record is-a?]]
       :cljs [active.data.record :refer [is-a?] :refer-macros [def-record]])
    [active.data.struct :as struct]
    [active.data.record :as record]
    [active.data.realm.realm-record-meta :as realm-record-meta]
    [clojure.set :as set]
-   [clojure.string :as string]))
+   [clojure.string :as string])
+  #?(:cljs (:require-macros [active.data.realm :refer [dispatch]])))
 
 (def-record Realm [description metadata])
 
@@ -33,7 +35,7 @@
 ; FIXME: natural positive-int
 (def int (builtin-scalar-realm description "int" builtin-scalar-realm-id :int metadata {}))
 ; FIXME? long? number?
-(def bigdec (builtin-scalar-realm description "big decimal" builtin-scalar-realm-id :bigdec metadata {}))
+#?(:clj (def bigdec (builtin-scalar-realm description "big decimal" builtin-scalar-realm-id :bigdec metadata {})))
 (def float (builtin-scalar-realm description  "float" builtin-scalar-realm-id :float metadata {}))
 (def double (builtin-scalar-realm description "double" builtin-scalar-realm-id :double metadata {}))
 (def keyword (builtin-scalar-realm description "keyword" builtin-scalar-realm-id :keyword metadata {}))
@@ -46,7 +48,7 @@
   (into {}
         (map (fn [scalar-realm]
                [(builtin-scalar-realm-id scalar-realm) scalar-realm])
-             [int bigdec float double
+             [int #?(:clj bigdec) float double
               keyword symbol string
               any])))
 
@@ -336,11 +338,11 @@
 (defn- parse-function-return
   [shorthand list]
   (when (not (= (first list) '->))
-    (throw (Exception. (str "function realm has no arrow: " shorthand))))
+    (throw (ex-info (str "function realm has no arrow: " shorthand) {:shorthand shorthand})))
   (when (empty? (rest list))
-    (throw (Exception. (str "function realm has nothing after ->: " shorthand))))
+    (throw (ex-info (str "function realm has nothing after ->: " shorthand) {:shorthand shorthand})))
   (when (not (empty? (rest (rest list))))
-    (throw (Exception. (str "function realm has more then one thing after ->: " shorthand))))
+    (throw (ex-info (str "function realm has more then one thing after ->: " shorthand) {:shorthand shorthand})))
   (first (rest list)))
 
 ;; (r1 r2 r3 -> r)
@@ -352,7 +354,7 @@
   (loop [list shorthand
          positional (transient [])]
     (if (empty? list)
-      (throw (Exception. (str "function realm does not have arrow: " shorthand)))
+      (throw (ex-info (str "function realm does not have arrow: " shorthand) {:shorthand shorthand}))
 
       (let [f (first list)]
         (case f
@@ -372,7 +374,7 @@
                                                 (description return#)))))
           (&)
           (if (empty? (rest list))
-            (throw (Exception. (str "function realm does not have an arrow: " shorthand)))
+            (throw (ex-info (str "function realm does not have an arrow: " shorthand) {:shorthand shorthand}))
 
             (let [list (rest list)
                   f (first list)
@@ -382,9 +384,9 @@
                              (list? f)
                              (do
                                (when (empty? (rest list))
-                                 (throw (Exception. (str "in function realm, empty optional list realm: " shorthand))))
+                                 (throw (ex-info (str "in function realm, empty optional list realm: " shorthand) {:shorthand shorthand})))
                                (when (not (empty (rest (rest list))))
-                                 (throw (Exception. (str "in function realm, more than one optional list realm: " shorthand))))
+                                 (throw (ex-info (str "in function realm, more than one optional list realm: " shorthand) {:shorthand shorthand})))
                                `(sequence-of (compile ~(first f))))
 
                              (vector? f)
@@ -399,7 +401,7 @@
                                                          f)))
 
                              :else
-                             (throw (Exception. (str "function realm has garbage after &: " shorthand))))]
+                             (throw (ex-info (str "function realm has garbage after &: " shorthand) {:shorthand shorthand})))]
               `(let [positional# ~positional
                      optional# ~optional
                      return# ~return]
@@ -499,7 +501,7 @@
     shorthand
     (condp identical? shorthand
       core/int int
-      core/bigdec bigdec
+      #?@(:clj [core/bigdec bigdec])
       core/float float
       core/double double
       core/boolean boolean
@@ -535,8 +537,9 @@
         (keyword? shorthand)
         (named shorthand any)
 
-        :else (throw (ex-info (str "unknown realm shorthand: " (pr-str shorthand))
-                              {::unknown-realm-shorthand shorthand}))))))
+        :else
+        (throw (ex-info (str "unknown realm shorthand: " (pr-str shorthand))
+                        {::unknown-realm-shorthand shorthand}))))))
 
 (def realm-predicates {'builtin-scalar? `builtin-scalar?
                        'predicate? `predicate?
@@ -625,7 +628,7 @@ realm cases."
     builtin-scalar?
     (case (builtin-scalar-realm-id realm)
       (:int) int?
-      (:bigdec) (fn [x] (instance? java.math.BigDecimal x))
+      #?@(:clj [(:bigdec) (fn [x] (instance? java.math.BigDecimal x))])
       (:float) float?
       (:double) double?
       (:keyword) keyword?
@@ -633,7 +636,7 @@ realm cases."
       (:string) string?
       (:boolean) boolean?
       (:any) any?
-      (throw (Exception. (str "unknown builtin scalar realm: " (builtin-scalar-realm-id realm)))))
+      (throw (ex-info (str "unknown builtin scalar realm: " (builtin-scalar-realm-id realm)) {:value realm})))
 
     predicate? (predicate-realm-predicate realm)
     
