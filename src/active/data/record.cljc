@@ -92,6 +92,8 @@
     (-locked-maps? [this] true))
 
 (defn ^:no-doc record-variant [name extends]
+  (assert (symbol? name))
+  (assert (or (nil? extends) (record? extends)))
   (RecordVariant. name extends))
 
 (defn ^:no-doc parse-def-record-args [args]
