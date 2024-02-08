@@ -90,10 +90,6 @@
 
 (record/def-record Rare [rar rdr])
 
-(deftest protocol-test
-  (is (realm/protocol?
-       (realm/compile Indexed))))
-
 (deftest named-test
   (is (realm/named?
        (realm/compile :a))))
@@ -142,8 +138,6 @@
          (realm/description (realm/record->record-realm Rare))))
   (is (= "delayed realm"
          (realm/description (realm/delay (/ 1 0)))))
-  (is (= "realm for protocol #'active.data.realm-test/Indexed"
-         (realm/description (realm/protocol Indexed))))
   (is (= "realm named :a: int"
          (realm/description (realm/named :a int))))
   (is (= "string restricted to nonempty strings"

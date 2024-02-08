@@ -75,15 +75,6 @@
       (0) kar
       (1) kdr)))
 
-(deftest protocol-test
-  (let [s (schema (realm/compile Indexed))]
-    (is
-     (some?
-      (schema/validate s (->Pare :kar :kdr))))
-  
-    (is (thrown? Exception
-                 (schema/validate s [:kar :kdr])))))
-
 (deftest integer-from-to-test
   (let [s (schema (realm/integer-from-to 1 10))]
     (is (some? (schema/validate s 1)))

@@ -456,30 +456,6 @@
   [thing]
   (is-a? delayed-realm thing))
 
-(defn- core-protocol?
-  [thing]
-  ;; Gross hack, as clojure.core/protocol? exists but is private?
-  (try
-    (satisfies? thing :nope)
-    true
-    (catch Exception exception false)))
-
-(def-record ^{:doc "Realm for objects implementing a protocol."}
-  protocol-realm
-  :extends Realm
-  [protocol-realm-protocol])
-
-(defn protocol
-  [protocol]
-  (protocol-realm protocol-realm-protocol protocol
-                  metadata {}
-                  description (str "realm for protocol " (:var protocol))))
-
-
-(defn protocol?
-  [thing]
-  (is-a? protocol-realm thing))
-
 ; for documenting polymorphism
 (def-record ^{:doc "Named realm."}
   named-realm
@@ -532,9 +508,6 @@
       core/str string
 
       (cond
-        (core-protocol? shorthand)
-        (protocol shorthand)
-        
         (fn? shorthand)
         (predicate "unknown predicate" shorthand)
 
@@ -580,7 +553,6 @@
                        'record? `record?
                        'function? `function?
                        'delayed? `delayed?
-                       'protocol? `protocol?
                        'named? `named?
                        'restricted? `restricted?})
 
@@ -706,9 +678,6 @@ realm cases."
     function? fn?
 
     delayed? (shallow-predicate (force (delayed-realm-delay realm)))
-
-    protocol?
-    (fn [thing] (satisfies? (protocol-realm-protocol realm) thing))
 
     named?
     (shallow-predicate (named-realm-realm realm))

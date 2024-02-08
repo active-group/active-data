@@ -35,9 +35,6 @@
     set-of?
     :TODO
     
-    protocol?
-    (schema/pred (fn [thing] (satisfies? (realm/protocol-realm-protocol realm) thing)))
-
     integer-from-to?
     (let [from (realm/integer-from-to-realm-from realm)
           to (realm/integer-from-to-realm-to realm)]
