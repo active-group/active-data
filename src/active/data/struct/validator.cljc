@@ -70,7 +70,7 @@
   "Returns a validator that passes validation on to the given validator, if `@var` is true, and does nothing otherwise."
   [var validator]
   (assert (satisfies? IMapValidator validator))
-  (assert (satisfies? clojure.lang.IDeref validator))
+  #?(:clj (assert (satisfies? clojure.lang.IDeref validator)))
   (reify IMapValidator
     (-validate-map! [this m]
       (when @var

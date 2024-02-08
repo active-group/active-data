@@ -1,125 +1,105 @@
 (ns active.data.struct
-  (:require [active.data.struct.key :as key]
-            [active.data.struct.closed-struct :as closed-struct]
-            [active.data.struct.closed-struct-map :as closed-struct-map]
-            [active.data.struct.closed-struct-meta :as closed-struct-meta]
+  "Structs describe structured data and offer an optimized way to work with such data.
+
+  ```
+  (def person (struct [:name :age]))
+  ```
+
+  Values can be tested to see if they conform with the struct:
+
+  ```
+  (has-keys? person {:name \"Huge\", :age 37})
+
+  (not (has-keys? person {}))
+  ```
+
+  A special kind of optimized struct-maps can be created,
+  using [[struct-map]] and [[to-struct-map]] or using the struct as a function:
+
+  ```
+  (def p1 (person :name \"Hugo\" :age 27))
+
+  (def p2 (person {:name \"Tina\" :age 31}))
+  ```
+
+  Struct-maps support all standard map functions like [[assoc]] and
+  [[get]], as well as [[transient]] and [[assoc!]].
+
+  But adding keys not defined in the record, or removing any key will
+  change a struct-map into a hash-map! That behaviour can be changed
+  using [[lock]] and [[unlock]]. Locked struct maps throw an error in
+  these cases.
+  
+  You can test if something is an actual struct-map:
+  
+  ```
+  (struct-map? p1)
+
+  (not (struct-map? (dissoc p1 :name)))
+  ```
+
+  Structs support some reflection at runtime:
+
+  ```
+  (= person (struct-of p1))
+
+  (= [:name :age] (struct-keys person))
+
+  (struct? person)
+  ```
+  "
+  (:require [active.data.struct.struct-type :as struct-type]
+            [active.data.struct.closed-struct-map :as struct-map]
             #_[active.clojure.lens :as lens])
-  (:refer-clojure :exclude [struct-map
+  (:refer-clojure :exclude [struct-map struct
                             set-validator! get-validator
                             accessor]))
-
-;; Note: there is no positional constructor on purpose; although they
-;; can be handy for small structs, they quickly become hard to read
-;; and hard to refactor when getting larger. And defining a positional
-;; constructor for small structs is much easier than the other way
-;; round.
-
-(defmacro ^:no-doc def-key [name]
-  `(def ~name (key/make (symbol ~(str *ns*) ~(str name)))))
-
-(defn ^:no-doc parse-def-struct-args [args]
-  ;; ...could use spec for that.
-  ;; TODO: not super tight on possible errors...
-  (loop [args args
-         extends nil
-         fields nil]
-    (if (empty? args)
-      [extends nil fields]
-      (cond
-        (true? extends) (recur (rest args)
-                               (first args)
-                               fields)
-        :else
-        (case (first args)
-          :extends (recur (rest args)
-                          true
-                          fields)
-          (recur (rest args)
-                 extends
-                 (first args)))))))
 
 (declare struct-map)
 (declare to-struct-map)
 
-(defmacro ^:no-doc def-struct*
-  [t extends _meta fields]
-  (when (empty? fields)
-    ;; Note: all empty structs would be equal (and all struct-map instances of all)
-    ;; And unique values should probably be created differently anyway.
-    (throw (ex-info "Cannot define an empty struct." {:name t})))
+(defrecord ^:no-doc StructVariant []
+  struct-type/IStructTypeVariant
+    (-variant-name [this] "active.data.struct.Struct")
+    (-construct-from [this struct-type m]
+      (to-struct-map struct-type m))
+    (-identifier [this struct-type] nil)
+    (-print-map-prefix [this struct-type] "")
+    (-locked-maps? [this] false))
 
-  `(do
-     ~@(for [f# fields]
-         `(def-key ~(cond-> f#
-                      (and (contains? (meta t) :private)
-                           (not (contains? (meta f#) :private)))
-                      (vary-meta assoc :private (:private (meta t))))))
+(def ^:no-doc struct-variant (StructVariant.))
 
-     ;; Note that 'meta' is evaluated after the fields, so they may refer to them.
-     (def ~t (closed-struct/create ~fields
-                                   ~extends
-                                   struct-map
-                                   to-struct-map
-                                   (assoc ~_meta closed-struct-meta/name-meta-key (symbol (str *ns*) (str '~t)))))
-
-     ~@(for [f# fields]
-         `(key/optimize-for! ~f# ~t))
-     
-     ~t))
-
-(defmacro def-struct
-  "Defines a struct and its keys:
-
-  ```
-  (def-struct T [field-1 ...])
-  ```
-
-  A corresponding struct map can be created by using the struct as a function:
-
-  ```
-  (T field-1 value-1 ...)
-
-  (T {field-1 value-1 ...})
-  ```
-
-  Other structs can be extended, too:
-
-  ``
-  (def-struct X
-    :extends T
-    [field-2])
-  ```
-  "
-  ([t & args]
-   (let [[extends _meta fields] (parse-def-struct-args args)]
-     `(def-struct* ~t ~extends ~_meta ~fields))))
+(defn struct
+  "Returns the description of a structure, i.e. maps with the given keys."
+  [keys]
+  (struct-type/create keys
+                      struct-variant
+                      nil
+                      nil))
 
 (defn struct-map
-  "Returns a new struct map with the keys of the struct. All keys of the
-  stuct must be given.
+  "Returns a new struct map with the keys of the struct.
 
   ```
-  (def-struct T [field-1 ...])
-  (struct-map T field-1 42 ...)
+  (struct-map (struct [field-1 ...]) field-1 42 ...)
   ```
   "
   [struct & keys-vals]
-  ;; TODO: reject the same key given twice? Or offer that explicitly as an easy way to specify default values?
-  ;; TODO: actually require all keys? If duplicates are allowed, that is costly to check.
-  ;; TODO: hash-map are quite complex macros in cljs - check that out.
-  (closed-struct-map/build-map struct keys-vals))
+  (struct-map/build-map struct keys-vals))
 
 (defn to-struct-map
-  "Returns a new struct map with the keys of the struct, from a collection of key-value tuples. All keys of the
-  stuct must be given.
+  "Returns a new struct map with the keys of the struct, from a collection of key-value tuples.
 
   ```
-  (def-struct T [field-1 ...])
+  (def T (struct [field-1 ...]))
   (to-struct-map T {field-1 42})
   ```
   "
   [struct keys-vals]
-  (closed-struct-map/from-coll struct keys-vals))
+  (struct-map/from-coll struct keys-vals))
+
+(defn struct-keys [struct]
+  (struct-type/keys struct))
 
 (defn constructor
   "Returns an optimized positional constructor function for struct-maps
@@ -127,7 +107,7 @@
   must match that of the definition of the struct, with additional
   fields from extended structs first."
   [struct]
-  (closed-struct-map/positional-constructor struct))
+  (struct-map/positional-constructor struct))
 
 (defn accessor
   "Returns an optimized accessor function for the value associated with
@@ -136,7 +116,7 @@
   ;; Note: (key m) and even (get m key) is already very
   ;; efficient. This is slightly more efficient; but only use it if
   ;; needed.
-  (closed-struct-map/accessor struct key))
+  (struct-map/accessor struct key))
 
 (defn mutator
   "Returns an optimized mutator function for the value associated with
@@ -145,7 +125,7 @@
   ;; Note: (key m v) and even (assoc m key v) is already very
   ;; efficient. This is slightly more efficient; but only use it if
   ;; needed.
-  (closed-struct-map/mutator struct key))
+  (struct-map/mutator struct key))
 
 (defn mutator!
   "Returns an optimized mutator function for the value associated with
@@ -154,38 +134,37 @@
   ;; Note: (assoc! m key v) and even (assoc m key v) is already very
   ;; efficient. This is slightly more efficient; but only use it if
   ;; needed.
-  (closed-struct-map/mutator! struct key))
+  (struct-map/mutator! struct key))
 
 (defn struct-of "Returns the struct the given struct-map was created from." [m]
-  (closed-struct-map/struct-of-map m))
-
-(defn ^{:no-doc true
-        :doc "Replace validator of struct. Unsynchronized side effect; use only if you know what you are doing."}
-  set-validator! [struct validator]
-  ;; Note: the validator is not an argument to 'def-struct', because
-  ;; you usually want to use the defined keys in the validator
-  ;; implementation; that would make for a weird macro.
-  (closed-struct/set-validator! struct validator))
+  (struct-map/struct-of-map m))
 
 (defn ^:no-doc get-validator [struct]
-  (closed-struct/get-validator struct))
+  (struct-type/get-validator struct))
 
 (defn struct?
-  "Tests if v is a struct defined by [[def-struct]]."
+  "Tests if v is a struct as returned by [[struct]]."
   [v]
-  (closed-struct/closed-struct? v))
+  (and (struct-type/struct-type? v)
+       (= struct-variant (struct-type/variant v))))
 
-(defn is-a?
-  "Tests if `v` is a struct map created from the given `struct` or an extension of it."
-  [struct v]
-  (or (closed-struct-map/exact-instance? struct v)
-      (closed-struct-map/derived-instance? struct v)))
+(defn struct-map? [v]
+  (struct-map/struct-map? v))
+
+(defn lock [struct-map]
+  (assert (struct-map? struct-map))
+  (struct-map/lock-struct-map struct-map))
+
+(defn unlock [struct-map]
+  (assert (struct-map? struct-map))
+  (struct-map/unlock-struct-map struct-map))
+
 
 (defn has-keys?
   "Tests if `v` is a map that contains at least the keys defined for `struct`."
   [struct v]
-  ;; Note: also checks the validity, if a validator is defined for struct.
-  (closed-struct-map/satisfies? struct v))
+  ;; Note: also checks the validity, if a validator is defined for struct.  (TODO: really do validate?)
+  (struct-map/satisfies? struct v))
 
 ;; TODO: here?
 #_(let [from-struct-1 (fn [v struct field-lens-map]

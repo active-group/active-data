@@ -6,5 +6,9 @@
   :dependencies [[org.clojure/clojure "1.11.1"]
                  [prismatic/schema "1.4.1"]]
 
+  :profiles {:test {:dependencies [[criterium "0.4.6"]]}}
+
+  :aliases {"benchmarks" ["with-profiles" "+test," "run" "-m" active.data.benchmarks]}
+  
   ;; Note: run ClojureScript tests with > npm run test
   )

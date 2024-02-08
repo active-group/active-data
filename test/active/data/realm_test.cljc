@@ -1,7 +1,7 @@
 (ns active.data.realm-test
   (:require [active.data.realm :as realm #?@(:cljs [:include-macros true])]
-            [active.data.struct :refer [def-struct]]
-            [active.data.struct :as struct]
+            [active.data.struct :as struct #?@(:cljs [:include-macros true])]
+            [active.data.record :as record #?@(:cljs [:include-macros true])]
             #?(:cljs [cljs.test :refer-macros (is deftest testing)])
             #?(:clj [clojure.test :refer (is deftest testing)])))
 
@@ -88,7 +88,7 @@
                 [(realm/field "kar" realm/int :kar)
                  (realm/field "kdr" realm/double :kdr)]))
 
-(def-struct Sare [sar sdr])
+(record/def-record Rare [rar rdr])
 
 (deftest protocol-test
   (is (realm/protocol?
@@ -136,8 +136,10 @@
                              (realm/function int int & (realm/string) -> boolean)))))
   (is (= "record Pare with fields kar from realm int, kdr from realm double"
          (realm/description pare-realm)))
-  (is (= "record active.data.realm-test/Sare with fields sar from realm any, sdr from realm any"
-         (realm/description (realm/compile Sare))))
+  (is (= "record unnamed-struct with fields :sar from realm any, :sdr from realm any"
+         (realm/description (realm/struct->record-realm (struct/struct [:sar :sdr])))))
+  (is (= "record active.data.realm-test/Rare with fields rar from realm any, rdr from realm any"
+         (realm/description (realm/record->record-realm Rare))))
   (is (= "delayed realm"
          (realm/description (realm/delay (/ 1 0)))))
   (is (= "realm for protocol #'active.data.realm-test/Indexed"
@@ -219,14 +221,19 @@
   (is (not ((realm/shallow-predicate (realm/tuple realm/keyword realm/int)) {5 :foo})))
   (is (not ((realm/shallow-predicate (realm/tuple realm/keyword realm/int)) #{5 :foo})))
 
-  (is ((realm/shallow-predicate (realm/compile Sare)) (struct/struct-map Sare sar 1 sdr 2)))
-  (is (not ((realm/shallow-predicate (realm/compile Sare)) 5)))
+  (let [s (struct/struct [:sar :sdr])]
+    (is ((realm/shallow-predicate (realm/struct->record-realm s)) (s :sar 1 :sdr 2)))
+    (is (not ((realm/shallow-predicate (realm/struct->record-realm s)) 5))))
 
+  (is ((realm/shallow-predicate (realm/record->record-realm Rare)) (Rare rar 1 rdr 2)))
+  (is (not ((realm/shallow-predicate (realm/record->record-realm Rare)) 5)))
+  
   (is ((realm/shallow-predicate (realm/function int boolean -> int)) (fn [a b] a)))
   (is (not ((realm/shallow-predicate (realm/function int boolean -> int)) 5)))
   
-  (is ((realm/shallow-predicate (realm/delay Sare)) (struct/struct-map Sare sar 1 sdr 2)))
-  (is (not ((realm/shallow-predicate (realm/delay Sare)) 5)))
+  (let [r (realm/tuple realm/keyword realm/int)]
+    (is ((realm/shallow-predicate (realm/delay r)) [:foo 5]))
+    (is (not ((realm/shallow-predicate (realm/delay r)) 5))))
 
   (is ((realm/shallow-predicate (realm/named :a int)) 5))
   (is (not ((realm/shallow-predicate (realm/named :a int)) "5")))

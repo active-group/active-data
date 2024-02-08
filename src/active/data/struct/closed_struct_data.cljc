@@ -1,33 +1,25 @@
 (ns ^:no-doc active.data.struct.closed-struct-data
-  "Mutable data structure backing a closed-struct-map."
-  (:require [active.data.struct.closed-struct :as closed-struct]))
+  "Mutable data structure backing struct maps."
+  (:require [active.data.struct.struct-type :as struct-type]))
 
-;; TODO: maybe this should do field validation?
+(defn unsafe-create ^objects [size]
+  (object-array size))
 
 (defn create
-  ([struct]
-   (object-array (closed-struct/size struct)))
-  ([struct values]
-   (assert (= (closed-struct/size struct) (count values))) ;; TODO: proper exception
+  (^objects [struct]
+   (unsafe-create (struct-type/size struct)))
+  (^objects [struct values]
+   (when-not (= (struct-type/size struct) (count values))
+     (throw (ex-info (str "Wrong number of values to create closed-struct-data. Expected " (struct-type/size struct) ", but got " (count values))
+                     {:struct struct})))
    (to-array values)))
 
 (defn unsafe-access [^objects data ^long index]
   (aget data index))
 
-(defn access [struct data key]
-  (unsafe-access data
-                 (closed-struct/index-of struct key)))
-
-(let [not-found #?(:clj (Object.) :cljs #js {})]
-  (defn access-with-default [struct ^objects data key default]
-    (let [index (closed-struct/maybe-index-of struct key not-found)]
-      (if (identical? index not-found)
-        default
-        (aget data index)))))
-
 (defn kv-reduce [struct ^objects data f init]
-  (let [keys (closed-struct/keys struct)
-        len (closed-struct/size struct)]
+  (let [keys (struct-type/keys struct)
+        len (struct-type/size struct)]
     (loop [res init
            idx 0]
       (if (< idx len)
@@ -38,14 +30,9 @@
         res))))
 
 (defn unsafe-mutate! [^objects data ^long index value]
-  (aset data index value)
-  data)
+  (aset data index value))
 
-(defn mutate! [struct data key value]
-  (let [index ^long (closed-struct/index-of struct key)]
-    (unsafe-mutate! data index value)))
-
-(defn copy [^objects data]
+(defn copy ^objects [^objects data]
   (aclone data))
 
 (defn equiv [^objects v1 ^objects v2]
@@ -59,11 +46,11 @@
           (range (alength v1))))
 
 (defn indices [struct]
-  (range (closed-struct/size struct)))
+  (range (struct-type/size struct)))
 
 #?(:clj
    (defn java-iterator [struct data]
-     (let [ks (closed-struct/keys struct)
+     (let [ks (struct-type/keys struct)
            idxs (indices struct)]
        (let [^java.util.Iterator base (.iterator idxs)]
          (reify java.util.Iterator
@@ -77,7 +64,7 @@
 
    :cljs
    (defn js-iterator [struct data]
-     (let [ks (closed-struct/keys struct)
+     (let [ks (struct-type/keys struct)
            idxs (indices struct)]
        (let [base (-iterator idxs)]
          (reify Object
@@ -92,5 +79,5 @@
      ;; OPT: special implementation needed? (but that's a lot: https://github.com/clojure/clojurescript/blob/219951678b16575ec29bb9b88047356cf1437aec/src/main/cljs/cljs/core.cljs#L6808)
      (map (fn [key idx]
             (MapEntry. key (unsafe-access data idx) nil))
-          (closed-struct/keys struct)
+          (struct-type/keys struct)
           (indices struct))))
