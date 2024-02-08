@@ -145,7 +145,8 @@
           (throw (unknown-key (first (remove #(t-find-index-of struct %1) keys)) struct))
           (reduce (fn [res [k v]]
                     (assoc! res k v))
-                (export-transient! this)))
+                  (export-transient! this)
+                  keys-vals))
         (do (validate-multi! struct keys-vals)
             (doseq [[index val] (map vector indices (map second keys-vals))]
               (data/unsafe-mutate! data index val))
@@ -202,8 +203,7 @@
                ;; else, assume sequence of Map.Entry
                (t-assoc-multi this (map (fn [^java.util.Map$Entry e]
                                           [(.getKey e) (.getValue e)])
-                                        (seq val))))
-             this)
+                                        (seq val)))))
        (valAt [this key] (t-get this key))
        (valAt [this key not-found] (t-get-with-default this key not-found))
        
@@ -231,8 +231,7 @@
                  :else
                  (t-assoc-multi this (map (fn [e]
                                             [(key e) (val e)])
-                                          (seq o))))
-               this)
+                                          (seq o)))))
        (-persistent! [this] (t-persistent this))
 
        ICounted
