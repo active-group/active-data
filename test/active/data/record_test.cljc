@@ -126,10 +126,11 @@
   (let [v (R r-a 42 r-b "foo")]
     ;; TODO: change how keys are printed here?
     
-    (t/is (= "#active.data.record-test/R{~r-a 42, ~r-b \"foo\"}" (pr-str v)))
+    (t/is (= "#active.data.record-test/R{r-a 42, r-b \"foo\"}" (pr-str v)))
+    ;; (t/is (= "#active.data.record-test/R{r-a 42, r-b foo" (str v)))
 
     ;; TODO: or just the record type name?
-    (t/is (= "#active.data.record.Record{~r-a, ~r-b}" (pr-str R)))
+    (t/is (= "#active.data.record.Record{r-a, r-b}" (pr-str R)))
     ))
 
 (t/deftest extends-test

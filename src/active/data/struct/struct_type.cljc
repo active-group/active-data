@@ -154,14 +154,9 @@
    :cljs
    (extend-protocol IPrintWithWriter
      StructType
-     ;; TODO: use print-prefix-map, print-map?
      (-pr-writer [^StructType s writer opts]
-       (pr-writer "#" writer opts)
-       (pr-writer (-variant-name (.-variant s)) writer opts)
-       (pr-writer "{" writer opts)
-       (doseq [k (interpose ", " (.-keys s))]
-         (pr-writer k writer opts))
-       (pr-writer "}" writer opts))))
+       (write-all writer "#" (-variant-name (.-variant s)))
+       (pr-sequential-writer writer pr-writer "{" ", " "}" opts (.-keys s)))))
 
 (defn struct-type? [v]
   (instance? StructType v))

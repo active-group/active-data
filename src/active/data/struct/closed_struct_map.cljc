@@ -534,10 +534,13 @@
    :cljs
    (extend-protocol IPrintWithWriter
      PersistentClosedStructMap
-     (-pr-writer [^PersistentClosedStructMap s writer x]
-       (pr-writer (struct-type/print-map-prefix (.-struct s)) writer x)
-       ;; OPT: direct access to map printer? reimplement? print-prefix-map
-       (pr-writer (into {} s) writer x))))
+     (-pr-writer [^PersistentClosedStructMap s writer opts]
+       (print-prefix-map (when-let [p (struct-type/print-map-prefix (.-struct s))]
+                           (str p))
+                         s
+                         pr-writer
+                         writer
+                         opts))))
 
 (defn struct-map? [v]
   (clj-instance? PersistentClosedStructMap v))

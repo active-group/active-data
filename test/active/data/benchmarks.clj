@@ -17,6 +17,8 @@
 (r/def-record ADRecord [r-a r-b r-c r-d r-e])
 (def mk-ad (r/constructor ADRecord))
 
+(def get-a r-a #_ (active.data.struct/accessor ADRecord r-a))
+
 (defrecord JRecord [a b c d e])
 
 (r/def-record Spec [r-a])

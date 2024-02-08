@@ -55,15 +55,13 @@
    ;; is an expression yielding the value.
    
    (defmethod print-method Key [sk ^java.io.Writer writer]
-     (.write writer "~")
      (.write writer (name (.-sym sk))))
 
    :cljs
    (extend-protocol IPrintWithWriter
      Key
-     (-pr-writer [sk writer _]
-       (write-all writer "~")
-       (write-all writer (name (.-sym sk))))))
+     (-pr-writer [sk writer opts]
+       (-write writer (name (.-sym sk))))))
 
 (defn make [sym]
   (Key. sym nil))
