@@ -609,30 +609,35 @@
 (defn unlock-struct-map [m]
   (create (struct-of-map m) (.-data m) false (meta m)))
 
-(defn- is-definitely-struct-map-of? [struct m]
-  ;; Note: this may return false negatives for optimization purposes
+(defn- is-definitely-struct-map-of? [m struct-match?]
+  ;; Note: this, resp struct= may return false negatives for optimization purposes
   (and (clj-instance? PersistentClosedStructMap m)
-       (= (.-struct ^PersistentClosedStructMap m)
-          struct)))
+       (struct-match? (.-struct ^PersistentClosedStructMap m))))
 
-(defn accessor [struct key]
+(defn accessor* [struct key struct-match?]
   (let [idx (find-index-of struct key)]
     (if (>= idx 0)
       (fn [m]
-        (if (is-definitely-struct-map-of? struct m)
+        (if (is-definitely-struct-map-of? m struct-match?)
           ;; (do-unsafe-get m idx), inlined:
           (data/unsafe-access (.-data ^PersistentClosedStructMap m) idx)
           (get m key)))
       (throw (unknown-key key struct)))))
 
-(defn mutator [struct key]
+(defn accessor [struct key]
+  (accessor* struct key (partial identical? struct)))
+
+(defn mutator* [struct key struct-match?]
   (let [idx (find-index-of struct key)]
     (if (>= idx 0)
       (fn [m v]
-        (if (is-definitely-struct-map-of? struct m)
+        (if (is-definitely-struct-map-of? m struct-match?)
           (do-unsafe-assoc ^PersistentClosedStructMap m key idx v)
           (get m key)))
       (throw (unknown-key key struct)))))
+
+(defn mutator [struct key]
+  (mutator* struct key (partial identical? struct)))
 
 (defn mutator! [struct key]
   ;; TODO: actually optimize it, e.g by looking at key beforehand.

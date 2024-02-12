@@ -168,12 +168,6 @@
   (and (struct-type/struct-type? v)
        (instance? RecordVariant (struct-type/variant v))))
 
-(def ^:no-doc constructor struct-map/positional-constructor)
-
-;; TODO: consider extends here:
-(def ^:no-doc accessor struct-map/accessor)
-(def ^:no-doc mutator struct-map/mutator)
-
 (defn record-keys
   "Returns the keys of a record as a vector, including those added via extension.
 
@@ -182,8 +176,11 @@
   (assert (record? t))
   (struct-type/keys t))
 
+(defn- is-exactly?-0 [t-1 t-2]
+  (= t-1 t-2))
+
 (defn- is-exactly-a?-0 [t m]
-  (= t (struct-map/struct-of-map m)))
+  (is-exactly?-0 t (struct-map/struct-of-map m)))
 
 (defn is-exactly-a?
   "Tests if `v` is an instance of the given record `t`."
@@ -195,7 +192,7 @@
 (defn- is-extension-of?-0 [parent-t child-t]
   ;; is the record child-t a direct or indirect extension of parent-t?
   (when-let [et (record-extends child-t)]
-    (or (= parent-t et)
+    (or (is-exactly?-0 parent-t et)
         (is-extension-of?-0 parent-t et))))
 
 (defn is-extended-from?
@@ -210,5 +207,22 @@
   [t v]
   (assert (record? t))
   (and (struct-map/struct-map? v)
-       (or (is-exactly-a?-0 t v)
-           (is-extension-of?-0 t (struct-map/struct-of-map v)))))
+       (let [r (struct-map/struct-of-map v)]
+         (or (is-exactly?-0 t r)
+             (is-extension-of?-0 t r)))))
+
+(def ^:no-doc constructor struct-map/positional-constructor)
+
+(defn- struct-type-matcher [record]
+  ;; Note: this enables optimized access to keys in extended records; extended
+  ;; keys must be come first for this, so the indices are the same as in the parent record!
+  (fn [struct-type]
+    (or (is-exactly?-0 record struct-type)
+        (is-extension-of?-0 record struct-type))))
+
+(defn ^:no-doc accessor [record key]
+  (struct-map/accessor* record key (struct-type-matcher record)))
+
+(defn ^:no-doc mutator [record key]
+  (struct-map/mutator* record key (struct-type-matcher record)))
+
