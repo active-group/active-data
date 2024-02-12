@@ -25,13 +25,6 @@
     (t/is (:private (meta #'pt-a)) "Privateness is inherited")
     (t/is (not (:private (meta #'pt-b))) "Privateness is inherited only as a default"))
 
-(t/deftest optimization-test
-  (t/is (key/optimized-for? r-a R))
-  (t/is (not (key/optimized-for? r-a OtherR)))
-
-  ;; Note: ClosedStructMap must also make use of that, but that cannot be tested extrinsicly.
-  )
-
 (t/deftest construction-test
   (t/is (some? (R r-a 42 r-b "foo")))
 

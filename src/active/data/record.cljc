@@ -75,7 +75,7 @@
   (:require [active.data.struct.key :as key #?@(:cljs [:include-macros true])]
             [active.data.struct.closed-struct-map :as struct-map]
             [active.data.struct.struct-type :as struct-type])
-  (:refer-clojure :exclude [record?]))
+  (:refer-clojure :exclude [record? accessor]))
 
 (declare to-record-map)
 (declare record?)
@@ -134,7 +134,7 @@
                                nil)))
 
        ~@(for [f# fields]
-           `(key/optimize-for! ~f# ~t))
+           `(key/set-optimized! ~f# (accessor ~t ~f#) (mutator ~t ~f#)))
 
        ~t)))
 
@@ -168,7 +168,11 @@
   (and (struct-type/struct-type? v)
        (instance? RecordVariant (struct-type/variant v))))
 
-(def constructor struct-map/positional-constructor)
+(def ^:no-doc constructor struct-map/positional-constructor)
+
+;; TODO: consider extends here:
+(def ^:no-doc accessor struct-map/accessor)
+(def ^:no-doc mutator struct-map/mutator)
 
 (defn record-keys
   "Returns the keys of a record as a vector, including those added via extension.

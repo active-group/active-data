@@ -169,7 +169,7 @@
                       fs fields]
                  (if-not (empty? fs)
                    (recur (inc idx)
-                          (assoc! r (first fs) idx)
+                          (assoc! r (first fs) (long idx))
                           (rest fs))
                    (persistent! r)))
                variant
@@ -188,16 +188,6 @@
 (defn keyset [^StructType t]
   (.-keyset t))
 
-(defn maybe-index-of [^StructType t key default]
-  (get (.-index-map t) key default))
-
-#_(let [not-found #?(:clj (Object.) :cljs #js {})] ;; TODO: remove?
-  (defn index-of [t key]
-    (let [idx (maybe-index-of t key not-found)]
-      (if (identical? idx not-found)
-        (throw (ex-info "Key not in struct" {:key key
-                                             :available (.-keys t)}))
-        idx))))
-
-(defn is-index-of? [t key index]
-  (= key (get (keys t) index)))
+(let [dflt (long -1)]
+  (defn maybe-index-of ^long [^StructType t key]
+    (get (.-index-map t) key dflt)))

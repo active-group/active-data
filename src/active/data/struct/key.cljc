@@ -1,29 +1,19 @@
 (ns ^:no-doc active.data.struct.key
-  (:require [active.data.struct.struct-type :as struct-type])
   (:refer-clojure :exclude (set)))
 
 (defprotocol ^:private IKey
-  (-optimize-for! [this struct])
-  (-optimized-for? [this struct] "Returns the index in struct or nil."))
+  (-set-optimized! [this opt-get opt-assoc] "Set (optimize) get and assoc functions. Note that these don't take the key: (get m) => value for key, and (assoc m value) => new m"))
 
-(deftype ^:private Key [^clojure.lang.Symbol sym ^:unsynchronized-mutable index]
+(deftype ^:private Key [^clojure.lang.Symbol sym ^:unsynchronized-mutable opt-get ^:unsynchronized-mutable opt-assoc]
   IKey
-  (-optimize-for! [this s]
-    (if-let [idx (struct-type/maybe-index-of s this nil)]
-      (set! (.-index this) idx)
-      (throw (ex-info (str "Unknown key: " this) {:key this :struct s}))))
-  (-optimized-for? [this s]
-    (when (and index
-               (struct-type/is-index-of? s this index))
-      index))
+  (-set-optimized! [this opt-get opt-assoc]
+    (set! (.-opt-get this) opt-get)
+    (set! (.-opt-assoc this) opt-assoc))
   
   #?@(:clj
       [clojure.lang.IHashEq
        (hasheq [this]
                (.hasheq sym))
-
-       ;; TODO: withMeta meta, clojure.lang.IObj
-       ;; TODO? java.lang.Comparable
 
        Object
        (hashCode [this]
@@ -31,29 +21,50 @@
        
        (equals [this other]
                (if (instance? Key other)
-                 (= sym (.-sym other))
+                 (.equals sym (.-sym ^Key other))
                  false))
 
        (toString [this]
-                 ;; this is (str key)
-                 ;; TODO: with or without ~ ?
-                 (name sym))])
+                 (name sym))]
+
+      :cljs
+      [Object
+       (toString [this]
+                 (name sym))
+       IEquiv
+       (-equiv [this other]
+               (if (instance? Key other)
+                 (-equiv sym (.-sym ^Key other))
+                 false))
+
+       IHash
+       (-hash [this]
+              (hash sym))])
 
   #?@(:clj
       ;; Note: the struct-map implementation of get and assoc will use 'optimized-for' info
       [clojure.lang.IFn
-       (invoke [this m] (get m this))
-       (invoke [this m v] (assoc m this v))]
+       (invoke [this m]
+               (if opt-get
+                 (opt-get m)
+                 (get m this)))
+       (invoke [this m v]
+               (if opt-assoc
+                 (opt-assoc m v)
+                 (assoc m this v)))]
 
       :cljs
       [IFn
-       (-invoke [this m] (get m this))
-       (-invoke [this m v] (assoc m this v))]))
+       (-invoke [this m]
+                (if opt-get
+                  (opt-get m)
+                  (get m this)))
+       (-invoke [this m v]
+                (if opt-assoc
+                  (opt-assoc m v)
+                  (assoc m this v)))]))
 
 #?(:clj
-   ;; add ~ to the namespaced symbol, so that quasiquoting the output
-   ;; is an expression yielding the value.
-   
    (defmethod print-method Key [sk ^java.io.Writer writer]
      (.write writer (name (.-sym sk))))
 
@@ -64,18 +75,12 @@
        (-write writer (name (.-sym sk))))))
 
 (defn make [sym]
-  (Key. sym nil))
+  (Key. sym nil nil))
 
 (defmacro def-key [name]
   `(def ~name (make (symbol ~(str *ns*) ~(str name)))))
 
-(defn optimize-for! [^Key key struct]
-  (assert (instance? Key key))
-  (assert (struct-type/struct-type? struct))
+(defn set-optimized! [^Key key opt-get opt-assoc]
   ;; Note: should only be called once and immediately after construction/during definition;
   ;; therefor it's ok to just use :unsynchronized-mutable fields.
-  (-optimize-for! key struct))
-
-(defn optimized-for? [key struct]
-  (and (instance? Key key)
-       (-optimized-for? ^Key key struct)))
+  (-set-optimized! key opt-get opt-assoc))

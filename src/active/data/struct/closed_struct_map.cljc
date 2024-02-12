@@ -1,7 +1,6 @@
 (ns ^:no-doc active.data.struct.closed-struct-map
   (:require [active.data.struct.struct-type :as struct-type]
             [active.data.struct.closed-struct-data :as data]
-            [active.data.struct.key :as struct-key]
             [active.data.struct.validator :as v]
             [clojure.set :as set])
   #?(:clj (:import (clojure.lang Util)))
@@ -118,9 +117,8 @@
   (t-get [this key])
   (t-get-with-default [this key not-found]))
 
-(defn- t-find-index-of [struct key]
-  (or (struct-key/optimized-for? key struct)
-      (struct-type/maybe-index-of struct key nil)))
+(defn- t-find-index-of ^long [struct key]
+  (struct-type/maybe-index-of struct key))
 
 (deftype ^:private TransientClosedStructMap [struct data locked? #?(:clj ^:unsynchronized-mutable owner :cljs ^:mutable owner)]
   ;; Note: does 'single field' validation immediately, but full map validation only on persistence.
@@ -140,9 +138,9 @@
     (ensure-editable! owner)
     (let [keys (map first keys-vals)
           indices (map #(t-find-index-of struct %1) keys)]
-      (if (not (every? some? indices))
+      (if (not (every? #(>= %1 0) indices))
         (if locked?
-          (throw (unknown-key (first (remove #(t-find-index-of struct %1) keys)) struct))
+          (throw (unknown-key (first (remove #(>= (t-find-index-of struct %1) 0) keys)) struct))
           (reduce (fn [res [k v]]
                     (assoc! res k v))
                   (export-transient! this)
@@ -168,14 +166,16 @@
 
   (t-get [this key]
     (ensure-editable! owner)
-    (if-let [index (t-find-index-of struct key)]
-      (data/unsafe-access data index)
-      (throw (unknown-key key struct))))
+    (let [index (t-find-index-of struct key)]
+      (if (>= index 0)
+        (data/unsafe-access data index)
+        (throw (unknown-key key struct)))))
   (t-get-with-default [this key not-found]
     (ensure-editable! owner)
-    (if-let [index (t-find-index-of struct key)]
-      (data/unsafe-access data index)
-      not-found))
+    (let [index (t-find-index-of struct key)]
+      (if (>= index 0)
+        (data/unsafe-access data index)
+        not-found)))
   
   #?@(:clj
       ;; clojure.lang.ATransientMap does not expose any helpers :-/
@@ -252,41 +252,50 @@
   (do-empty [this])
   (do-struct-equiv [this other])
   (do-optional-struct-type= [this other])
-  (do-optional-struct-type-hash [this]))
+  (do-optional-struct-type-hash [this])
+  (do-unsafe-assoc [this key index value])
+  (do-unsafe-get [this index]))
 
-(defn- find-index-of [struct key]
-  ;; OPT: test if the index is right, and do the alternative lookup at once.
-  (or (struct-key/optimized-for? key struct)
-      (struct-type/maybe-index-of struct key nil)))
+(defn- find-index-of ^long [struct key]
+  (struct-type/maybe-index-of struct key))
 
 (deftype ^:private PersistentClosedStructMap [struct data locked? _meta
                                               #?(:clj ^:unsynchronized-mutable ^int _hasheq) ;; only clj!
                                               #?(:clj ^:unsynchronized-mutable ^int _hash :cljs ^:mutable _hash)]
 
   PersistentUtil
+  (do-unsafe-get [this index]
+    (data/unsafe-access data index))
+
   (do-get [this key]
-    (if-let [index (find-index-of struct key)]
-      (data/unsafe-access data index)
-      (if locked?
-        (throw (unknown-key key struct))
-        nil)))
+    (let [index (find-index-of struct key)]
+      (if (>= index 0)
+        (data/unsafe-access data index)
+        (if locked?
+          (throw (unknown-key key struct))
+          nil))))
 
   (do-get-with-default [this key not-found]
-    (if-let [index (find-index-of struct key)]
-      (data/unsafe-access data index)
-      not-found))
+    (let [index (find-index-of struct key)]
+      (if (>= index 0)
+        (data/unsafe-access data index)
+        not-found)))
+
+  (do-unsafe-assoc [this key index val]
+    ;; OPT: check if current associated value is identical?
+    (-> (create struct (let [d (data/copy data)]
+                         (data/unsafe-mutate! d index val)
+                         d)
+                locked? _meta)
+        (validate struct (list key) (list val))))
 
   (do-assoc [this key val]
-    ;; OPT: check if current associated value is identical?
-    (if-let [index (find-index-of struct key)]
-      (-> (create struct (let [d (data/copy data)]
-                           (data/unsafe-mutate! d index val)
-                           d)
-                  locked? _meta)
-          (validate struct (list key) (list val)))
-      (if locked?
-        (throw (unknown-key key struct))
-        (assoc (export this) key val))))
+    (let [index (find-index-of struct key)]
+      (if (>= index 0)
+        (do-unsafe-assoc this key index val)
+        (if locked?
+          (throw (unknown-key key struct))
+          (assoc (export this) key val)))))
 
   (do-dissoc [this key]
     (if locked?
@@ -310,10 +319,11 @@
 
       (let [[new-data irritant]
             (reduce (fn [[data _] [k v]]
-                      (if-let [index (find-index-of struct k)]
-                        (do (data/unsafe-mutate! data index v)
-                            [data nil])
-                        (reduced [nil k])))
+                      (let [index (find-index-of struct k)]
+                        (if (>= index 0)
+                          (do (data/unsafe-mutate! data index v)
+                              [data nil])
+                          (reduced [nil k]))))
                     [(data/copy data) nil]
                     changed-keys-vals)]
         (if (nil? new-data)
@@ -418,7 +428,7 @@
        (assocEx [this key val]
                 ;; the semantic should be 'assoc unless already present, throw otherwise'
                 ;; all actual keys are always set though.
-                (if (or locked? (find-index-of struct key))
+                (if (or locked? (>= (find-index-of struct key) 0))
                   (throw (cannot-add key))
                   (assoc (export this) key val)))
        (without [this key]
@@ -599,15 +609,30 @@
 (defn unlock-struct-map [m]
   (create (struct-of-map m) (.-data m) false (meta m)))
 
+(defn- is-definitely-struct-map-of? [struct m]
+  ;; Note: this may return false negatives for optimization purposes
+  (and (clj-instance? PersistentClosedStructMap m)
+       (= (.-struct ^PersistentClosedStructMap m)
+          struct)))
+
 (defn accessor [struct key]
-  ;; TODO: actually optimize it, e.g by looking at key beforehand.
-  (fn [m]
-    (get m key)))
+  (let [idx (find-index-of struct key)]
+    (if (>= idx 0)
+      (fn [m]
+        (if (is-definitely-struct-map-of? struct m)
+          ;; (do-unsafe-get m idx), inlined:
+          (data/unsafe-access (.-data ^PersistentClosedStructMap m) idx)
+          (get m key)))
+      (throw (unknown-key key struct)))))
 
 (defn mutator [struct key]
-  ;; TODO: actually optimize it, e.g by looking at key beforehand.
-  (fn [m v]
-    (assoc m key v)))
+  (let [idx (find-index-of struct key)]
+    (if (>= idx 0)
+      (fn [m v]
+        (if (is-definitely-struct-map-of? struct m)
+          (do-unsafe-assoc ^PersistentClosedStructMap m key idx v)
+          (get m key)))
+      (throw (unknown-key key struct)))))
 
 (defn mutator! [struct key]
   ;; TODO: actually optimize it, e.g by looking at key beforehand.
