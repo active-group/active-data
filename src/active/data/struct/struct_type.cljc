@@ -118,11 +118,11 @@
   (get-validator struct-type))
 
 (defn- calc-hash [^StructType struct]
-  (+ (let [id (identifier struct)]
-       (if (some? id)
-         (hash id)
-         0))
-     (hash (.-keys struct))))
+  (unchecked-int (+ (let [id (identifier struct)]
+                      (if (some? id)
+                        (hash id)
+                        0))
+                    (hash (.-keys struct)))))
 
 (defn- equals? [^StructType struct other]
   (if (instance? StructType other)

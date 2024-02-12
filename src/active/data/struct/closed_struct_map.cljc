@@ -383,14 +383,14 @@
 
        clojure.lang.IHashEq
        (hasheq [this] ;; called by (hash x)
-               (when (= 0 (.-_hasheq this))
-                 (set! (.-_hasheq this) (+ (do-optional-struct-type-hash this)
-                                           (clojure.lang.APersistentMap/mapHasheq this))))
+               (when (= 0 ^int (.-_hasheq this))
+                 (set! (.-_hasheq this) (unchecked-int (+ (do-optional-struct-type-hash this)
+                                                          (clojure.lang.APersistentMap/mapHasheq this)))))
                (.-_hasheq this))
        (hashCode [this] ;; Java's hashCode
                  (when (= 0 ^int (.-_hash this))
-                   (set! (.-_hash this) (+ (do-optional-struct-type-hash this)
-                                           (clojure.lang.APersistentMap/mapHash this))))
+                   (set! (.-_hash this) (unchecked-int (+ (do-optional-struct-type-hash this)
+                                                          (clojure.lang.APersistentMap/mapHash this)))))
                  (.-_hash this))
 
        ;; MapEquivalence marks that other maps should try to compare with this.
