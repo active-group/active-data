@@ -560,17 +560,6 @@
   (and (clj-instance? PersistentClosedStructMap v)
        (= t (.-struct ^PersistentClosedStructMap v))))
 
-(defn satisfies? [t v]
-  (assert (struct-type/struct-type? t))
-  (or (and (clj-instance? PersistentClosedStructMap v)
-           (= t (.-struct ^PersistentClosedStructMap v)))
-      ;; OPT: don't do this is v is a (different) struct-map
-      (and (map? v)
-           (and (every? #(contains? v %) (struct-type/keys t))
-                ;; Note: passes v to validator, which may contain more keys. (validators should allow that)
-                ;; TODO: add back or remove?
-                #_(valid? t v)))))
-
 (defn unvalidated-empty-transient [struct]
   ;; even if an all-nil map would be invalid, if it is immediately
   ;; used as a transient, the validity is checked when getting
@@ -583,8 +572,9 @@
   ;; for locked maps, keys are checked in t-assoc-multi, but even for unlocked maps,
   ;; we don't want to immediately export the map on creation.
   (when-not (struct-type/locked-maps? struct)
-    ;; TODO: exception or assert?
-    (assert (empty? (set/difference (set (map first key-val-pairs)) (struct-type/keyset struct)))))
+    (let [unknowns (set/difference (set (map first key-val-pairs)) (struct-type/keyset struct))]
+      (when-not (empty? unknowns)
+        (throw (unknown-key (first unknowns) struct)))))
   
   (-> (t-assoc-multi (unvalidated-empty-transient struct) key-val-pairs)
       (t-persistent)))

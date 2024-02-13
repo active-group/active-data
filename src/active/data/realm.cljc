@@ -296,11 +296,11 @@
   [struct field-realm-map]
   (record 'unnamed-struct
           (struct/constructor struct)
-          (partial struct/has-keys? struct)
-          (map (fn [getter]
-                 (field (core/symbol (str getter))
-                        (get field-realm-map getter any)
-                        getter))
+          (fn [v] (and (map? v) (struct/has-keys? struct v)))
+          (map (fn [key]
+                 (field (core/symbol (str key))
+                        (get field-realm-map key any)
+                        (struct/accessor struct key)))
                (struct/struct-keys struct))))
 
 (defn ^:no-doc create-realm-record-realm
@@ -310,10 +310,10 @@
   (record (record/record-name rec)
           (record/constructor rec)
           (partial is-a? rec)
-          (map (fn [getter]
-                 (field (core/symbol (str getter))
-                        (get field-realm-map getter any)
-                        getter))
+          (map (fn [key]
+                 (field (core/symbol (str key))
+                        (get field-realm-map key any)
+                        key))
                (record/record-keys rec))))
 
 (defn ^:no-doc struct->record-realm

@@ -176,13 +176,16 @@
       (t/is (map? v)))
 
     (t/testing "has-keys?"
-      (t/is (not (sut/has-keys? T 42)))
-      (t/is (not (sut/has-keys? T {})))
+      (t/is (sut/has-keys? T (sut/struct-map T
+                                             :t-a -42
+                                             :t-b :foo)))
       
       (t/is (sut/has-keys? T {:t-a nil
                               :t-b :foo
                               :x :y}))
 
+      (t/is (not (sut/has-keys? T {})))
+      
       (t/is (not (sut/has-keys? T {:t-a 42}))))
     ))
 

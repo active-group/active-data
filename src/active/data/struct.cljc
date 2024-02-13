@@ -69,6 +69,9 @@
 
 (def ^:no-doc struct-variant (StructVariant.))
 
+(defn- struct-variant? [v]
+  (instance? StructVariant v))
+
 (defn struct
   "Returns the description of a structure, i.e. maps with the given keys."
   [keys]
@@ -136,18 +139,15 @@
   ;; needed.
   (struct-map/mutator! struct key))
 
-(defn ^:no-doc get-validator [struct]
-  (struct-type/get-validator struct))
-
 (defn struct?
   "Tests if v is a struct as returned by [[struct]]."
   [v]
   (and (struct-type/struct-type? v)
-       (= struct-variant (struct-type/variant v))))
+       (struct-variant? (struct-type/variant v))))
 
 (defn struct-map? [v]
-  ;; TODO: check variant?
-  (struct-map/struct-map? v))
+  (and (struct-map/struct-map? v)
+       (struct-variant? (struct-type/variant (struct-map/struct-of-map v)))))
 
 (defn struct-of "Returns the struct the given struct-map was created from." [m]
   (assert (struct-map? m))
@@ -161,12 +161,13 @@
   (assert (struct-map? struct-map))
   (struct-map/unlock-struct-map struct-map))
 
-
 (defn has-keys?
   "Tests if `v` is a map that contains at least the keys defined for `struct`."
   [struct v]
-  ;; Note: also checks the validity, if a validator is defined for struct.  (TODO: really do validate?)
-  (struct-map/satisfies? struct v))
+  (assert (map? v))
+  (or (and (struct-map? v)
+           (= struct (struct-map/struct-of-map v)))
+      (every? (set (keys v)) (struct-type/keys struct))))
 
 ;; TODO: here?
 #_(let [from-struct-1 (fn [v struct field-lens-map]

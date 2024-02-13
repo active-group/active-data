@@ -96,6 +96,9 @@
   (assert (or (nil? extends) (record? extends)))
   (RecordVariant. name extends))
 
+(defn- record-variant? [v]
+  (instance? RecordVariant v))
+
 (defn ^:no-doc parse-def-record-args [args]
   ;; TODO: not actually checking possible errors... use spec for that?
   (loop [args args
@@ -143,21 +146,25 @@
   (assert (record? t))
   (struct-map/from-coll t m))
 
+#_(defn- record-map? [v]
+  (and (struct-map/struct-map? m)
+       (record-variant? (struct-type/variant (struct-map/struct-of-map m)))))
+
 (defn record-of
   "Returns the record defined via [[def-record]] for the given instance of it."
   [m]
-  (assert (struct-map/struct-map? m))
-  ;; TODO (assert (instance? RecordVariant x))
-  (struct-map/struct-of-map m))
+  (let [v (struct-map/struct-of-map m)]
+    (assert (record? v))
+    v))
 
 (defn record-name [t]
   (let [v (struct-type/variant t)]
-    (assert (instance? RecordVariant v))
+    (assert (record-variant? v))
     (:record-name v)))
 
 (defn record-extends [t]
   (let [v (struct-type/variant t)]
-    (assert (instance? RecordVariant v))
+    (assert (record-variant? v))
     (:extends v)))
 
 (defn record?
@@ -166,7 +173,7 @@
   Note: use [[is-a?]] to test for instances of a particular record instead."
   [v]
   (and (struct-type/struct-type? v)
-       (instance? RecordVariant (struct-type/variant v))))
+       (record-variant? (struct-type/variant v))))
 
 (defn record-keys
   "Returns the keys of a record as a vector, including those added via extension.
