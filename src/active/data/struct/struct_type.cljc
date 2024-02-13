@@ -1,4 +1,5 @@
 (ns ^:no-doc active.data.struct.struct-type
+  (:require [active.data.struct.validator :as validator])
   (:refer-clojure :exclude [alter-meta!
                             get-validator set-validator!
                             #?@(:cljs [contains? keys])]
@@ -114,8 +115,7 @@
   (.-validator struct-type))
 
 (defn get-current-validator! [struct-type]
-  ;; TODO: resolve 'dynamic' validators here
-  (get-validator struct-type))
+  (validator/resolve! (get-validator struct-type)))
 
 (defn- calc-hash [^StructType struct]
   (unchecked-int (+ (let [id (identifier struct)]

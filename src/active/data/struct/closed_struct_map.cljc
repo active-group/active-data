@@ -11,24 +11,6 @@
                             get-validator
                             accessor struct-map struct create-struct]))
 
-#_(defprotocol IStructMapVariant ;; -> type?
-  (-print-prefix [this] "Optional prefix before the printout of the map - ie. \"{key value ...}\" ")
-  )
-
-#_(defn- maybe-validate! [m t changed-keys changed-values]
-  ;; validate map, if the struct has any of the changed-keys
-  (when-let [v (struct-type/get-current-validator! t)]
-    ;; OPT: maybe validators should be able to say that they are 'inactive', so that we don't have to do this:
-    (when-let [red (->> (map (fn [k v]
-                               (when (struct-type/contains? t k)
-                                 [k v]))
-                             changed-keys changed-values)
-                        (remove nil?)
-                        (not-empty))]
-      (let [changed-keys (map first red)
-            changed-values (map second red)]
-        (v/validate! v m changed-keys changed-values)))))
-
 (defn- validate [m t changed-keys changed-values]
   (when-let [v (struct-type/get-current-validator! t)]
     (v/validate! v m changed-keys changed-values))
@@ -47,11 +29,6 @@
   (when-let [v (struct-type/get-current-validator! t)]
     (v/validate-map-only! v m))
   m)
-
-#_(defn valid? [t m]
-  (if-let [validator (closed-struct/get-current-validator! t)]
-    (v/valid? validator m)
-    true))
 
 #?(:clj
    (defn- java-cons-o [o]
@@ -637,47 +614,60 @@
 (defn positional-n [struct]
   (let [keys (struct-type/keys struct)
         nkeys (count keys)
-        locked? (struct-type/locked-maps? struct)]
-    (fn [& args]
-      (assert (= (count args) nkeys))
-      (validate-multi! struct (map vector keys args))
-      (-> (create struct
-                  (let [data (data/create struct)]
-                    (doseq [[idx v] (map-indexed vector args)]
-                      (data/unsafe-mutate! data idx v))
-                    data)
-                  locked?
-                  nil)
-          (validate-map-only struct)))))
+        locked? (struct-type/locked-maps? struct)
+        do-create (fn [args]
+                    (assert (= (count args) nkeys) "Invalid arity")
+                    (create struct
+                            (let [data (data/create struct)]
+                              (doseq [[idx v] (map-indexed vector args)]
+                                (data/unsafe-mutate! data idx v))
+                              data)
+                            locked?
+                            nil))]
+    (if (some? (struct-type/get-validator struct))
+      (fn [& args]
+        (-> (do-create args)
+            (validate struct keys args)))
+      (fn [& args]
+        (do-create args)))))
 
 #?(:clj
    (defmacro gen-positional [n]
-     (let [keys (repeatedly n #(gensym "k"))
+     (let [gen-create (fn [struct size vars locked?]
+                        (let [data (gensym "data")]
+                          `(create ~struct
+                                   (let [~data (data/unsafe-create ~size)]
+                                     (do
+                                       ~@(map-indexed (fn [idx v]
+                                                        `(data/unsafe-mutate! ~data ~idx ~v))
+                                                      vars))
+                                     ~data)
+                                   ~locked?
+                                   nil)))
+           keys (repeatedly n #(gensym "k"))
            vars (repeatedly n #(gensym "v"))
            struct (gensym "struct")
-           data (gensym "data")]
-       ;; TODO: optimize/fix validator calls - fetch 'current-validator' only once.
+           size (gensym "size")
+           locked? (gensym "locked?")
+           validator (gensym "validator")]
+       
        `(fn [~struct]
           (let [[~@keys] (struct-type/keys ~struct)
-                has-validation?# (some? (struct-type/get-validator ~struct))
-                locked?# (struct-type/locked-maps? ~struct)
-                size# (struct-type/size ~struct)]
-            (fn [~@vars]
-              (when has-validation?#
-                (do ~@(map (fn [k v]
-                             `(validate-single! ~struct ~k ~v))
-                           keys
-                           vars)))
-              (cond-> (create ~struct
-                              (let [~data (data/unsafe-create size#)]
-                                (do
-                                  ~@(map-indexed (fn [idx v]
-                                                   `(data/unsafe-mutate! ~data ~idx ~v))
-                                                 vars))
-                                ~data)
-                              locked?#
-                              nil)
-                has-validation?# (validate-map-only ~struct))))))))
+                ~locked? (struct-type/locked-maps? ~struct)
+                ~size (struct-type/size ~struct)]
+            (if (some? (struct-type/get-validator ~struct))
+              (fn [~@vars]
+                (let [~validator (struct-type/get-current-validator! ~struct)]
+                  (do ~@(map (fn [k v]
+                               `(v/validate-single! ~validator ~k ~v))
+                             keys
+                             vars)
+
+                      (let [res# ~(gen-create struct size vars locked?)]
+                        (v/validate-map-only! ~validator res#)
+                        res#))))
+              (fn [~@vars]
+                ~(gen-create struct size vars locked?))))))))
 
 (def positional-1 (gen-positional 1))
 (def positional-2 (gen-positional 2))
