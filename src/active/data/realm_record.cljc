@@ -51,20 +51,19 @@
          ~t)))
 
 (defn ^:no-doc validator [field-realm-pairs opt-extended-record]
-  (struct-validator/field-validators
-   (into {}
-         (map (fn [[field realm]]
-                (let [validator (realm-validation/validator realm)]
-                  [field (fn [value]
-                           (when (realm-validation/checking?) ; FIXME slow, shouldn't check for each field
-                             (validator value)))]))
-              (concat (when opt-extended-record
-                        (when-let [fields-realm-map (get (meta opt-extended-record) realm-record-meta/fields-realm-map-meta-key)]
-                          fields-realm-map))
-                      field-realm-pairs)))))
+  (-> (struct-validator/field-validators
+       (into {}
+             (map (fn [[field realm]]
+                    (let [validator (realm-validation/validator realm)]
+                      [field validator]))
+                  (concat (when opt-extended-record
+                            (when-let [ext-fields-realm-map (get (meta opt-extended-record) realm-record-meta/fields-realm-map-meta-key)]
+                              ext-fields-realm-map))
+                          field-realm-pairs))))
+      (struct-validator/conditionally realm-validation/checking?)))
 
 (defn ^:no-doc set-realm-record-meta! [t own-field-realm-pairs]
-  ;; if record extends a realm-record, add the realms of inherited keys:x
+  ;; if record extends a realm-record, add the realms of inherited keys
   (let [all-field-realms-map (into {} (concat own-field-realm-pairs
                                               (when-let [ext (record/record-extends t)]
                                                 (get (meta ext) realm-record-meta/fields-realm-map-meta-key))))]
