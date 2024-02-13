@@ -499,47 +499,37 @@
   [shorthand]
   (if (realm? shorthand)
     shorthand
-    (condp identical? shorthand
-      core/int int
-      #?@(:clj [core/bigdec bigdec])
-      core/float float
-      core/double double
-      core/boolean boolean
-      core/keyword keyword
-      core/symbol symbol
-      core/str string
+    (cond
+      (fn? shorthand)
+      (predicate "unknown predicate" shorthand)
 
-      (cond
-        (fn? shorthand)
-        (predicate "unknown predicate" shorthand)
+      (vector? shorthand)
+      (if (= 1 (count shorthand))
+        (sequence-of (first shorthand))
+        (apply tuple shorthand))
 
-        (vector? shorthand)
-        (if (= 1 (count shorthand))
-          (sequence-of (first shorthand))
-          (apply tuple shorthand))
+      (and (set? shorthand)
+           (= 1 (count shorthand)))
+      (set-of (first shorthand))
 
-        (and (set? shorthand)
-             (= 1 (count shorthand)))
-        (set-of (first shorthand))
+      (map? shorthand)
+      (if (= (count shorthand) 1)
+        (let [[key value] (first shorthand)]
+          (map-of key value))
+        (map-with-keys shorthand))
 
-        (map? shorthand)
-        (if (= (count shorthand) 1)
-          (let [[key value] (first shorthand)]
-            (map-of key value))
-          (map-with-keys shorthand))
-
-        (record/record? shorthand)
-        (record->record-realm shorthand)
+      (record/record? shorthand)
+      (record->record-realm shorthand)
         
-        (struct/struct? shorthand)
-        (struct->record-realm shorthand)
+      (struct/struct? shorthand)
+      (struct->record-realm shorthand)
 
-        (keyword? shorthand)
-        (named shorthand any)
+      (keyword? shorthand)
+      (named shorthand any)
 
-        :else
-        (throw (ex-info (str "unknown realm shorthand: " (pr-str shorthand))
-                        {::unknown-realm-shorthand shorthand}))))))
+      :else
+      (throw (ex-info (str "unknown realm shorthand: " (pr-str shorthand))
+                      {::unknown-realm-shorthand shorthand})))))
 
 (def realm-predicates {'builtin-scalar? `builtin-scalar?
                        'predicate? `predicate?

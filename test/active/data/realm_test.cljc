@@ -5,68 +5,50 @@
             #?(:cljs [cljs.test :refer-macros (is deftest testing)])
             #?(:clj [clojure.test :refer (is deftest testing)])))
 
-(deftest builtin-scalar-realms-test
-  (is (= realm/int
-         (realm/compile int)))
-  #?(:clj (is (= realm/bigdec
-                 (realm/compile bigdec))))
-  (is (= realm/float
-         (realm/compile float)))
-  (is (= realm/double
-         (realm/compile double)))
-  (is (= realm/boolean
-         (realm/compile boolean)))
-  (is (= realm/keyword
-         (realm/compile keyword)))
-  (is (= realm/symbol
-         (realm/compile symbol)))
-  (is (= realm/string
-         (realm/compile str))))
-
 (deftest predicate-test
   (is (realm/predicate?
        (realm/compile integer?))))
 
 (deftest sequence-of-test
   (is (realm/sequence-of?
-       (realm/compile [int])))
+       (realm/compile [realm/int])))
   (is (= realm/int
-         (realm/sequence-of-realm-realm (realm/compile [int])))))
+         (realm/sequence-of-realm-realm (realm/compile [realm/int])))))
 
 (deftest set-of-test
   (is (realm/set-of?
-       (realm/compile #{int})))
+       (realm/compile #{realm/int})))
   (is (= realm/int
-         (realm/set-of-realm-realm (realm/compile #{int})))))
+         (realm/set-of-realm-realm (realm/compile #{realm/int})))))
 
 (deftest map-with-keys-test
   (is (realm/map-with-keys?
-       (realm/compile {:a int
-                       :b double}))))
+       (realm/compile {:a realm/int
+                       :b realm/double}))))
 
 (deftest map-of-test
   (is (realm/map-of?
-       (realm/compile {int double}))))
+       (realm/compile {realm/int realm/double}))))
 
 (deftest tuple-test
   (is (realm/tuple?
-       (realm/compile [int double]))))
+       (realm/compile [realm/int realm/double]))))
 
 (deftest function-test
   (is (realm/function?
-       (realm/function int int -> boolean)))
+       (realm/function realm/int realm/int -> realm/boolean)))
   (is (realm/function?
-       (realm/function int int & (realm/string) -> boolean)))
+       (realm/function realm/int realm/int & (realm/string) -> realm/boolean)))
   (is (realm/function?
-       (realm/function int int & [realm/string int boolean] -> boolean)))
+       (realm/function realm/int realm/int & [realm/string realm/int realm/boolean] -> realm/boolean)))
   (is (realm/function?
-       (realm/function int int & {:a realm/string :b int :c boolean} -> boolean))))
+       (realm/function realm/int realm/int & {:a realm/string :b realm/int :c realm/boolean} -> realm/boolean))))
 
 (deftest function-cases-test
   (is (realm/function?
        (realm/function-cases
-        (realm/function int int -> boolean)
-        (realm/function int int & (realm/string) -> boolean)))))
+        (realm/function realm/int realm/int -> realm/boolean)
+        (realm/function realm/int realm/int & (realm/string) -> realm/boolean)))))
 
 (deftest delay-test
   (is (realm/delayed? (realm/delay (/ 1 0)))))
@@ -119,17 +101,17 @@
   (is (= "map of {int -> double}"
          (realm/description (realm/map-of realm/int realm/double))))
   (is (= "function (int, int) -> boolean"
-         (realm/description (realm/function int int -> boolean))))
+         (realm/description (realm/function realm/int realm/int -> realm/boolean))))
   (is (= "function (int, int & sequence of string) -> boolean"
-         (realm/description (realm/function int int & (realm/string) -> boolean))))
+         (realm/description (realm/function realm/int realm/int & (realm/string) -> realm/boolean))))
   (is (= "function (int, int & tuple of (string, int, boolean)) -> boolean"
-         (realm/description (realm/function int int & [realm/string int boolean] -> boolean))))
+         (realm/description (realm/function realm/int realm/int & [realm/string realm/int realm/boolean] -> realm/boolean))))
   (is (= "function (int, int & map with keys {:a -> string, :b -> int, :c -> boolean}) -> boolean"
-         (realm/description (realm/function int int & {:a realm/string :b int :c boolean} -> boolean))))
+         (realm/description (realm/function realm/int realm/int & {:a realm/string :b realm/int :c realm/boolean} -> realm/boolean))))
   (is (= "function with cases function (int, int) -> boolean, function (int, int & sequence of string) -> boolean"
          (realm/description (realm/function-cases
-                             (realm/function int int -> boolean)
-                             (realm/function int int & (realm/string) -> boolean)))))
+                             (realm/function realm/int realm/int -> realm/boolean)
+                             (realm/function realm/int realm/int & (realm/string) -> realm/boolean)))))
   (is (= "record Pare with fields kar from realm int, kdr from realm double"
          (realm/description pare-realm)))
   (is (= "record unnamed-struct with fields :sar from realm any, :sdr from realm any"
@@ -139,7 +121,7 @@
   (is (= "delayed realm"
          (realm/description (realm/delay (/ 1 0)))))
   (is (= "realm named :a: int"
-         (realm/description (realm/named :a int))))
+         (realm/description (realm/named :a realm/int))))
   (is (= "string restricted to nonempty strings"
          (realm/description nonempty-string-realm))))
       
@@ -222,15 +204,15 @@
   (is ((realm/shallow-predicate (realm/record->record-realm Rare)) (Rare rar 1 rdr 2)))
   (is (not ((realm/shallow-predicate (realm/record->record-realm Rare)) 5)))
   
-  (is ((realm/shallow-predicate (realm/function int boolean -> int)) (fn [a b] a)))
-  (is (not ((realm/shallow-predicate (realm/function int boolean -> int)) 5)))
+  (is ((realm/shallow-predicate (realm/function realm/int realm/boolean -> realm/int)) (fn [a b] a)))
+  (is (not ((realm/shallow-predicate (realm/function realm/int realm/boolean -> realm/int)) 5)))
   
   (let [r (realm/tuple realm/keyword realm/int)]
     (is ((realm/shallow-predicate (realm/delay r)) [:foo 5]))
     (is (not ((realm/shallow-predicate (realm/delay r)) 5))))
 
-  (is ((realm/shallow-predicate (realm/named :a int)) 5))
-  (is (not ((realm/shallow-predicate (realm/named :a int)) "5")))
+  (is ((realm/shallow-predicate (realm/named :a realm/int)) 5))
+  (is (not ((realm/shallow-predicate (realm/named :a realm/int)) "5")))
 
   (is ((realm/shallow-predicate nonempty-string-realm) "foo"))
   (is (not ((realm/shallow-predicate nonempty-string-realm) "")))
