@@ -120,6 +120,7 @@
 (defmacro def-record
   [t & args]
   (let [[options fields] (parse-def-record-args args)]
+    (assert (every? #{:extends :validator} (map first options)) "Invalid option")
     `(do
        ~@(for [f# fields]
            `(key/def-key ~(cond-> f#

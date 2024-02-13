@@ -35,12 +35,13 @@
   (let [[options fields*] (record/parse-def-record-args args)
         pairs (map vec (partition 2 fields*))
         fields (map first pairs)]
+    (assert (every? #{:extends} (map first options)) "Invalid option")
     `(do (record/def-record ~t
            ~@(apply concat options)
-           ;; TODO: validate extended fields too
            :validator (validator (map (fn [[field# realm#]]
                                            [field# (realm/compile realm#)])
-                                         [~@pairs]))
+                                      [~@pairs])
+                                 ~(:extends options))
            [~@fields])
 
          (set-realm-record-meta! ~t (map (fn [[field# realm#]]
@@ -49,7 +50,7 @@
 
          ~t)))
 
-(defn ^:no-doc validator [field-realm-pairs]
+(defn ^:no-doc validator [field-realm-pairs opt-extended-record]
   (struct-validator/field-validators
    (into {}
          (map (fn [[field realm]]
@@ -57,7 +58,10 @@
                   [field (fn [value]
                            (when (realm-validation/checking?) ; FIXME slow, shouldn't check for each field
                              (validator value)))]))
-              field-realm-pairs))))
+              (concat (when opt-extended-record
+                        (when-let [fields-realm-map (get (meta opt-extended-record) realm-record-meta/fields-realm-map-meta-key)]
+                          fields-realm-map))
+                      field-realm-pairs)))))
 
 (defn ^:no-doc set-realm-record-meta! [t own-field-realm-pairs]
   ;; if record extends a realm-record, add the realms of inherited keys:x
@@ -66,6 +70,5 @@
                                                 (get (meta ext) realm-record-meta/fields-realm-map-meta-key))))]
     (struct-type/alter-meta!
      t assoc
-     ;; Note: fields-realm-map is redundant - could be reconstructed from record-realm
      realm-record-meta/fields-realm-map-meta-key all-field-realms-map
      realm-record-meta/record-realm-meta-key (realm/create-realm-record-realm t all-field-realms-map))))

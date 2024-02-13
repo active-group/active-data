@@ -28,10 +28,20 @@
 (deftest extended-realm-structs
   (is (realm/record? (realm/compile ExtT)))
   
-  (is (record/is-a? ExtT
-                    (realm-validation/checking
-                     (ExtT f1 5 f2 "foo" f3 :bar))))
-   
+  (is (some? (realm-validation/checking
+              (ExtT f1 5 f2 "foo" f3 :bar))))
+
+  (is (some? (ExtT f1 5 f2 "foo" f3 "wrong")) "can be created without checking")
+  
   (is (thrown? #?(:clj Exception :cljs js/Error)
                (realm-validation/checking
-                (ExtT f1 5 f2 "foo" f3 "test")))))
+                (ExtT f1 5 f2 "foo" f3 "wrong")))
+      "Validates own fields")
+
+  (is (some? (ExtT f1 :wrong f2 "foo" f3 :bar)) "can be created without checking")
+  
+  (is (thrown? #?(:clj Exception :cljs js/Error)
+               (realm-validation/checking
+                (ExtT f1 :wrong f2 "foo" f3 :bar)))
+      "Validates fields 'inherited' fields too")
+  )
