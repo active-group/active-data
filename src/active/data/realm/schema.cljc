@@ -51,6 +51,9 @@
                (conj! (conj! args (realm/shallow-predicate (first realms)))
                       (schema (first realms))))))
 
+    enum?
+    (apply schema/enum (realm/enum-realm-values realm))
+
     sequence-of?
     [(schema (realm/sequence-of-realm-realm realm))]
 

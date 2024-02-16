@@ -131,4 +131,20 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [])))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s '())))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 'foo)))))
+
+(deftest enum-test
+  (let [s (schema (realm/enum :a "a" 'b 1 2 [4]))]
+    (is (some? (schema/validate s :a)))
+    (is (some? (schema/validate s 'b)))
+    (is (some? (schema/validate s 1)))
+    (is (some? (schema/validate s 2)))
+    (is (some? (schema/validate s [4])))
+    (is (some? (schema/validate s '(4))))
+
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s :b)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 'c)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 3)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 4)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [5])))))
+
     
