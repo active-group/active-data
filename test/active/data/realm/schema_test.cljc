@@ -168,4 +168,19 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s :a)))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 5.5)))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s -1)))))
+
+(defrecord Pare [kar kdr])
+
+(def pare-realm
+  (realm/record "Pare"
+                ->Pare
+                (partial instance? Pare)
+                [(realm/field "kar" realm/int :kar)
+                 (realm/field "kdr" realm/double :kdr)]))
+
+(deftest record-test
+  (let [s (schema pare-realm)]
+    (is (some? (schema/validate s (->Pare 1 2))))
     
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s :a)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [1 2])))))

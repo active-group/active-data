@@ -43,7 +43,8 @@
       (:any) schema/Any)
 
     predicate?
-    (schema/pred (realm/predicate-realm-predicate realm))
+    (schema/pred (realm/predicate-realm-predicate realm)
+                 (realm/description realm))
 
     optional?
     (schema/maybe (schema (realm/optional-realm-realm realm)))
@@ -99,6 +100,10 @@
     (schema/constrained (schema (realm/restricted-realm-realm realm))
                         (realm/restricted-realm-predicate realm)
                         (realm/description realm))
+
+    record?
+    (schema/pred (realm/record-realm-predicate realm)
+                 (str (realm/record-realm-name realm) " record"))
     
     :else
     (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))
