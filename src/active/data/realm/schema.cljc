@@ -112,6 +112,9 @@
     (schema/schema-with-name (schema (realm/named-realm-realm realm))
                              (realm/named-realm-name realm))
 
+    delayed?
+    (schema/recursive (delay (schema (realm/delayed-realm-delay realm))))
+
     :else
     (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))
     

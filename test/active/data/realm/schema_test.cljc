@@ -192,3 +192,22 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 5.5)))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s :a)))))
 
+
+(def plist-realm
+  (realm/union (realm/enum '())
+               (realm/record "plist-pare"
+                             ->Pare
+                             (partial instance? Pare)
+                             [(realm/field "kar" realm/int :kar)
+                              (realm/field "kdr" (realm/delay plist-realm) :kdr)])))
+
+(deftest delay-test
+  (let [s (schema plist-realm)]
+
+    (is (some? (schema/validate s '())))
+    (is (some? (schema/validate s (->Pare 5 '()))))
+    (is (some? (schema/validate s (->Pare 3 (->Pare 5 '())))))
+
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate 5)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate (->Pare :a '()))))))
+
