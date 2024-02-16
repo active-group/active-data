@@ -186,8 +186,7 @@
                   set-of-realm-realm realm
                   metadata {})))
 
-;; FIXME: always all the keys, or are certain keys optional?
-;; maybe do that with optional realms?
+;; keys you can live out just have optional realms
 
 (def-record ^{:doc "Realm for maps with certain constant keys."}
   map-with-keys-realm

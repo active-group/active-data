@@ -53,6 +53,16 @@
 
     sequence-of?
     [(schema (realm/sequence-of-realm-realm realm))]
+
+    map-with-keys?
+    (into {}
+          (map (fn [[key realm]]
+                 (if (realm/optional? realm)
+                   [(schema/optional-key key)
+                    (schema (realm/optional-realm-realm realm))]
+                   [(schema/required-key key)
+                    (schema realm)]))
+               (realm/map-with-keys-realm-map realm)))
     
     :else
     (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))

@@ -118,3 +118,17 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s #{:foo :bar})))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s #{"foo" :bar})))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s #{:foo "bar"})))))
+
+(deftest map-with-keys-test
+  (let [s (schema (realm/map-with-keys {:foo realm/string :bar (realm/optional realm/int)}))]
+    (is (some? (schema/validate s {:foo "foo" :bar 15})))
+    (is (some? (schema/validate s {:foo "foo"})))
+
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s {})))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s {:bar 15})))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s {:bar "15"})))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s {:foo 15})))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [])))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s '())))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 'foo)))))
+    
