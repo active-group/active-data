@@ -1,6 +1,31 @@
 (ns active.data.realm.schema
   (:require [active.data.realm :as realm #?@(:cljs [:include-macros true])]
-            [schema.core :as schema]))
+            [schema.core :as schema]
+            [schema.utils :as schema-utils]
+            [schema.spec.core :as schema-spec :include-macros true]
+            #?(:clj [schema.macros :as schema-macros])
+            #?(:cljs (:require-macros [schema.macros :as schema-macros]
+                                      schema.core))))
+
+;; essentially a copy of Schema's Both, which is deprecated
+(schema-macros/defrecord-schema Intersection [schemas]
+  schema/Schema
+  (spec [this] this)
+  (explain [this] (cons 'intersection (map schema/explain schemas)))
+  schema/HasPrecondition
+  (precondition [this]
+    (apply every-pred (map (comp schema/precondition schema/spec) schemas)))
+  schema-spec/CoreSpec
+  (subschemas [this] schemas)
+  (checker [this params]
+    (reduce
+     (fn [f t]
+       (fn [x]
+         (let [tx (t x)]
+           (if (schema-utils/error? tx)
+             tx
+             (f (or tx x))))))
+     (map #(schema-spec/sub-checker {:schema %} params) (reverse schemas)))))
 
 (defn schema
   [realm]
@@ -51,6 +76,9 @@
                (conj! (conj! args (realm/shallow-predicate (first realms)))
                       (schema (first realms))))))
 
+    intersection?
+    (Intersection. (map schema (realm/intersection-realm-realms realm)))
+    
     enum?
     (apply schema/enum (realm/enum-realm-values realm))
 
@@ -66,7 +94,8 @@
                    [(schema/required-key key)
                     (schema realm)]))
                (realm/map-with-keys-realm-map realm)))
-    
+
+
     :else
     (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))
     

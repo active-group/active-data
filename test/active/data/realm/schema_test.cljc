@@ -147,4 +147,13 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 4)))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [5])))))
 
+
+(deftest intersection-test
+  (let [s (schema (realm/intersection realm/int
+                                      (realm/predicate "non-negative number" (fn [x] (>= x 0)))))]
     
+    (is (some? (schema/validate s 5)))
+    (is (some? (schema/validate s 0)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s :a)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 5.5)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s -1)))))
