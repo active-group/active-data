@@ -184,3 +184,11 @@
     
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s :a)))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [1 2])))))
+
+(deftest named-test
+  (let [s (schema (realm/named :a realm/int))]
+
+    (is (some? (schema/validate s 5)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 5.5)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s :a)))))
+

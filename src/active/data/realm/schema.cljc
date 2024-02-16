@@ -104,7 +104,14 @@
     record?
     (schema/pred (realm/record-realm-predicate realm)
                  (str (realm/record-realm-name realm) " record"))
-    
+
+    ;; FIXME: function
+    ;; FIXME: delayed
+
+    named?
+    (schema/schema-with-name (schema (realm/named-realm-realm realm))
+                             (realm/named-realm-name realm))
+
     :else
     (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))
     
