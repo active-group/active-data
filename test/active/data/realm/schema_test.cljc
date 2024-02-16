@@ -105,3 +105,16 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [:foo :bar])))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s ["foo" :bar])))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [:foo "bar"])))))
+
+(deftest set-of-test
+  (let [s (schema (realm/set-of realm/string))]
+    (is (some? (schema/validate s #{})))
+    (is (some? (schema/validate s #{"foo"})))
+    (is (some? (schema/validate s #{"foo" "bar"})))
+
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [])))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s '())))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 'foo)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s #{:foo :bar})))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s #{"foo" :bar})))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s #{:foo "bar"})))))

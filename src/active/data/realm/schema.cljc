@@ -33,7 +33,7 @@
      (schema (realm/map-of-realm-value-realm realm))}
 
     set-of?
-    :TODO
+    #{(schema (realm/set-of-realm-realm realm))}
     
     integer-from-to?
     (let [from (realm/integer-from-to-realm-from realm)
