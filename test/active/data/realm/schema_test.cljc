@@ -157,3 +157,15 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s :a)))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 5.5)))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s -1)))))
+
+(deftest restricted-test
+  (let [s (schema (realm/restricted realm/int
+                                    (fn [x] (>= x 0))
+                                    "non-negative ints"))]
+
+    (is (some? (schema/validate s 5)))
+    (is (some? (schema/validate s 0)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s :a)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 5.5)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s -1)))))
+    

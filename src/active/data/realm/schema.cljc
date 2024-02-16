@@ -95,7 +95,11 @@
                     (schema realm)]))
                (realm/map-with-keys-realm-map realm)))
 
-
+    restricted?
+    (schema/constrained (schema (realm/restricted-realm-realm realm))
+                        (realm/restricted-realm-predicate realm)
+                        (realm/description realm))
+    
     :else
     (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))
     
