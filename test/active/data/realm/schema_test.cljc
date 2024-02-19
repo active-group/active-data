@@ -65,16 +65,6 @@
                  (schema/validate s {"foo" "bar"
                                      :baz "blam"})))))
 
-(defprotocol Indexed
-  (index [x index]))
-
-(defrecord Pare [kar kdr]
-  Indexed
-  (index [_ index]
-    (case index
-      (0) kar
-      (1) kdr)))
-
 (deftest integer-from-to-test
   (let [s (schema (realm/integer-from-to 1 10))]
     (is (some? (schema/validate s 1)))
