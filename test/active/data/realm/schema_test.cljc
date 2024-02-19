@@ -3,8 +3,8 @@
             [active.data.realm.schema :refer [schema]]
             [schema.core :as schema]
             #?(:cljs [cljs.test :refer (deftest is testing)])
-            #?(:clj [clojure.test :refer (deftest is testing)]))
-    #?(:cljs (:require-macros [cljs.test :refer (is deftest run-tests testing)])))
+            #?(:clj [clojure.test :refer (deftest is testing)])
+            #?(:cljs (:require-macros [cljs.test :refer (is deftest run-tests testing)]))))
 
 (deftest builtin-scalar-realm-test
   (is (some? (schema/validate (schema realm/int)
