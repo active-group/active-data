@@ -3,9 +3,8 @@
             [schema.core :as schema]
             [schema.utils :as schema-utils]
             [schema.spec.core :as schema-spec :include-macros true]
-            #?(:clj [schema.macros :as schema-macros])
-            #?(:cljs (:require-macros [schema.macros :as schema-macros]
-                                      schema.core))))
+            #?(:clj [schema.macros :as schema-macros]))
+  #?(:cljs (:require-macros [schema.macros :as schema-macros])))
 
 ;; essentially a copy of Schema's Both, which is deprecated
 (schema-macros/defrecord-schema Intersection [schemas]
