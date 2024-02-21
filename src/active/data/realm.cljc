@@ -326,13 +326,25 @@
   (or (get (meta record) realm-record-meta/record-realm-meta-key)
       (create-realm-record-realm record {})))
 
-(def-record ^{:doc "Realm for function."}
-  function-realm
-  :extends Realm
-  [function-realm-positional-argument-realms ; seq of realms
-   function-realm-optional-arguments-realm ; sequence-of realm or map-with-keys realm or tuple realm
-   function-realm-return-realm])
+(def-record ^{:doc "Function case."}
+  function-case
+  [function-case-positional-argument-realms ; seq of realms
+   function-case-optional-arguments-realm ; nil or sequence-of realm or map-with-keys realm or tuple realm
+   function-case-return-realm])
 
+(defn function-case-description
+  [function-case]
+  (str "function ("
+       (string/join ", "
+                    (map description (function-case-positional-argument-realms function-case)))
+       (if-let [optional (function-case-optional-arguments-realm function-case)]
+         (str " & "
+              (description optional))
+         "")
+
+       ") -> "
+       (description (function-case-return-realm function-case))))
+   
 ; list is expected to start with ->
 (defn- parse-function-return
   [shorthand list]
@@ -362,15 +374,11 @@
                 return `(compile ~(parse-function-return shorthand list))]
             `(let [positional# ~positional
                    return# ~return]
-               (function-realm function-realm-positional-argument-realms positional#
-                               function-realm-optional-arguments-realm nil
-                               function-realm-return-realm return#
-                               metadata {}
-                               description (str "function ("
-                                                (string/join ", "
-                                                             (map description positional#))
-                                                ") -> "
-                                                (description return#)))))
+               (function-cases ; hack to get description right
+                (function-realm function-realm-cases
+                                [(function-case function-case-positional-argument-realms positional#
+                                                function-case-optional-arguments-realm nil
+                                                function-case-return-realm return#)]))))
           (&)
           (if (empty? (rest list))
             (throw (ex-info (str "function realm does not have an arrow: " shorthand) {:shorthand shorthand}))
@@ -404,43 +412,46 @@
               `(let [positional# ~positional
                      optional# ~optional
                      return# ~return]
-                 (function-realm function-realm-positional-argument-realms positional#
-                                 function-realm-optional-arguments-realm optional#
-                                 function-realm-return-realm return#
-                                 metadata {}
-                                 description (str "function ("
-                                                  (string/join ", "
-                                                               (map description positional#))
-
-                                                  " & "
-                                                  (description optional#)
-                                                  ") -> "
-                                                  (description return#))))))
+                 (function-cases ; hack to get description right
+                  (function-realm function-realm-cases
+                                  [(function-case function-case-positional-argument-realms positional#
+                                                  function-case-optional-arguments-realm optional#
+                                                  function-case-return-realm return#)])))))
 
           (recur (rest list)
                  (conj! positional `(compile ~f))))))))
 
 (defmacro function
   [& shorthand]
+  "Shorthand for function realms.
+
+Here are the different forms:
+
+(function r1 r2 r3 -> r)                       - fixed arity
+(function r1 r2 r3 & (rs) -> r)                - rest args
+(function r1 r2 r3 & [rr1 rr2]) -> r)          - 2 optional args
+(function r1 r2 r3 & {:a ra :b rb :c rc} -> r) - optional keyword args"
   (compile-function-case-shorthand shorthand))
 
 (def-record ^{:doc "Realm for function with multiple cases."}
-  function-cases-realm
+  function-realm
   :extends Realm
-  [function-cases-realm-cases])
+  [function-realm-cases])
 
 (defn function-cases
+  "Just call this on a buch of function realms."
   [& cases]
-  (let [cases (mapv compile cases)]
-    (function-cases-realm function-cases-realm-cases cases
-                          metadata {}
-                          description
-                          (str "function with cases " (string/join ", " (map description cases))))))
+  (let [cases (mapcat function-realm-cases cases)]
+    (function-realm function-realm-cases cases
+                    metadata {}
+                    description
+                    (if (= (count cases) 1)
+                      (function-case-description (first cases))
+                      (str "function with cases " (string/join ", " (map function-case-description cases)))))))
 
 (defn function?
   [thing]
-  (or (is-a? function-realm thing)
-      (is-a? function-cases-realm thing)))
+  (is-a? function-realm thing))
 
 (def-record ^{:doc "Lazy realm."}
   delayed-realm
