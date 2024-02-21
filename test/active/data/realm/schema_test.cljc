@@ -203,3 +203,36 @@
     #_(is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s (->Pare :a '()))))
     ))
 
+(deftest function-test
+  (let [s1 (schema (realm/function realm/int realm/int -> realm/boolean))
+        s2 (schema (realm/function realm/int realm/int & (realm/string) -> realm/boolean))
+        s3 (schema (realm/function realm/int realm/int & [realm/string realm/int realm/boolean] -> realm/boolean))
+        s4 (schema (realm/function realm/int realm/int & {:a realm/string :b realm/int :c realm/boolean} -> realm/boolean))
+        s5 (schema (realm/function-cases
+                    (realm/function realm/int realm/int -> realm/boolean)
+                    (realm/function realm/int realm/int & (realm/string) -> realm/boolean)))]
+
+    ;; only rudimentary checking
+    (is (some? (schema/validate s1 (fn [i1 i2] true))))
+    (is (some? (schema/validate s2 (fn [i1 i2 & ss] true))))
+    (is (some? (schema/validate s3 (fn [i1 i2 & [s1 i3 b3]] true))))
+    (is (some? (schema/validate s4 (fn [i1 i2 & {:keys [a b c] :or {a :a b :b c :c}}] [a b c]))))
+    (is (some? (schema/validate s5 (fn [i1 i2] true))))
+    (is (some? (schema/validate s5 (fn [i1 i2 & ss] true))))
+
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s1 5)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s2 5)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s3 5)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s4 5)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s5 5)))))
+
+        
+    
+    
+
+    
+
+        
+
+                                
+                                

@@ -26,6 +26,37 @@
              (f (or tx x))))))
      (map #(schema-spec/sub-checker {:schema %} params) (reverse schemas)))))
 
+(declare schema)
+
+; schema allows only one output schema for a fn
+(defn- fn-output-schema
+  [cases]
+  (let [returns (into #{} (map realm/function-case-return-realm cases))]
+    (if (= (count returns) 1)
+      (schema (first returns))
+      realm/any))) ; cop out
+
+(defn- fn-input-schema
+  [case]
+  (let [positional-schemas
+        (vec
+         (map-indexed (fn [index realm]
+                        (schema/one (schema realm) (str "arg" index)))
+                      (realm/function-case-positional-argument-realms case)))
+        optional (realm/function-case-optional-arguments-realm case)]
+    (cond
+      (nil? optional)
+      positional-schemas
+
+      (vector? optional)
+      (vec (concat positional-schemas
+                   (mapv schema optional)))
+
+      :else
+      positional-schemas))) ; FIXME: knowing that schema doesn't handle this and won't check this
+
+(def generic-function-schema (schema/pred fn? "schema for unknown function"))
+
 (defn schema
   [realm]
   (realm/dispatch
@@ -34,6 +65,7 @@
     (case (realm/builtin-scalar-realm-id realm)
       (:float) float
       (:double) double
+      (:boolean) boolean
       (:int) schema/Int
       #?@(:clj [(:bigdec) java.math.BigDecimal])
       (:keyword) schema/Keyword
@@ -104,9 +136,6 @@
     (schema/pred (realm/record-realm-predicate realm)
                  (str (realm/record-realm-name realm) " record"))
 
-    ;; FIXME: function
-    ;; FIXME: delayed
-
     named?
     (schema/schema-with-name (schema (realm/named-realm-realm realm))
                              (realm/named-realm-name realm))
@@ -114,8 +143,10 @@
     delayed?
     (schema/recursive (delay (schema (realm/delayed-realm-delay realm))))
 
-    :else
-    (throw (ex-info (str "unhandled realm case: " (realm/description realm)) {:active.data.realm/realm realm}))
-    
-  ))
-    
+    function?
+    (let [cases (realm/function-realm-cases realm)]
+      (try
+        (schema/make-fn-schema (fn-output-schema cases)
+                               (map fn-input-schema cases))
+        (catch #?(:clj RuntimeException :cljs js/Error) e
+            generic-function-schema)))))
