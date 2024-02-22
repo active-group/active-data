@@ -20,7 +20,6 @@
   (is-a? Realm thing))
 
 ;; FIXME: should there be a fold/generic dispatch?
-;; FIXME: realm realm ...
 
 (def-record ^{:doc "Builtin scalar realm."}
   builtin-scalar-realm
@@ -717,3 +716,9 @@ realm cases."
       (fn [thing]
         (and (realm-predicate thing)
              (predicate thing))))))
+
+(defn contains?
+  [realm x]
+  ((shallow-predicate realm) x)) ; FIXME: could this be more efficient?
+
+
