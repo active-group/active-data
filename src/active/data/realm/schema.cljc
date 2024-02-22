@@ -1,5 +1,7 @@
 (ns active.data.realm.schema
   (:require [active.data.realm :as realm #?@(:cljs [:include-macros true])]
+            [active.data.realm.dispatch :as realm-dispatch #?@(:cljs [:include-macros true])]
+            [active.data.realm.realms :as realms]
             [schema.core :as schema]
             [schema.utils :as schema-utils]
             [schema.spec.core :as schema-spec :include-macros true]
@@ -60,96 +62,95 @@
 
 (defn schema
   [realm]
-  (realm/dispatch
-      realm
-    builtin-scalar?
-    (case (realm/builtin-scalar-realm-id realm)
-      (:natural) natural-schema
-      (:integer) schema/Int
-      #?@(:clj [:rational (schema/pred rational?)])
-      (:real) schema/Num
-      (:number) schema/Num
+  (realm-dispatch/union-case
+   realms/realm realm
 
-      (:boolean) boolean
-      (:keyword) schema/Keyword
-      (:symbol) schema/Symbol
-      (:string) schema/Str
-      (:any) schema/Any)
+   realms/natural natural-schema
+   realms/integer schema/Int
+   #?@(:clj [realms/rational (schema/pred rational?)])
+   realms/real schema/Num
+   realms/number schema/Num
 
-    predicate?
-    (schema/pred (realm/predicate-realm-predicate realm)
-                 (realm/description realm))
+   realms/boolean boolean
+   realms/keyword schema/Keyword
+   realms/symbol schema/Symbol
+   realms/string schema/Str
+   realms/any schema/Any
 
-    optional?
-    (schema/maybe (schema (realm/optional-realm-realm realm)))
+   realms/predicate
+   (schema/pred (realm/predicate-realm-predicate realm)
+                (realm/description realm))
 
-    tuple?
-    (vec (map-indexed (fn [index realm]
-                        (schema/one (schema realm) (str index)))
-                      (realm/tuple-realm-realms realm)))
+   realms/optional
+   (schema/maybe (schema (realm/optional-realm-realm realm)))
+   
+   realms/tuple
+   (vec (map-indexed (fn [index realm]
+                       (schema/one (schema realm) (str index)))
+                     (realm/tuple-realm-realms realm)))
 
-    map-of?
-    {(schema (realm/map-of-realm-key-realm realm))
-     (schema (realm/map-of-realm-value-realm realm))}
+   realms/map-of
+   {(schema (realm/map-of-realm-key-realm realm))
+    (schema (realm/map-of-realm-value-realm realm))}
+   
+   realms/set-of
+   #{(schema (realm/set-of-realm-realm realm))}
+   
+   realms/integer-from-to
+   (let [from (realm/integer-from-to-realm-from realm)
+         to (realm/integer-from-to-realm-to realm)]
+     (schema/constrained schema/Int
+                         (fn [n]
+                           (<= from n to))))
 
-    set-of?
-    #{(schema (realm/set-of-realm-realm realm))}
-    
-    integer-from-to?
-    (let [from (realm/integer-from-to-realm-from realm)
-          to (realm/integer-from-to-realm-to realm)]
-      (schema/constrained schema/Int
-                          (fn [n]
-                            (<= from n to))))
+   realms/union
+   (loop [realms (realm/union-realm-realms realm)
+          args (transient [])]
+     (if (empty? realms)
+       (apply schema/conditional (persistent! args))
+       (recur (rest realms)
+              (conj! (conj! args (realm/shallow-predicate (first realms)))
+                     (schema (first realms))))))
+   
+   realms/intersection
+   (Intersection. (map schema (realm/intersection-realm-realms realm)))
+   
+   realms/enum
+   (apply schema/enum (realm/enum-realm-values realm))
 
-    union?
-    (loop [realms (realm/union-realm-realms realm)
-           args (transient [])]
-      (if (empty? realms)
-        (apply schema/conditional (persistent! args))
-        (recur (rest realms)
-               (conj! (conj! args (realm/shallow-predicate (first realms)))
-                      (schema (first realms))))))
+   realms/sequence-of
+   [(schema (realm/sequence-of-realm-realm realm))]
 
-    intersection?
-    (Intersection. (map schema (realm/intersection-realm-realms realm)))
-    
-    enum?
-    (apply schema/enum (realm/enum-realm-values realm))
+   realms/map-with-keys
+   (into {}
+         (map (fn [[key realm]]
+                (if (realm/optional? realm)
+                  [(schema/optional-key key)
+                   (schema (realm/optional-realm-realm realm))]
+                  [(schema/required-key key)
+                   (schema realm)]))
+              (realm/map-with-keys-realm-map realm)))
 
-    sequence-of?
-    [(schema (realm/sequence-of-realm-realm realm))]
+   realms/restricted
+   (schema/constrained (schema (realm/restricted-realm-realm realm))
+                       (realm/restricted-realm-predicate realm)
+                       (realm/description realm))
 
-    map-with-keys?
-    (into {}
-          (map (fn [[key realm]]
-                 (if (realm/optional? realm)
-                   [(schema/optional-key key)
-                    (schema (realm/optional-realm-realm realm))]
-                   [(schema/required-key key)
-                    (schema realm)]))
-               (realm/map-with-keys-realm-map realm)))
+   realms/record
+   (schema/pred (realm/record-realm-predicate realm)
+                (str (realm/record-realm-name realm) " record"))
 
-    restricted?
-    (schema/constrained (schema (realm/restricted-realm-realm realm))
-                        (realm/restricted-realm-predicate realm)
-                        (realm/description realm))
+   realms/named
+   (schema/schema-with-name (schema (realm/named-realm-realm realm))
+                            (realm/named-realm-name realm))
 
-    record?
-    (schema/pred (realm/record-realm-predicate realm)
-                 (str (realm/record-realm-name realm) " record"))
+   realms/delayed
+   (schema/recursive (delay (schema (realm/delayed-realm-delay realm))))
 
-    named?
-    (schema/schema-with-name (schema (realm/named-realm-realm realm))
-                             (realm/named-realm-name realm))
-
-    delayed?
-    (schema/recursive (delay (schema (realm/delayed-realm-delay realm))))
-
-    function?
-    (let [cases (realm/function-realm-cases realm)]
-      (try
-        (schema/make-fn-schema (fn-output-schema cases)
-                               (map fn-input-schema cases))
-        (catch #?(:clj RuntimeException :cljs js/Error) e
-            generic-function-schema)))))
+   realms/function
+   (let [cases (realm/function-realm-cases realm)]
+     (try
+       (schema/make-fn-schema (fn-output-schema cases)
+                              (map fn-input-schema cases))
+       (catch #?(:clj RuntimeException :cljs js/Error) e
+         generic-function-schema)))))
