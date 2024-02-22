@@ -520,6 +520,7 @@ Here are the different forms:
   [thing]
   (is-a? named-realm thing))
 
+; FIXME: why not intersection + predicate?
 (def-record ^{:doc "Realm restricted by a predicate"}
   restricted-realm
   :extends Realm
