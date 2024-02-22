@@ -21,12 +21,12 @@
 
 ;; FIXME: should there be a fold/generic dispatch?
 ;; FIXME: realm realm ...
-;; FIXME: put predicate into builtin
 
 (def-record ^{:doc "Builtin scalar realm."}
   builtin-scalar-realm
   :extends Realm
-  [builtin-scalar-realm-id])
+  [builtin-scalar-realm-id
+   builtin-scalar-realm-predicate])
 
 (defn builtin-scalar?
   [thing]
@@ -44,18 +44,38 @@
   [n]
   (number? n))
 
-(def natural (builtin-scalar-realm description "natural" builtin-scalar-realm-id :natural metadata {}))
-(def integer (builtin-scalar-realm description "integer" builtin-scalar-realm-id :integer metadata {}))
-#?(:clj (def rational (builtin-scalar-realm description "rational" builtin-scalar-realm-id :rational metadata {})))
+(def natural (builtin-scalar-realm builtin-scalar-realm-id :natural
+                                   builtin-scalar-realm-predicate natural?
+                                   description "natural" metadata {}))
+(def integer (builtin-scalar-realm builtin-scalar-realm-id :integer
+                                   builtin-scalar-realm-predicate integer?
+                                   description "integer" metadata {}))
+#?(:clj (def rational (builtin-scalar-realm builtin-scalar-realm-id :rational
+                                            builtin-scalar-realm-predicate rational?
+                                            description "rational" metadata {})))
 ; mainly to sometime distinguish from complex
-(def real (builtin-scalar-realm description "real" builtin-scalar-realm-id :real metadata {}))
-(def number (builtin-scalar-realm description "number" builtin-scalar-realm-id :number metadata {}))
+(def real (builtin-scalar-realm builtin-scalar-realm-id :real
+                                builtin-scalar-realm-predicate real?
+                                description "real" metadata {}))
+(def number (builtin-scalar-realm builtin-scalar-realm-id :number
+                                  builtin-scalar-realm-predicate number?
+                                  description "number" metadata {}))
 
-(def keyword (builtin-scalar-realm description "keyword" builtin-scalar-realm-id :keyword metadata {}))
-(def symbol (builtin-scalar-realm description "symbol" builtin-scalar-realm-id :symbol metadata {}))
-(def string (builtin-scalar-realm description "string" builtin-scalar-realm-id :string metadata {}))
-(def boolean (builtin-scalar-realm description "boolean" builtin-scalar-realm-id :boolean metadata {}))
-(def any (builtin-scalar-realm description "any" builtin-scalar-realm-id :any metadata {}))
+(def keyword (builtin-scalar-realm builtin-scalar-realm-id :keyword
+                                   builtin-scalar-realm-predicate keyword?
+                                   description "keyword" metadata {}))
+(def symbol (builtin-scalar-realm builtin-scalar-realm-id :symbol
+                                  builtin-scalar-realm-predicate symbol?
+                                  description "symbol" metadata {}))
+(def string (builtin-scalar-realm builtin-scalar-realm-id :string
+                                  builtin-scalar-realm-predicate string?
+                                  description "string"  metadata {}))
+(def boolean (builtin-scalar-realm builtin-scalar-realm-id :boolean
+                                   builtin-scalar-realm-predicate boolean?
+                                   description "boolean" metadata {}))
+(def any (builtin-scalar-realm builtin-scalar-realm-id :any
+                               builtin-scalar-realm-predicate any?
+                               description "any" metadata {}))
 
 (def scalar-realms
   (into {}
@@ -639,18 +659,7 @@ realm cases."
   (dispatch
       realm
     builtin-scalar?
-    (case (builtin-scalar-realm-id realm)
-      (:natural) natural?
-      (:integer) integer?
-      (:rational) rational?
-      (:real) real?
-      (:number) number?
-      (:keyword) keyword?
-      (:symbol) symbol?
-      (:string) string?
-      (:boolean) boolean?
-      (:any) any?
-      (throw (ex-info (str "unknown builtin scalar realm: " (builtin-scalar-realm-id realm)) {:value realm})))
+    (builtin-scalar-realm-predicate realm)
 
     predicate? (predicate-realm-predicate realm)
     
