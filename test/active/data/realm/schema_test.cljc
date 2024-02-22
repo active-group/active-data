@@ -7,11 +7,33 @@
   #?(:cljs (:require-macros [cljs.test :refer [is deftest run-tests testing]])))
 
 (deftest builtin-scalar-realm-test
-  (is (some? (schema/validate (schema realm/int)
+  (is (some? (schema/validate (schema realm/integer)
                               12)))
+  #?(:clj (is (some? (schema/validate (schema realm/integer)
+                                      (biginteger 12)))))
+  #?(:clj (is (some? (schema/validate (schema realm/integer)
+                                      (bigint 12)))))
+  #?(:clj (is (some? (schema/validate (schema realm/rational)
+                                      12))))
+  #?(:clj (is (some? (schema/validate (schema realm/rational)
+                                      (/ 1 3)))))
+  (is (some? (schema/validate (schema realm/real)
+                              12)))
+  (is (some? (schema/validate (schema realm/real)
+                              12.5)))
+  
   (is (thrown? #?(:clj Exception :cljs js/Error)
-               (schema/validate (schema realm/int)
-                                "12"))))
+               (schema/validate (schema realm/integer)
+                                "12")))
+  (is (thrown? #?(:clj Exception :cljs js/Error)
+               (schema/validate (schema realm/natural)
+                                -12)))
+  (is (thrown? #?(:clj Exception :cljs js/Error)
+               (schema/validate (schema realm/natural)
+                                12.5)))
+  (is (thrown? #?(:clj Exception :cljs js/Error)
+               (schema/validate (schema realm/integer)
+                                12.5))))
 
 (deftest predicate-realm-test
   (is (some?
@@ -24,20 +46,20 @@
 
 (deftest optional-realm-test
   (is (some?
-       (schema/validate (schema (realm/optional realm/int))
+       (schema/validate (schema (realm/optional realm/integer))
                         12)))
 
   (is (nil?
-       (schema/validate (schema (realm/optional realm/int))
+       (schema/validate (schema (realm/optional realm/integer))
                         nil)))
 
   (is (thrown? #?(:clj Exception :cljs js/Error)
-               (schema/validate (schema (realm/optional (realm/int)))
+               (schema/validate (schema (realm/optional (realm/integer)))
                                 "12"))))
 
 
 (deftest tuple-realm-test
-  (let [s (schema (realm/compile [realm/string realm/keyword realm/int]))]
+  (let [s (schema (realm/compile [realm/string realm/keyword realm/integer]))]
     (is (some?
          (schema/validate s ["foo" :bar 42])))
     (is (thrown? #?(:clj Exception :cljs js/Error)
@@ -76,7 +98,7 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s "11")))))
 
 (deftest union-test
-  (let [s (schema (realm/union realm/string realm/keyword realm/int))]
+  (let [s (schema (realm/union realm/string realm/keyword realm/integer))]
     (is (some? (schema/validate s "foo")))
     (is (some? (schema/validate s :foo)))
     (is (some? (schema/validate s 5)))
@@ -110,7 +132,7 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s #{:foo "bar"})))))
 
 (deftest map-with-keys-test
-  (let [s (schema (realm/map-with-keys {:foo realm/string :bar (realm/optional realm/int)}))]
+  (let [s (schema (realm/map-with-keys {:foo realm/string :bar (realm/optional realm/integer)}))]
     (is (some? (schema/validate s {:foo "foo" :bar 15})))
     (is (some? (schema/validate s {:foo "foo"})))
 
@@ -139,7 +161,7 @@
 
 
 (deftest intersection-test
-  (let [s (schema (realm/intersection realm/int
+  (let [s (schema (realm/intersection realm/integer
                                       (realm/predicate "non-negative number" (fn [x] (>= x 0)))))]
     
     (is (some? (schema/validate s 5)))
@@ -149,7 +171,7 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s -1)))))
 
 (deftest restricted-test
-  (let [s (schema (realm/restricted realm/int
+  (let [s (schema (realm/restricted realm/integer
                                     (fn [x] (>= x 0))
                                     "non-negative ints"))]
 
@@ -165,8 +187,8 @@
   (realm/record "Pare"
                 ->Pare
                 (partial instance? Pare)
-                [(realm/field "kar" realm/int :kar)
-                 (realm/field "kdr" realm/double :kdr)]))
+                [(realm/field "kar" realm/integer :kar)
+                 (realm/field "kdr" realm/real :kdr)]))
 
 (deftest record-test
   (let [s (schema pare-realm)]
@@ -176,7 +198,7 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [1 2])))))
 
 (deftest named-test
-  (let [s (schema (realm/named :a realm/int))]
+  (let [s (schema (realm/named :a realm/integer))]
 
     (is (some? (schema/validate s 5)))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 5.5)))
@@ -188,7 +210,7 @@
                (realm/record "plist-pare"
                              ->Pare
                              (partial instance? Pare)
-                             [(realm/field "kar" realm/int :kar)
+                             [(realm/field "kar" realm/integer :kar)
                               (realm/field "kdr" (realm/delay plist-realm) :kdr)])))
 
 (deftest delay-test
@@ -204,13 +226,13 @@
     ))
 
 (deftest function-test
-  (let [s1 (schema (realm/function realm/int realm/int -> realm/boolean))
-        s2 (schema (realm/function realm/int realm/int & (realm/string) -> realm/boolean))
-        s3 (schema (realm/function realm/int realm/int & [realm/string realm/int realm/boolean] -> realm/boolean))
-        s4 (schema (realm/function realm/int realm/int & {:a realm/string :b realm/int :c realm/boolean} -> realm/boolean))
+  (let [s1 (schema (realm/function realm/integer realm/integer -> realm/boolean))
+        s2 (schema (realm/function realm/integer realm/integer & (realm/string) -> realm/boolean))
+        s3 (schema (realm/function realm/integer realm/integer & [realm/string realm/integer realm/boolean] -> realm/boolean))
+        s4 (schema (realm/function realm/integer realm/integer & {:a realm/string :b realm/integer :c realm/boolean} -> realm/boolean))
         s5 (schema (realm/function-cases
-                    (realm/function realm/int realm/int -> realm/boolean)
-                    (realm/function realm/int realm/int & (realm/string) -> realm/boolean)))]
+                    (realm/function realm/integer realm/integer -> realm/boolean)
+                    (realm/function realm/integer realm/integer & (realm/string) -> realm/boolean)))]
 
     ;; only rudimentary checking
     (is (some? (schema/validate s1 (fn [i1 i2] true))))

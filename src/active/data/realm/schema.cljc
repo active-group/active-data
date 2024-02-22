@@ -56,6 +56,7 @@
       positional-schemas))) ; FIXME: knowing that schema doesn't handle this and won't check this
 
 (def generic-function-schema (schema/pred fn? "schema for unknown function"))
+(def natural-schema (schema/constrained schema/Int (fn [n] (>= n 0)) "natural"))
 
 (defn schema
   [realm]
@@ -63,11 +64,13 @@
       realm
     builtin-scalar?
     (case (realm/builtin-scalar-realm-id realm)
-      (:float) float
-      (:double) double
+      (:natural) natural-schema
+      (:integer) schema/Int
+      #?@(:clj [:rational (schema/pred rational?)])
+      (:real) schema/Num
+      (:number) schema/Num
+
       (:boolean) boolean
-      (:int) schema/Int
-      #?@(:clj [(:bigdec) java.math.BigDecimal])
       (:keyword) schema/Keyword
       (:symbol) schema/Symbol
       (:string) schema/Str

@@ -5,9 +5,9 @@
               #?(:cljs [cljs.test :refer-macros (deftest is testing)])
               #?(:clj [clojure.test :refer (deftest is testing)])))
 
-(realm-attach/defn realm/int
+(realm-attach/defn realm/integer
   twoify
-  [n realm/int]
+  [n realm/integer]
   (* n 2))
 
 (deftest checking-checks

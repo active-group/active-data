@@ -32,12 +32,25 @@
   [thing]
   (is-a? builtin-scalar-realm thing))
 
-; FIXME: natural positive-int
-(def int (builtin-scalar-realm description "int" builtin-scalar-realm-id :int metadata {}))
-; FIXME? long? number?
-#?(:clj (def bigdec (builtin-scalar-realm description "big decimal" builtin-scalar-realm-id :bigdec metadata {})))
-(def float (builtin-scalar-realm description  "float" builtin-scalar-realm-id :float metadata {}))
-(def double (builtin-scalar-realm description "double" builtin-scalar-realm-id :double metadata {}))
+(defn natural?
+  "Returns true if n is a natural number.
+  I.e. a n integer >= 0."
+  [n]
+  (and (integer? n)
+       (>= n 0)))
+
+(defn real?
+  "Returns true if n is a real number."
+  [n]
+  (number? n))
+
+(def natural (builtin-scalar-realm description "natural" builtin-scalar-realm-id :natural metadata {}))
+(def integer (builtin-scalar-realm description "integer" builtin-scalar-realm-id :integer metadata {}))
+#?(:clj (def rational (builtin-scalar-realm description "rational" builtin-scalar-realm-id :rational metadata {})))
+; mainly to sometime distinguish from complex
+(def real (builtin-scalar-realm description "real" builtin-scalar-realm-id :real metadata {}))
+(def number (builtin-scalar-realm description "number" builtin-scalar-realm-id :number metadata {}))
+
 (def keyword (builtin-scalar-realm description "keyword" builtin-scalar-realm-id :keyword metadata {}))
 (def symbol (builtin-scalar-realm description "symbol" builtin-scalar-realm-id :symbol metadata {}))
 (def string (builtin-scalar-realm description "string" builtin-scalar-realm-id :string metadata {}))
@@ -48,7 +61,7 @@
   (into {}
         (map (fn [scalar-realm]
                [(builtin-scalar-realm-id scalar-realm) scalar-realm])
-             [int #?(:clj bigdec) float double
+             [natural integer rational real number
               keyword symbol string
               any])))
 
@@ -422,7 +435,6 @@
                  (conj! positional `(compile ~f))))))))
 
 (defmacro function
-  [& shorthand]
   "Shorthand for function realms.
 
 Here are the different forms:
@@ -431,6 +443,7 @@ Here are the different forms:
 (function r1 r2 r3 & (rs) -> r)                - rest args
 (function r1 r2 r3 & [rr1 rr2]) -> r)          - 2 optional args
 (function r1 r2 r3 & {:a ra :b rb :c rc} -> r) - optional keyword args"
+  [& shorthand]
   (compile-function-case-shorthand shorthand))
 
 (def-record ^{:doc "Realm for function with multiple cases."}
@@ -627,10 +640,11 @@ realm cases."
       realm
     builtin-scalar?
     (case (builtin-scalar-realm-id realm)
-      (:int) int?
-      #?@(:clj [(:bigdec) (fn [x] (instance? java.math.BigDecimal x))])
-      (:float) float?
-      (:double) double?
+      (:natural) natural?
+      (:integer) integer?
+      (:rational) rational?
+      (:real) real?
+      (:number) number?
       (:keyword) keyword?
       (:symbol) symbol?
       (:string) string?

@@ -7,7 +7,7 @@
             #?(:clj [clojure.test :refer (is deftest testing)])))
 
 (sut/def-realm-record T
-  [f1 realm/int
+  [f1 realm/integer
    f2 realm/string])
 
 (sut/def-realm-record ExtT
