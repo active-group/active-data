@@ -688,7 +688,9 @@ realm cases."
       (fn [x]
         (every? #(% x) predicates)))
     
-    enum? (enum-realm-values realm)
+    enum? (let [set (enum-realm-values realm)]
+            (fn [x]
+              (core/contains? set x)))
     sequence-of? sequential?
     set-of? set?
     map-with-keys? map?
