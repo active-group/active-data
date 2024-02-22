@@ -1,6 +1,6 @@
 (ns active.data.realm
-  (:refer-clojure :exclude [int bigdec float double keyword symbol boolean seq compile record? delay delayed?
-                            struct])
+  (:refer-clojure :exclude [keyword symbol boolean seq compile record? delay delayed?
+                            struct contains?])
   (:require
    #?(:clj [clojure.core :as core]
       :cljs [cljs.core :as core])
