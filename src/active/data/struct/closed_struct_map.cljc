@@ -515,7 +515,7 @@
 #?(:clj
    ;; seems already implemented for all IPersistentMap, but we override it
    (defmethod print-method PersistentClosedStructMap [^PersistentClosedStructMap s ^java.io.Writer writer]
-     (.write writer (struct-type/print-map-prefix (.-struct s)))
+     (.write writer ^String (struct-type/print-map-prefix (.-struct s)))
      (print-method (into {} s) writer))
 
    :cljs
@@ -570,10 +570,10 @@
 (defn struct-of-map [^PersistentClosedStructMap m]
   (.-struct m))
 
-(defn lock-struct-map [m]
+(defn lock-struct-map [^PersistentClosedStructMap m]
   (create (struct-of-map m) (.-data m) true (meta m)))
 
-(defn unlock-struct-map [m]
+(defn unlock-struct-map [^PersistentClosedStructMap m]
   (create (struct-of-map m) (.-data m) false (meta m)))
 
 (defn- is-definitely-struct-map-of? [m struct-match?]

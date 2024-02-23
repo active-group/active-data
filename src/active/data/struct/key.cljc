@@ -65,7 +65,7 @@
                   (assoc m this v)))]))
 
 #?(:clj
-   (defmethod print-method Key [sk ^java.io.Writer writer]
+   (defmethod print-method Key [^Key sk ^java.io.Writer writer]
      (.write writer (name (.-sym sk))))
 
    :cljs

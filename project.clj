@@ -8,6 +8,8 @@
 
   :profiles {:test {:dependencies [[criterium "0.4.6"]]}}
 
+  :global-vars {*warn-on-reflection* true}
+  
   :aliases {"benchmarks" ["with-profiles" "+test," "run" "-m" active.data.benchmarks]}
   
   ;; Note: run ClojureScript tests with > npm run test

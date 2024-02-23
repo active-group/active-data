@@ -14,14 +14,14 @@
   (-alter-meta! [this f args]))
 
 (defprotocol IStructTypeVariant
-  (-variant-name [this]
+  (-variant-name ^String [this]
     ;; "Struct" or "Record" or a record's name? .. TODO or add full flexibility for printout of a struct-type?
     )
   (-construct-from [this struct-type m])
   (-identifier [this struct-type]
     ;; optional additional value for equality of struct-types
     )
-  (-print-map-prefix [this struct-type]
+  (-print-map-prefix ^String [this struct-type]
     ;; prefix for map printouts
     )
   (-locked-maps? [this] "If dissoc/assoc with other keys is an error, or transforms this into a hash-map otherwise.")

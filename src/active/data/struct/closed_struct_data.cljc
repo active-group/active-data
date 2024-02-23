@@ -45,7 +45,7 @@
           (= (alength v1) (alength v2))
           (range (alength v1))))
 
-(defn indices [struct]
+(defn indices ^java.lang.Iterable [struct]
   (range (struct-type/size struct)))
 
 #?(:clj
