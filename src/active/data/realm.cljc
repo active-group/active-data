@@ -81,7 +81,7 @@
   (into {}
         (map (fn [scalar-realm]
                [(builtin-scalar-realm-id scalar-realm) scalar-realm])
-             [natural integer rational real number
+             [natural integer #?(:clj rational) real number
               keyword symbol string
               any])))
 
