@@ -51,7 +51,17 @@
        (invoke [this m v]
                (if opt-assoc
                  (opt-assoc m v)
-                 (assoc m this v)))]
+                 (assoc m this v)))
+       (applyTo [this arglist]
+                (case (count arglist)
+                  (1) (let [[m] arglist]
+                        (if opt-get
+                          (opt-get m)
+                          (get m this)))
+                  (2) (let [[m v] arglist]
+                        (if opt-assoc
+                          (opt-assoc m v)
+                          (assoc m this v)))))]
 
       :cljs
       [IFn
