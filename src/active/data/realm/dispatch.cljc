@@ -2,7 +2,7 @@
   (:require [active.data.realm :as realm]
             [clojure.string :as string]))
 
-(defmacro union-case
+#_(defmacro union-case
   "(dispatch union-realm subject & cases)
 
 where union-realm is a statically resolvable union realm,
@@ -57,3 +57,19 @@ realm cases."
                        (disj! realms realm)
                        (conj! (conj! cond-rest `(active.data.realm/contains? ~?realm-name ~subject-name)) ?exp))
                 (throw (ex-info (str "unknown realm case: " ?realm-name) {::form &form}))))))))))
+
+(defmacro union-case
+  [?union-realm ?subject & ?clauses]
+  (let [subject (gensym "subject")
+        union-realm (gensym "union-realm")
+        [r-clauses else? else-exp]
+        (if (= :else (first (drop-last 2 ?clauses)))
+          [(drop-last 2 ?clauses) true (last ?clauses)]
+          ;; Note: condp throws already if nothing matches, but we could provide a hint for which sub-realm might be missing.
+          [?clauses false nil])]
+    `(let [~subject ~?subject
+           ~union-realm ~?union-realm]
+       ;; Note: currently no check if test-realms are part of the union realm.
+       (condp realm/contains? ~subject
+         ~@r-clauses
+         ~@(when else? [else-exp])))))

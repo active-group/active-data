@@ -37,7 +37,7 @@
   (realm/union
    natural
    integer
-   rational
+   #?(:clj rational)
    real
    number
    keyword
