@@ -5,7 +5,7 @@
             #?(:cljs [cljs.test :refer-macros (is deftest testing)])
             #?(:clj [clojure.test :refer (is deftest testing)])))
 
-(deftest predicate-test
+(deftest from-predicate-test
   (is (realm/from-predicate?
        (realm/compile integer?))))
 
@@ -124,8 +124,94 @@
          (realm/description (realm/named :a realm/integer))))
   (is (= "string restricted to nonempty strings"
          (realm/description nonempty-string-realm))))
-      
 
 
+(deftest predicate-test
+  (is ((realm/predicate realm/integer) 5))
+  (is (not ((realm/predicate realm/integer) "5")))
+  (is ((realm/predicate realm/real) 5.0))
+  (is (not ((realm/predicate realm/real) :five)))
+  (is ((realm/predicate realm/boolean) true))
+  (is (not ((realm/predicate realm/boolean) "true")))
+  (is ((realm/predicate realm/keyword) :keyword))
+  (is (not ((realm/predicate realm/real) "keyword")))
+  (is ((realm/predicate realm/string) "string"))
+  (is (not ((realm/predicate realm/real) :string)))
+
+  (is ((realm/predicate realm/any) "string"))
+
+  (is ((realm/predicate (realm/from-predicate "ints" int?)) 5))
+  (is (not ((realm/predicate (realm/from-predicate "ints" int?)) "5")))
+
+  (is ((realm/predicate (realm/optional realm/integer)) 5))
+  (is ((realm/predicate (realm/optional realm/integer)) nil))
+  (is (not ((realm/predicate (realm/optional realm/integer)) "5")))
+
+  (is ((realm/predicate (realm/integer-from-to 5 7)) 5))
+  (is ((realm/predicate (realm/integer-from-to 5 7)) 6))
+  (is ((realm/predicate (realm/integer-from-to 5 7)) 7))
+  (is (not ((realm/predicate (realm/integer-from-to 5 7)) 4)))
+  (is (not ((realm/predicate (realm/integer-from-to 5 7)) 8)))
+  (is (not ((realm/predicate (realm/integer-from-to 5 7)) "5")))
+
+  (is ((realm/predicate (realm/union realm/integer realm/string)) 5))
+  (is ((realm/predicate (realm/union realm/integer realm/string)) "5"))
+  (is (not ((realm/predicate (realm/union realm/integer realm/string)) :five)))
+
+  (is ((realm/predicate (realm/intersection realm/string nonempty-string-realm)) "foo"))
+  (is (not ((realm/predicate (realm/intersection realm/string nonempty-string-realm)) "")))
+
+  (is ((realm/predicate (realm/enum 2 3 5)) 2))
+  (is ((realm/predicate (realm/enum 2 3 5)) 3))
+  (is ((realm/predicate (realm/enum 2 3 5)) 5))
+  (is (not ((realm/predicate (realm/enum 2 3 5)) 7)))
+
+  (is ((realm/predicate (realm/sequence-of realm/integer)) [1 2 3]))
+  (is ((realm/predicate (realm/sequence-of realm/integer)) [:one :two :three]))
+  (is (not ((realm/predicate (realm/sequence-of realm/integer)) 5)))
+  (is (not ((realm/predicate (realm/sequence-of realm/integer)) #{5})))
+  (is (not ((realm/predicate (realm/sequence-of realm/integer)) {5 2})))
   
+  (is ((realm/predicate (realm/set-of realm/integer)) #{1 2 3}))
+  (is ((realm/predicate (realm/set-of realm/integer)) #{:one :two :three}))
+  (is (not ((realm/predicate (realm/set-of realm/integer)) [1 2 3])))
+
+  (is ((realm/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) {:foo 5 :bar "5"}))
+  (is ((realm/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) {:foo "5" :bar 5}))
+  (is ((realm/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) {:bla 5 :baz "5"}))
+  (is (not ((realm/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) 5)))
+  (is (not ((realm/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) [])))
+
+  (is ((realm/predicate (realm/map-of realm/keyword realm/integer)) {}))
+  (is ((realm/predicate (realm/map-of realm/keyword realm/integer)) {:foo 5}))
+  (is ((realm/predicate (realm/map-of realm/keyword realm/integer)) {"foo" "5"}))
+  (is (not ((realm/predicate (realm/map-of realm/keyword realm/integer)) [])))
+
+  (is ((realm/predicate (realm/tuple realm/keyword realm/integer)) [:foo 5]))
+  (is ((realm/predicate (realm/tuple realm/keyword realm/integer)) [5 :foo]))
+  (is (not ((realm/predicate (realm/tuple realm/keyword realm/integer)) [5 :foo 12])))
+  (is (not ((realm/predicate (realm/tuple realm/keyword realm/integer)) {5 :foo})))
+  (is (not ((realm/predicate (realm/tuple realm/keyword realm/integer)) #{5 :foo})))
+
+  (let [s (struct/struct [:sar :sdr])]
+    (is ((realm/predicate (realm/struct->record-realm s)) (s :sar 1 :sdr 2)))
+    (is (not ((realm/predicate (realm/struct->record-realm s)) 5))))
+
+  (is ((realm/predicate (realm/record->record-realm Rare)) (Rare rar 1 rdr 2)))
+  (is (not ((realm/predicate (realm/record->record-realm Rare)) 5)))
   
+  (is ((realm/predicate (realm/function realm/integer realm/boolean -> realm/integer)) (fn [a b] a)))
+  (is (not ((realm/predicate (realm/function realm/integer realm/boolean -> realm/integer)) 5)))
+  
+  (let [r (realm/tuple realm/keyword realm/integer)]
+    (is ((realm/predicate (realm/delay r)) [:foo 5]))
+    (is (not ((realm/predicate (realm/delay r)) 5))))
+
+  (is ((realm/predicate (realm/named :a realm/integer)) 5))
+  (is (not ((realm/predicate (realm/named :a realm/integer)) "5")))
+
+  (is ((realm/predicate nonempty-string-realm) "foo"))
+  (is (not ((realm/predicate nonempty-string-realm) "")))
+  (is (not ((realm/predicate nonempty-string-realm) 5)))
+  
+  )

@@ -1,6 +1,5 @@
 (ns active.data.realm.dispatch
   (:require [active.data.realm :as realm]
-            [active.data.realm.predicate :as realm-predicate]
             [clojure.string :as string]))
 
 (defmacro union-case
@@ -56,5 +55,5 @@ realm cases."
               (if (clojure.core/contains? realms realm)
                 (recur (rest pairs)
                        (disj! realms realm)
-                       (conj! (conj! cond-rest `(active.data.realm.predicate/contains? ~?realm-name ~subject-name)) ?exp))
+                       (conj! (conj! cond-rest `(active.data.realm/contains? ~?realm-name ~subject-name)) ?exp))
                 (throw (ex-info (str "unknown realm case: " ?realm-name) {::form &form}))))))))))

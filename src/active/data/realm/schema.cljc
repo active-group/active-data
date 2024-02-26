@@ -1,7 +1,6 @@
 (ns active.data.realm.schema
   (:require [active.data.realm :as realm #?@(:cljs [:include-macros true])]
             [active.data.realm.dispatch :as realm-dispatch #?@(:cljs [:include-macros true])]
-            [active.data.realm.predicate :as realm-predicate]
             [active.data.realm.realms :as realms]
             [schema.core :as schema]
             [schema.utils :as schema-utils]
@@ -79,7 +78,7 @@
    realms/any schema/Any
 
    realms/from-predicate
-   (schema/pred (realm/from-predicate-realm-predicate realm)
+   (schema/pred (realm/predicate realm)
                 (realm/description realm))
 
    realms/optional
@@ -110,7 +109,7 @@
      (if (empty? realms)
        (apply schema/conditional (persistent! args))
        (recur (rest realms)
-              (conj! (conj! args (realm-predicate/shallow-predicate (first realms)))
+              (conj! (conj! args (realm/predicate (first realms)))
                      (schema (first realms))))))
    
    realms/intersection
@@ -138,7 +137,7 @@
                        (realm/description realm))
 
    realms/record
-   (schema/pred (realm/record-realm-predicate realm)
+   (schema/pred (realm/predicate realm)
                 (str (realm/record-realm-name realm) " record"))
 
    realms/named

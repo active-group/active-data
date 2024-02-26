@@ -1,5 +1,6 @@
 (ns active.data.realm
   (:refer-clojure :exclude [keyword symbol boolean seq compile record? delay delayed?
+                            contains?
                             struct])
   (:require
    #?(:clj [clojure.core :as core]
@@ -12,19 +13,20 @@
    [clojure.set :as set]
    [clojure.string :as string]))
 
-(def-record Realm [description metadata])
+(def-record Realm [description predicate metadata])
+
+(defn contains?
+  [realm x]
+  ((predicate realm) x))
 
 (defn realm?
   [thing]
   (is-a? Realm thing))
 
-;; FIXME: should there be a fold/generic dispatch?
-
 (def-record ^{:doc "Builtin scalar realm."}
   builtin-scalar-realm
   :extends Realm
-  [builtin-scalar-realm-id
-   builtin-scalar-realm-predicate])
+  [builtin-scalar-realm-id])
 
 (defn builtin-scalar?
   [thing]
@@ -43,36 +45,36 @@
   (number? n))
 
 (def natural (builtin-scalar-realm builtin-scalar-realm-id :natural
-                                   builtin-scalar-realm-predicate natural?
+                                   predicate natural?
                                    description "natural" metadata {}))
 (def integer (builtin-scalar-realm builtin-scalar-realm-id :integer
-                                   builtin-scalar-realm-predicate integer?
+                                   predicate integer?
                                    description "integer" metadata {}))
 #?(:clj (def rational (builtin-scalar-realm builtin-scalar-realm-id :rational
-                                            builtin-scalar-realm-predicate rational?
+                                            predicate rational?
                                             description "rational" metadata {})))
 ; mainly to sometime distinguish from complex
 (def real (builtin-scalar-realm builtin-scalar-realm-id :real
-                                builtin-scalar-realm-predicate real?
+                                predicate real?
                                 description "real" metadata {}))
 (def number (builtin-scalar-realm builtin-scalar-realm-id :number
-                                  builtin-scalar-realm-predicate number?
+                                  predicate number?
                                   description "number" metadata {}))
 
 (def keyword (builtin-scalar-realm builtin-scalar-realm-id :keyword
-                                   builtin-scalar-realm-predicate keyword?
+                                   predicate keyword?
                                    description "keyword" metadata {}))
 (def symbol (builtin-scalar-realm builtin-scalar-realm-id :symbol
-                                  builtin-scalar-realm-predicate symbol?
+                                  predicate symbol?
                                   description "symbol" metadata {}))
 (def string (builtin-scalar-realm builtin-scalar-realm-id :string
-                                  builtin-scalar-realm-predicate string?
+                                  predicate string?
                                   description "string"  metadata {}))
 (def boolean (builtin-scalar-realm builtin-scalar-realm-id :boolean
-                                   builtin-scalar-realm-predicate boolean?
+                                   predicate boolean?
                                    description "boolean" metadata {}))
 (def any (builtin-scalar-realm builtin-scalar-realm-id :any
-                               builtin-scalar-realm-predicate any?
+                               predicate any?
                                description "any" metadata {}))
 
 (def scalar-realms
@@ -86,16 +88,16 @@
 (def-record ^{:doc "Realm only defined through a predicate."}
   from-predicate-realm
   :extends Realm
-  [from-predicate-realm-predicate])
+  [])
 
 (defn from-predicate?
   [thing]
   (is-a? from-predicate-realm thing))
 
 (defn from-predicate
-  [desc predicate]
+  [desc pred]
   (from-predicate-realm description desc
-                        from-predicate-realm-predicate predicate
+                        predicate pred
                         metadata {}))
 
 (def-record ^{:doc "Realm of optional values."}
@@ -113,6 +115,10 @@
   [realm]
   (let [realm (compile realm)]
     (optional-realm description (str "optional " (description realm))
+                    predicate (let [inner-predicate (predicate realm)]
+                                (fn [x]
+                                  (or (nil? x)
+                                      (inner-predicate x))))
                     optional-realm-realm realm
                     metadata {})))
 
@@ -130,6 +136,10 @@
   (integer-from-to-realm description (str "integer from " from " to " to)
                          integer-from-to-realm-from from
                          integer-from-to-realm-to to
+                         predicate (fn [x]
+                                     (and (integer? x)
+                                          (>= x from)
+                                          (<= x to)))
                          metadata {}))
 
 (defn realm-seq-description
@@ -152,6 +162,9 @@
   [& realms]
   (union-realm description (str "union of " (realm-seq-description realms))
                union-realm-realms (map compile realms)
+               predicate (let [predicates (map predicate realms)]
+                           (fn [x]
+                             (core/boolean (some #(% x) predicates))))
                metadata {}))
 
 (def-record^{:doc "Realm for enumerations."}
@@ -165,9 +178,12 @@
 
 (defn enum
   [& values]
-  (enum-realm description (str "enumeration of [" (string/join ", " (map str values)) "]")
-              enum-realm-values (set values)
-              metadata {}))
+  (let [values-set (set values)]
+    (enum-realm description (str "enumeration of [" (string/join ", " (map str values)) "]")
+                enum-realm-values values-set
+                predicate (fn [x]
+                            (core/contains? values-set x))
+                metadata {})))
 
 (def-record ^{:doc "Realm for intersections."}
   intersection-realm
@@ -183,6 +199,9 @@
   [& realms]
   (intersection-realm description (str "intersection of " (realm-seq-description realms))
                       intersection-realm-realms (map compile realms)
+                      predicate (let [predicates (map predicate realms)]
+                                  (fn [x]
+                                    (every? #(% x) predicates)))
                       metadata {}))
 
 (def-record ^{:doc "Realm for sequences."}
@@ -199,6 +218,7 @@
   (let [realm (compile realm)]
     (sequence-of-realm description (str "sequence of " (description realm))
                        sequence-of-realm-realm realm
+                       predicate sequential?
                        metadata {})))
 
 (def-record ^{:doc "Realm for sets."}
@@ -215,6 +235,7 @@
   (let [realm (compile realm)]
     (set-of-realm description (str "set of " (description realm))
                   set-of-realm-realm realm
+                  predicate set?
                   metadata {})))
 
 ;; keys you can live out just have optional realms
@@ -241,6 +262,7 @@
                                                                  keys-realm-map))
                                           "}")
                          map-with-keys-realm-map keys-realm-map
+                         predicate map?
                          metadata {})))
 
 (def-record ^{:doc "Realm for maps with realms for keys and values respectively."}
@@ -263,6 +285,7 @@
                                    "}")
                   map-of-realm-key-realm key-realm
                   map-of-realm-value-realm value-realm
+                  predicate map?
                   metadata {})))
 
 (def-record ^{:doc "Realm for tuples, i.e. sequences with a fixed number of elements, each of which has a realm."}
@@ -281,6 +304,10 @@
                                   (string/join ", " (map description realms))
                                   ")")
                  tuple-realm-realms realms
+                 predicate (let [size (count realms)]
+                             (fn [x]
+                               (and (sequential? x)
+                                    (= (count x) size))))
                  metadata {})))
 
 (def-record ^{:doc "Description of the field of a record."}
@@ -298,7 +325,6 @@
   :extends Realm
   [record-realm-name
    record-realm-constructor
-   record-realm-predicate
    record-realm-fields])
 
 (defn record?
@@ -306,7 +332,7 @@
   (is-a? record-realm thing))
 
 (defn record
-  [name constructor predicate fields]
+  [name constructor pred fields]
   (record-realm description (str "record " name
                                  " with fields "
                                  (string/join ", "
@@ -316,7 +342,7 @@
                                                    fields)))
                 record-realm-name name
                 record-realm-constructor constructor
-                record-realm-predicate predicate
+                predicate pred
                 record-realm-fields fields
                 metadata {}))
 
@@ -475,6 +501,7 @@ Here are the different forms:
   (let [cases (mapcat function-realm-cases cases)]
     (function-realm function-realm-cases cases
                     metadata {}
+                    predicate fn?
                     description
                     (if (= (count cases) 1)
                       (function-case-description (first cases))
@@ -491,9 +518,12 @@ Here are the different forms:
 
 (defmacro delay
   [realm-expression]
-  `(delayed-realm delayed-realm-delay (core/delay (compile ~realm-expression))
-                  metadata {}
-                  description "delayed realm"))
+  `(let [delay-object# (core/delay (compile ~realm-expression))]
+     (delayed-realm delayed-realm-delay delay-object#
+                    metadata {}
+                    predicate (fn [x#]
+                                ((predicate (force delay-object#)) x#))
+                    description "delayed realm")))
 
 (defn delayed?
   [thing]
@@ -512,6 +542,7 @@ Here are the different forms:
     (named-realm named-realm-name name
                  named-realm-realm realm
                  metadata {}
+                 predicate (predicate realm)
                  description (str "realm named " name ": " (description realm)))))
 
 (defn named?
@@ -526,11 +557,15 @@ Here are the different forms:
    restricted-realm-predicate])
 
 (defn restricted
-  [realm predicate predicate-description]
+  [realm pred predicate-description]
   (let [realm (compile realm)]
     (restricted-realm restricted-realm-realm realm
-                      restricted-realm-predicate predicate
+                      restricted-realm-predicate pred
                       metadata {}
+                      predicate (let [realm-predicate (predicate realm)]
+                                  (fn [x]
+                                    (and (realm-predicate x)
+                                         (pred x))))
                       description (str (description realm) " restricted to " predicate-description))))
 
 (defn restricted?
