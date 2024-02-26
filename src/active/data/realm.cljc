@@ -10,8 +10,7 @@
    [active.data.record :as record]
    [active.data.realm.realm-record-meta :as realm-record-meta]
    [clojure.set :as set]
-   [clojure.string :as string])
-  #?(:cljs (:require-macros [active.data.realm :refer [dispatch]])))
+   [clojure.string :as string]))
 
 (def-record Realm [description metadata])
 
