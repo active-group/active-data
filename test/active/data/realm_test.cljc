@@ -59,7 +59,7 @@
 (defrecord Pare [kar kdr]
   Indexed
   (index [_ index]
-    (case index
+    (case (int index)
       (0) kar
       (1) kdr)))
 
