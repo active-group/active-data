@@ -37,10 +37,10 @@
 
 (deftest predicate-realm-test
   (is (some?
-       (schema/validate (schema (realm/predicate "odd integer" odd?))
+       (schema/validate (schema (realm/from-predicate "odd integer" odd?))
                         11)))
   (is (thrown? #?(:clj Exception :cljs js/Error)
-               (schema/validate (schema (realm/predicate "odd integer" odd?))
+               (schema/validate (schema (realm/from-predicate "odd integer" odd?))
                                 12))))
 
 
@@ -162,7 +162,7 @@
 
 (deftest intersection-test
   (let [s (schema (realm/intersection realm/integer
-                                      (realm/predicate "non-negative number" (fn [x] (>= x 0)))))]
+                                      (realm/from-predicate "non-negative number" (fn [x] (>= x 0)))))]
     
     (is (some? (schema/validate s 5)))
     (is (some? (schema/validate s 0)))

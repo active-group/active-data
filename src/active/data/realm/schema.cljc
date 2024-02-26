@@ -78,8 +78,8 @@
    realms/string schema/Str
    realms/any schema/Any
 
-   realms/predicate
-   (schema/pred (realm/predicate-realm-predicate realm)
+   realms/from-predicate
+   (schema/pred (realm/from-predicate-realm-predicate realm)
                 (realm/description realm))
 
    realms/optional

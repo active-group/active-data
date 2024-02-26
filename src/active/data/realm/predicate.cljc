@@ -21,8 +21,8 @@
     (realm/builtin-scalar? realm)
     (realm/builtin-scalar-realm-predicate realm)
     
-    (realm/predicate? realm)
-    (realm/predicate-realm-predicate realm)
+    (realm/from-predicate? realm)
+    (realm/from-predicate-realm-predicate realm)
     
     (realm/optional? realm)
     (let [inner-predicate (shallow-predicate (realm/optional-realm-realm realm))]

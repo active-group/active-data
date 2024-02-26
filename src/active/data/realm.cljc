@@ -84,19 +84,19 @@
               any])))
 
 (def-record ^{:doc "Realm only defined through a predicate."}
-  predicate-realm
+  from-predicate-realm
   :extends Realm
-  [predicate-realm-predicate])
+  [from-predicate-realm-predicate])
 
-(defn predicate?
+(defn from-predicate?
   [thing]
-  (is-a? predicate-realm thing))
+  (is-a? from-predicate-realm thing))
 
-(defn predicate
+(defn from-predicate
   [desc predicate]
-  (predicate-realm description desc
-                   predicate-realm-predicate predicate
-                   metadata {}))
+  (from-predicate-realm description desc
+                        from-predicate-realm-predicate predicate
+                        metadata {}))
 
 (def-record ^{:doc "Realm of optional values."}
   optional-realm
@@ -543,7 +543,7 @@ Here are the different forms:
     shorthand
     (cond
       (fn? shorthand)
-      (predicate "unknown predicate" shorthand)
+      (from-predicate "unknown predicate" shorthand) ; FIXME: questionable
 
       (vector? shorthand)
       (if (= 1 (count shorthand))

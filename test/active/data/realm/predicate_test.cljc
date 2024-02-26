@@ -28,8 +28,8 @@
 
   (is ((realm-predicate/shallow-predicate realm/any) "string"))
 
-  (is ((realm-predicate/shallow-predicate (realm/predicate "ints" int?)) 5))
-  (is (not ((realm-predicate/shallow-predicate (realm/predicate "ints" int?)) "5")))
+  (is ((realm-predicate/shallow-predicate (realm/from-predicate "ints" int?)) 5))
+  (is (not ((realm-predicate/shallow-predicate (realm/from-predicate "ints" int?)) "5")))
 
   (is ((realm-predicate/shallow-predicate (realm/optional realm/integer)) 5))
   (is ((realm-predicate/shallow-predicate (realm/optional realm/integer)) nil))

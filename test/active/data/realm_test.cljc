@@ -6,7 +6,7 @@
             #?(:clj [clojure.test :refer (is deftest testing)])))
 
 (deftest predicate-test
-  (is (realm/predicate?
+  (is (realm/from-predicate?
        (realm/compile integer?))))
 
 (deftest sequence-of-test

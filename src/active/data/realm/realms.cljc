@@ -16,7 +16,7 @@
 (def boolean (realm/enum realm/boolean))
 (def any (realm/enum realm/any))
 
-(def predicate (realm/record->record-realm realm/predicate-realm))
+(def from-predicate (realm/record->record-realm realm/from-predicate-realm))
 (def optional (realm/record->record-realm realm/optional-realm))
 (def integer-from-to (realm/record->record-realm realm/integer-from-to-realm))
 (def union  (realm/record->record-realm realm/union-realm))
@@ -45,7 +45,7 @@
    string
    boolean
    any
-   predicate
+   from-predicate
    optional
    integer-from-to
    union
