@@ -23,6 +23,11 @@
   [thing]
   (is-a? Realm thing))
 
+(defn with-metadata
+  [realm key data]
+  (assoc realm metadata
+         (assoc (metadata realm) key data)))
+
 (def-record ^{:doc "Builtin scalar realm."}
   builtin-scalar-realm
   :extends Realm
