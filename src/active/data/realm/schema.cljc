@@ -75,6 +75,7 @@
    realms/keyword schema/Keyword
    realms/symbol schema/Symbol
    realms/string schema/Str
+   realms/uuid schema/Uuid
    realms/any schema/Any
 
    realms/from-predicate

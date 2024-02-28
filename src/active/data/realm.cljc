@@ -1,7 +1,6 @@
 (ns active.data.realm
   (:refer-clojure :exclude [keyword symbol boolean seq compile record? delay delayed?
-                            contains?
-                            struct])
+                            contains? uuid])
   (:require
    #?(:clj [clojure.core :as core]
       :cljs [cljs.core :as core])
@@ -73,6 +72,9 @@
 (def boolean (builtin-scalar-realm builtin-scalar-realm-id :boolean
                                    predicate boolean?
                                    description "boolean" metadata {}))
+(def uuid (builtin-scalar-realm builtin-scalar-realm-id :uuid
+                                predicate uuid?
+                                description "uuid" metadata {}))
 (def any (builtin-scalar-realm builtin-scalar-realm-id :any
                                predicate any?
                                description "any" metadata {}))
@@ -82,7 +84,7 @@
         (map (fn [scalar-realm]
                [(builtin-scalar-realm-id scalar-realm) scalar-realm])
              [natural integer #?(:clj rational) real number
-              keyword symbol string
+              keyword symbol string uuid
               any])))
 
 (def-record ^{:doc "Realm only defined through a predicate."}

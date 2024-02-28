@@ -134,9 +134,11 @@
   (is ((realm/predicate realm/boolean) true))
   (is (not ((realm/predicate realm/boolean) "true")))
   (is ((realm/predicate realm/keyword) :keyword))
-  (is (not ((realm/predicate realm/real) "keyword")))
+  (is (not ((realm/predicate realm/keyword) "keyword")))
   (is ((realm/predicate realm/string) "string"))
-  (is (not ((realm/predicate realm/real) :string)))
+  (is (not ((realm/predicate realm/string) :string)))
+  (is ((realm/predicate realm/uuid) #uuid "66a73374-6730-4a4b-a835-78e938293918"))
+  (is (not ((realm/predicate realm/uuid) "66a73374-6730-4a4b-a835-78e938293918")))
 
   (is ((realm/predicate realm/any) "string"))
 
