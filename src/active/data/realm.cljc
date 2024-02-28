@@ -32,14 +32,14 @@
   [thing]
   (is-a? builtin-scalar-realm thing))
 
-(defn natural?
+(defn- natural?
   "Returns true if n is a natural number.
   I.e. a n integer >= 0."
   [n]
   (and (integer? n)
        (>= n 0)))
 
-(defn real?
+(defn- real?
   "Returns true if n is a real number."
   [n]
   (number? n))
@@ -77,7 +77,7 @@
                                predicate any?
                                description "any" metadata {}))
 
-(def scalar-realms
+#_(def scalar-realms
   (into {}
         (map (fn [scalar-realm]
                [(builtin-scalar-realm-id scalar-realm) scalar-realm])
@@ -389,7 +389,7 @@
    function-case-optional-arguments-realm ; nil or sequence-of realm or map-with-keys realm or tuple realm
    function-case-return-realm])
 
-(defn function-case-description
+(defn- function-case-description
   [function-case]
   (str "function ("
        (string/join ", "
@@ -495,7 +495,7 @@ Here are the different forms:
   :extends Realm
   [function-realm-cases])
 
-(defn function-cases
+(defn ^:no-doc function-cases
   "Just call this on a buch of function realms."
   [& cases]
   (let [cases (mapcat function-realm-cases cases)]
