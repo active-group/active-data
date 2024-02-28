@@ -1,5 +1,5 @@
 (ns active.data.realm.realms
-  (:refer-clojure :exclude [keyword symbol boolean])
+  (:refer-clojure :exclude [keyword symbol boolean uuid])
   (:require [active.data.realm :as realm]))
 
 ; questionable
@@ -14,6 +14,7 @@
 (def symbol (realm/enum realm/symbol))
 (def string (realm/enum realm/string))
 (def boolean (realm/enum realm/boolean))
+(def uuid (realm/enum realm/uuid))
 (def any (realm/enum realm/any))
 
 (def from-predicate (realm/record->record-realm realm/from-predicate-realm))
@@ -44,6 +45,7 @@
    symbol
    string
    boolean
+   uuid
    any
    from-predicate
    optional

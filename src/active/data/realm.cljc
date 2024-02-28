@@ -1,7 +1,6 @@
 (ns active.data.realm
   (:refer-clojure :exclude [keyword symbol boolean seq compile record? delay delayed?
-                            contains?
-                            struct])
+                            contains? uuid])
   (:require
    #?(:clj [clojure.core :as core]
       :cljs [cljs.core :as core])
@@ -37,14 +36,14 @@
   [thing]
   (is-a? builtin-scalar-realm thing))
 
-(defn natural?
+(defn- natural?
   "Returns true if n is a natural number.
   I.e. a n integer >= 0."
   [n]
   (and (integer? n)
        (>= n 0)))
 
-(defn real?
+(defn- real?
   "Returns true if n is a real number."
   [n]
   (number? n))
@@ -78,16 +77,19 @@
 (def boolean (builtin-scalar-realm builtin-scalar-realm-id :boolean
                                    predicate boolean?
                                    description "boolean" metadata {}))
+(def uuid (builtin-scalar-realm builtin-scalar-realm-id :uuid
+                                predicate uuid?
+                                description "uuid" metadata {}))
 (def any (builtin-scalar-realm builtin-scalar-realm-id :any
                                predicate any?
                                description "any" metadata {}))
 
-(def scalar-realms
+#_(def scalar-realms
   (into {}
         (map (fn [scalar-realm]
                [(builtin-scalar-realm-id scalar-realm) scalar-realm])
              [natural integer #?(:clj rational) real number
-              keyword symbol string
+              keyword symbol string uuid
               any])))
 
 (def-record ^{:doc "Realm only defined through a predicate."}
@@ -394,7 +396,7 @@
    function-case-optional-arguments-realm ; nil or sequence-of realm or map-with-keys realm or tuple realm
    function-case-return-realm])
 
-(defn function-case-description
+(defn- function-case-description
   [function-case]
   (str "function ("
        (string/join ", "
@@ -500,7 +502,7 @@ Here are the different forms:
   :extends Realm
   [function-realm-cases])
 
-(defn function-cases
+(defn ^:no-doc function-cases
   "Just call this on a buch of function realms."
   [& cases]
   (let [cases (mapcat function-realm-cases cases)]
