@@ -1,5 +1,5 @@
 (ns active.data.realm.realms
-  (:refer-clojure :exclude [keyword symbol boolean uuid])
+  (:refer-clojure :exclude [keyword symbol boolean char uuid])
   (:require [active.data.realm :as realm]))
 
 ; questionable
@@ -10,6 +10,7 @@
 #?(:clj (def rational (realm/enum realm/rational)))
 (def real (realm/enum realm/real))
 (def number (realm/enum realm/number))
+(def char (realm/enum realm/char))
 (def keyword (realm/enum realm/keyword))
 (def symbol (realm/enum realm/symbol))
 (def string (realm/enum realm/string))

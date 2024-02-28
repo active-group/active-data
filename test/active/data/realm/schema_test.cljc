@@ -22,6 +22,12 @@
   (is (some? (schema/validate (schema realm/real)
                               12.5)))
 
+  (is (some? (schema/validate (schema realm/char)
+                              \A)))
+  (is (thrown? #?(:clj Exception :cljs js/Error) 
+               (schema/validate (schema realm/char)
+                                :A)))
+
   (is (some? (schema/validate (schema realm/uuid) #uuid "66a73374-6730-4a4b-a835-78e938293918")))
   (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate realm/uuid "66a73374-6730-4a4b-a835-78e938293918")))
   

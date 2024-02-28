@@ -1,5 +1,5 @@
 (ns active.data.realm
-  (:refer-clojure :exclude [keyword symbol boolean seq compile record? delay delayed?
+  (:refer-clojure :exclude [keyword symbol char boolean seq compile record? delay delayed?
                             contains? uuid])
   (:require
    #?(:clj [clojure.core :as core]
@@ -64,7 +64,9 @@
 (def number (builtin-scalar-realm builtin-scalar-realm-id :number
                                   predicate number?
                                   description "number" metadata {}))
-
+(def char (builtin-scalar-realm builtin-scalar-realm-id :char
+                                predicate char?
+                                description "char" metadata {}))
 (def keyword (builtin-scalar-realm builtin-scalar-realm-id :keyword
                                    predicate keyword?
                                    description "keyword" metadata {}))
