@@ -343,6 +343,9 @@
       ;; extend APersistentMap; but using gen-class is also not easy
       ;; in terms of the interop.
       [java.lang.Iterable
+
+       java.lang.Object
+       (toString [this] (pr-str this))
        
        java.util.Map
        (size [this] (struct-type/size struct))

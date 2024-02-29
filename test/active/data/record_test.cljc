@@ -124,8 +124,9 @@
 (t/deftest printer-test
   (let [v (R r-a 42 r-b "foo")]
     (t/is (= "#active.data.record-test/R{r-a 42, r-b \"foo\"}" (pr-str v)))
-    ;; FIXME (str)?
-    #_(t/is (= "#active.data.record-test/R{r-a 42, r-b foo}" (str v)))
+    ;; Note: (str) is sometimes different - but no in maps?
+    (t/is (= "{:foo \"bar\"}" (str {:foo "bar"})))
+    (t/is (= "#active.data.record-test/R{r-a 42, r-b \"foo\"}" (str v)))
 
     ;; TODO: or just the record type name?
     (t/is (= "#active.data.record.Record{r-a, r-b}" (pr-str R)))
