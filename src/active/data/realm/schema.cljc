@@ -71,9 +71,9 @@
    realms/real schema/Num
    realms/number schema/Num
 
-   realms/char char
+   realms/char (schema/pred char?)
 
-   realms/boolean boolean
+   realms/boolean schema/Bool
    realms/keyword schema/Keyword
    realms/symbol schema/Symbol
    realms/string schema/Str
