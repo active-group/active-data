@@ -18,8 +18,8 @@
 (sut/def-record OtherR
   [or-a or-b])
 
-;; TODO
-#_#_(sut/def-struct ^:private PrivT [pt-a ^{:private false} pt-b])
+(sut/def-record ^:private PrivT [pt-a ^{:private false} pt-b])
+
 (t/testing "private inheritance"
     (t/is (:private (meta #'PrivT)))
     (t/is (:private (meta #'pt-a)) "Privateness is inherited")
@@ -84,27 +84,6 @@
       (t/is (= 42 (apply r-a [v])))
       (t/is (= 11 (r-a (apply r-a [v 11])))))))
 
-;; TODO: -> keys-test ?
-#_(t/deftest keyed-map-test
-  (t/testing "keys also work for hash-maps"
-    (let [v {t-a 42
-             t-b :foo}]
-      (t/testing "access"
-        (t/is (= 42 (t-a v)))
-        (t/is (= :foo (get v t-b)))
-
-        (t/is (= nil (t-b {})))
-        (t/is (= nil (get {} t-b)))
-        )
-
-      (t/testing "update"
-       (t/is (= {t-a 42 t-b :bar}
-                (t-b v :bar)))
-    
-       (t/is (= {t-a 42 t-b :bar}
-                (assoc v :t-b :bar))))))
-  )
-
 (t/deftest empty-test
   (sut/def-record Empty1 [])
   (sut/def-record Empty2 [])
@@ -135,10 +114,14 @@
 (t/deftest extends-test
   (sut/def-record ExtR :extends R [r-c])
 
-  (t/is (some? (ExtR r-a 42 r-b "foo" r-c :bla)))
+  (let [v (ExtR r-a 42 r-b "foo" r-c :bla)]
+    
+    (t/is (= 10 (r-a (assoc v r-a 10))))
+    (t/is (= "yyy" (r-c (assoc v r-c "yyy")))))
 
   (t/testing "predicates"
     (let [v (ExtR r-a 42 r-b "foo" r-c :bla)]
+      (t/is (sut/is-a? ExtR v))
       (t/is (sut/is-a? R v))
       (t/is (sut/is-extended-from? R v))
 
@@ -172,83 +155,7 @@
       (t/is (throws #(into valid {vt-a :foo})))
       (t/is (throws #(empty valid))))))
 
-#_(sut/def-struct ExT
-  :extends T
-  [t-c])
-
-#_(t/deftest extends-test
-  (let [v (sut/struct-map ExT t-a 42 t-b :test t-c "xxx")]
-
-    (t/is (sut/has-keys? ExT v))
-    (t/is (sut/has-keys? T v))
-    
-    (t/is (= 10 (t-a (assoc v t-a 10))))
-    (t/is (= "yyy" (t-c (assoc v t-c "yyy"))))
-
-    ;; optimizations
-    (t/is (key/optimized-for? t-a ExT))
-    )
-
-  ;; TODO: not anymore...?
-  #_(t/testing "inherited validation"
-    (let [inspect-v (fn [atom]
-                      (reify validator/IMapValidator
-                        (-validate-field! [this changed-key changed-value]
-                          (swap! atom conj [:field changed-key changed-value]))
-                        (-validate-map! [this m]
-                          (swap! atom conj [:map m]))))
-          base-validations (atom [])
-          derived-validations (atom [])]
-      
-      (sut/def-struct VBase [vt-a])
-      (sut/set-validator! VBase (inspect-v base-validations))
-
-      (sut/def-struct VExt :extends VBase [vt-b])
-      (sut/set-validator! VExt (inspect-v derived-validations))
-  
-      (let [valid (sut/struct-map VExt vt-a 42 vt-b 21)]
-        (t/testing "contruction checks for validity"
-            (t/is (= [[:field vt-a 42]
-                      [:map valid]]
-                     @base-validations))
-            (t/is (= [[:field vt-a 42]
-                      [:field vt-b 21]
-                      [:map valid]]
-                     @derived-validations)))
-
-        (reset! base-validations [])
-        (reset! derived-validations [])
-
-        (t/testing "modification checks for validity"
-          ;; of a base field:
-          (assoc valid vt-a :foo)
-          (t/is (= `[[:field ~vt-a :foo]
-                     [:map {~vt-a :foo, ~vt-b 21}]]
-                   @base-validations))
-          ;; Note: validator of derived struct is also called for change in base field
-          (t/is (= `[[:field ~vt-a :foo]
-                     [:map {~vt-a :foo, ~vt-b 21}]]
-                   @derived-validations))
-
-          (reset! base-validations [])
-          (reset! derived-validations [])
-
-          ;; of a derived field:
-          (assoc valid vt-b :bar)
-          (t/is (empty? @base-validations))
-          (t/is (= `[[:field ~vt-b :bar]
-                     [:map {~vt-a 42, ~vt-b :bar}]]
-                   @derived-validations)))
-
-        (reset! base-validations [])
-        (reset! derived-validations [])
-
-        (t/testing "has-keys? does not check base validity if derived struct-map"
-          ;; Note: although it is not an is-a? base, the base validity must have been checked on construction already.
-          
-          (t/is (sut/has-keys? VBase valid))
-          (t/is (empty? @base-validations))
-          )))
-    )
-  
-  )
+(t/deftest destructuring-works-test
+  (let [{a r-a b r-b} (R r-a 42 r-b :foo)]
+    (t/is (= a 42))
+    (t/is (= b :foo))))
