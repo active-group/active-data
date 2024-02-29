@@ -52,8 +52,8 @@
   [keys-predicates-map]
   (field-validators
    (into {} (map (fn [[k pred]]
-                   (fn [v]
-                     (assert (pred v) k)))
+                   [k (fn [v]
+                        (assert (pred v) k))])
                  keys-predicates-map))))
 
 (defn conditionally

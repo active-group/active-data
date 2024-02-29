@@ -157,36 +157,20 @@
                            (f 11)
                            (persistent!))))))))
 
-;; TODO
-#_#_
-(defrecord AllInt []
-  validator/IMapValidator
-  (-validate-field! [this changed-key changed-value]
-    (when-not (int? changed-value)
-      (throw (ex-info "Not an int" {:v changed-value}))))
-  (-validate-map! [this m]
-    nil))
-
-
 (t/deftest validator-test
-
-  (sut/def-struct ValidatedT [vt-a vt-b])
-  (sut/set-validator! ValidatedT (AllInt.))
+  (sut/def-record ValidatedT
+    :validator (validator/field-assertions {vt-a int?
+                                            vt-b int?})
+    [vt-a vt-b])
   
-  (let [valid (sut/struct-map ValidatedT vt-a 42 vt-b 21)]
+  (let [valid (ValidatedT vt-a 42 vt-b 21)]
     (t/testing "contruction checks for validity"
-      (t/is (throws #(sut/struct-map ValidatedT vt-a :foo vt-b 21))))
+      (t/is (throws #(ValidatedT vt-a :foo vt-b 21))))
 
     (t/testing "modification checks for validity"
       (t/is (throws #(assoc valid vt-a :foo)))
       (t/is (throws #(into valid {vt-a :foo})))
-      (t/is (throws #(empty valid))))
-
-    ;; TODO: not currently anymore
-    #_(t/testing "has-keys? checks for validity"  
-      (t/is (sut/has-keys? ValidatedT {vt-a 11 vt-b 22}))
-      (t/is (not (sut/has-keys? ValidatedT {vt-a :foo vt-b :bar})))))
-  )
+      (t/is (throws #(empty valid))))))
 
 #_(sut/def-struct ExT
   :extends T
