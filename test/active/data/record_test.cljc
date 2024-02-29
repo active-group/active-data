@@ -123,10 +123,9 @@
 
 (t/deftest printer-test
   (let [v (R r-a 42 r-b "foo")]
-    ;; TODO: change how keys are printed here?
-    
     (t/is (= "#active.data.record-test/R{r-a 42, r-b \"foo\"}" (pr-str v)))
-    ;; (t/is (= "#active.data.record-test/R{r-a 42, r-b foo" (str v)))
+    ;; FIXME (str)?
+    #_(t/is (= "#active.data.record-test/R{r-a 42, r-b foo}" (str v)))
 
     ;; TODO: or just the record type name?
     (t/is (= "#active.data.record.Record{r-a, r-b}" (pr-str R)))
@@ -144,6 +143,18 @@
 
       (t/is (not (sut/is-exactly-a? R v)))
       (t/is (sut/is-exactly-a? ExtR v)))))
+
+(t/deftest transient-test
+  (let [v (R r-a 42 r-b "foo")]
+
+    (t/is (= 11 (r-a (-> (transient v)
+                         (assoc! r-a 11)
+                         (persistent!)))))
+
+    (let [f (sut/mutator! R r-a)]
+      (t/is (= 11 (r-a (-> (transient v)
+                           (f 11)
+                           (persistent!))))))))
 
 ;; TODO
 #_#_

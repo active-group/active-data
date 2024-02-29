@@ -245,3 +245,5 @@
 (defn ^:no-doc mutator [record key]
   (struct-map/mutator* record key (struct-type-matcher record)))
 
+(defn mutator! [record key]
+  (struct-map/mutator!* record key (struct-type-matcher record)))

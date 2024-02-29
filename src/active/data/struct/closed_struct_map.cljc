@@ -89,6 +89,7 @@
 (defprotocol ^:private TransientUtil ;; to share some code between clj/cljs, with hopefully little runtime overhead.
   (t-assoc [this key val])
   (t-assoc-multi [this keys-vals])
+  (t-unsafe-assoc [this key index value])
   (t-dissoc [this key])
   (t-persistent [this])
   (t-get [this key])
@@ -101,6 +102,12 @@
   ;; Note: does 'single field' validation immediately, but full map validation only on persistence.
 
   TransientUtil
+  (t-unsafe-assoc [this key index val]
+    (ensure-editable! owner)
+    (do (validate-single! struct key val)
+        (data/unsafe-mutate! data index val)
+        this))
+  
   (t-assoc [this key val]
     (ensure-editable! owner)
     (if-let [index (t-find-index-of struct key)]
@@ -581,6 +588,11 @@
   (and (clj-instance? PersistentClosedStructMap m)
        (struct-match? (.-struct ^PersistentClosedStructMap m))))
 
+(defn- is-definitely-transient-struct-map-of? [m struct-match?]
+  ;; Note: this, resp struct= may return false negatives for optimization purposes
+  (and (clj-instance? TransientClosedStructMap m)
+       (struct-match? (.-struct ^TransientClosedStructMap m))))
+
 (defn accessor* [struct key struct-match?]
   (let [idx (find-index-of struct key)]
     (if (>= idx 0)
@@ -606,10 +618,17 @@
 (defn mutator [struct key]
   (mutator* struct key (partial identical? struct)))
 
+(defn mutator!* [struct key struct-match?]
+  (let [idx (find-index-of struct key)]
+    (if (>= idx 0)
+      (fn [m v]
+        (if (is-definitely-transient-struct-map-of? m struct-match?)
+          (t-unsafe-assoc ^TransientClosedStructMap m key idx v)
+          (assoc! m key v)))
+      (throw (unknown-key key struct)))))
+
 (defn mutator! [struct key]
-  ;; TODO: actually optimize it, e.g by looking at key beforehand.
-  (fn [m v]
-    (assoc! m key v)))
+  (mutator!* struct key (partial identical? struct)))
 
 (defn positional-n [struct]
   (let [keys (struct-type/keys struct)
