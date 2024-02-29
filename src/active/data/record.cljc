@@ -35,6 +35,13 @@
   (update p1 person-age inc)
   ```
 
+  As well as destructuring like maps:
+
+  ```
+  (let [{p1-age person-age, p1-name person-name} p1]
+    ...)
+  ```
+
   But trying to add keys not defined in the record, or removing any
   keys will result in an error!
 
@@ -65,7 +72,7 @@
   in the host language. That has the disadvantage that you cannot
   implement protocols for these records, but has the advantage that
   records are first class values and are non-generative. That means
-  redefining a record (with the same keys) still define the same
+  redefining a record (with the same keys) still defines the same
   record and keys, that still work on instances of the previous
   definition.
   ```
