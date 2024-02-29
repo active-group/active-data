@@ -71,7 +71,7 @@
    realms/real schema/Num
    realms/number schema/Num
 
-   realms/char char
+   realms/char #?(:clj char :cljs (schema/pred char?))
 
    realms/boolean boolean
    realms/keyword schema/Keyword
