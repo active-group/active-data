@@ -6,14 +6,26 @@
             [active.data.realm :as realm]
             [active.data.realm.validation :as realm-validation]))
 
+(defn ^:no-doc parse-fields [fields]
+  (loop [fields fields
+         res []]
+    (if (empty? fields)
+      res
+      (let [field (first fields)]
+        (if (= :- (second fields))
+          (recur (drop 3 fields)
+                 (conj res [field (second (rest fields))]))
+          (recur (rest fields)
+                 (conj res [field nil])))))))
+
 (defmacro def-realm-record
   "
   ```
   Defines a record and its keys, given a realm for each key:
   
   (def-realm-record T
-    [f1 realm/int
-     f2 realm/string])
+    [f1 :- realm/int,
+     f2 :- realm/string])
 
   A corresponding instance can be created by using the record as a function:
 
@@ -33,19 +45,19 @@
   "
   [t & args]
   (let [[options fields*] (record/parse-def-record-args args)
-        pairs (map vec (partition 2 fields*))
+        pairs (parse-fields fields*)
         fields (map first pairs)]
     (assert (every? #{:extends} (map first options)) "Invalid option")
     `(do (record/def-record ~t
            ~@(apply concat options)
            :validator (validator (map (fn [[field# realm#]]
-                                           [field# (realm/compile realm#)])
+                                           [field# (if realm# (realm/compile realm#) realm/any)])
                                       [~@pairs])
                                  ~(:extends options))
            [~@fields])
 
          (set-realm-record-meta! ~t (map (fn [[field# realm#]]
-                                           [field# (realm/compile realm#)])
+                                           [field# (if realm# (realm/compile realm#) realm/any)])
                                          [~@pairs]))
 
          ~t)))
