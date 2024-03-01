@@ -4,10 +4,12 @@
             #?(:cljs [cljs.test :refer-macros (deftest is testing)])
             #?(:clj [clojure.test :refer (deftest is testing)])))
 
-(realm-attach/defn realm/integer
-  twoify
-  [n realm/integer]
+(realm-attach/defn twoify :- realm/integer
+  [n :- realm/integer]
   (* n 2))
+
+;; realms are optional
+(realm-attach/defn test-fn [a b])
 
 (deftest defn-defines-test
   (is (= 14 (twoify 7))))

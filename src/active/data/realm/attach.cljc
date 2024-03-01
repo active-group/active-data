@@ -10,23 +10,54 @@
 
 (def ^:no-doc fn-realm-meta-key ::realm)
 
+(core/defn ^:no-doc parse-defn-args [next & rest-args]
+  (let [[return-realm rest-args]
+        (if (= :- next)
+          [(first rest-args) (rest rest-args)]
+          [nil rest-args])
+
+        [doc-string rest-args]
+        (if (string? (first rest-args))
+          [(first rest-args) (rest rest-args)]
+          [nil rest-args])
+
+        [args-list & body] rest-args
+
+        args-realms (loop [args-list args-list
+                           res []]
+                      (if (empty? args-list)
+                        res
+                        (let [arg (first args-list)]
+                          (if (= :- (second args-list))
+                            (recur (drop 3 args-list)
+                                   (conj res [arg (second (rest args-list))]))
+                            (recur (rest args-list)
+                                   (conj res [arg nil]))))))]
+    [return-realm doc-string args-realms body]))
+
 (defmacro defn
-  [return-realm name next & rest-args]
-  (let [[doc-string rest-args]
-        (if (string? next)
-          [next rest-args]
-          [nil (cons next rest-args)])
-        args (partition 2 (first rest-args))
-        body (rest rest-args)
+  "Define a function with realms for return value and arguments.
+
+  ```
+  (defn myfun :- realm/integer [a :- realm/string]
+    ...)
+  ```
+  "
+  [name next & rest-args]
+  ;; TODO: support some 'rest args' forms?
+  (let [[return-realm doc-string args-realms body] (apply parse-defn-args next rest-args)
         arrow '->]
-    `(let [ret# (schema/defn ~name :- (realm-schema/schema (realm/compile ~return-realm))
+    `(let [ret# (schema/defn ~name ~@(when return-realm `[:- (realm-schema/schema (realm/compile ~return-realm))])
                   ~(vec (apply concat
                                (map (core/fn [[parameter realm]]
-                                      `[~parameter :- (realm-schema/schema (realm/compile ~realm))])
-                                    args)))
+                                      `[~parameter ~@(when realm `[:- (realm-schema/schema (realm/compile ~realm))])])
+                                    args-realms)))
                   ~@body)]
        (alter-meta! (var ~name) assoc fn-realm-meta-key
-                    (realm/function ~@(map second args) ~arrow ~return-realm))
+                    (realm/function ~@(map (core/fn [[arg realm]]
+                                             (or realm realm/any))
+                                           args-realms)
+                                    ~arrow (or ~return-realm realm/any)))
        ret#)))
 
 #?(:clj
