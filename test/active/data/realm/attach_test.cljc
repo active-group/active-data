@@ -9,5 +9,9 @@
   [n realm/integer]
   (* n 2))
 
-(deftest defn-defines
+(deftest defn-defines-test
   (is (= 14 (twoify 7))))
+
+#?(:clj
+   (deftest fn-realm-test
+     (is (realm/function? (realm-attach/fn-realm #'twoify)))))
