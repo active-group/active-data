@@ -7,12 +7,17 @@
             #?(:clj [clojure.test :refer (is deftest testing)])))
 
 (sut/def-realm-record T
-  [f1 realm/integer
-   f2 realm/string])
+  [f1 :- realm/integer,
+   f2 :- realm/string])
+
+;; realms are optional
+(sut/def-realm-record OptT
+  [opt1,
+   opt2 :- realm/string])
 
 (sut/def-realm-record ExtT
   :extends T
-  [f3 realm/keyword])
+  [f3 :- realm/keyword])
 
 (deftest realm
   (is (realm/record? (realm/compile T))))

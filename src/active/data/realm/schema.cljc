@@ -9,7 +9,7 @@
   #?(:cljs (:require-macros [schema.macros :as schema-macros])))
 
 ;; essentially a copy of Schema's Both, which is deprecated
-(schema-macros/defrecord-schema Intersection [schemas]
+(schema-macros/defrecord-schema ^:private Intersection [schemas]
   schema/Schema
   (spec [this] this)
   (explain [this] (cons 'intersection (map schema/explain schemas)))
@@ -57,8 +57,8 @@
       :else
       positional-schemas))) ; FIXME: knowing that schema doesn't handle this and won't check this
 
-(def generic-function-schema (schema/pred fn? "schema for unknown function"))
-(def natural-schema (schema/constrained schema/Int (fn [n] (>= n 0)) "natural"))
+(def ^:private generic-function-schema (schema/pred fn? "schema for unknown function"))
+(def ^:private natural-schema (schema/constrained schema/Int (fn [n] (>= n 0)) "natural"))
 
 (defn schema
   [realm]
@@ -71,9 +71,9 @@
    realms/real schema/Num
    realms/number schema/Num
 
-   realms/char #?(:clj char :cljs (schema/pred char?))
+   realms/char (schema/pred char?)
 
-   realms/boolean boolean
+   realms/boolean schema/Bool
    realms/keyword schema/Keyword
    realms/symbol schema/Symbol
    realms/string schema/Str
