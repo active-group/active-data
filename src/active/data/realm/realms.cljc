@@ -8,7 +8,6 @@
 (def natural (realm/enum realm/natural))
 (def integer (realm/enum realm/integer))
 #?(:clj (def rational (realm/enum realm/rational)))
-(def real (realm/enum realm/real))
 (def number (realm/enum realm/number))
 (def char (realm/enum realm/char))
 (def keyword (realm/enum realm/keyword))
@@ -41,7 +40,6 @@
    natural
    integer
    #?(:clj rational)
-   real
    number
    keyword
    symbol

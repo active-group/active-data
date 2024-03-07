@@ -68,7 +68,6 @@
    realms/natural natural-schema
    realms/integer schema/Int
    #?@(:clj [realms/rational (schema/pred rational?)])
-   realms/real schema/Num
    realms/number schema/Num
 
    realms/char (schema/pred char?)

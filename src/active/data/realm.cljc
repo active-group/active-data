@@ -57,10 +57,6 @@
 #?(:clj (def rational (builtin-scalar-realm builtin-scalar-realm-id :rational
                                             predicate rational?
                                             description "rational" metadata {})))
-; mainly to sometime distinguish from complex
-(def real (builtin-scalar-realm builtin-scalar-realm-id :real
-                                predicate real?
-                                description "real" metadata {}))
 (def number (builtin-scalar-realm builtin-scalar-realm-id :number
                                   predicate number?
                                   description "number" metadata {}))
@@ -241,6 +237,8 @@
 (defn real-range?
   [thing]
   (is-a? real-range? thing))
+
+(def real (real-range :in nil nil :in))
 
 (defn- realm-seq-description
   [realms]
