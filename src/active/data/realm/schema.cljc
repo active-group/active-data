@@ -106,6 +106,11 @@
                          (fn [n]
                            (<= from n to))))
 
+   realms/real-range
+   (schema/constrained schema/Num
+                       (realm/predicate realm))
+   
+
    realms/union
    (loop [realms (realm/union-realm-realms realm)
           args (transient [])]

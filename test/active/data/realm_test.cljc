@@ -88,6 +88,22 @@
 (deftest description-test
   (is (= "optional integer"
          (realm/description (realm/optional realm/integer))))
+  (is (= "real range [5, 10]"
+         (realm/description (realm/real-range :in 5 10 :in))))
+  (is (= "real range (5, 10]"
+         (realm/description (realm/real-range :ex 5 10 :in))))
+  (is (= "real range [5, 10)"
+         (realm/description (realm/real-range :in 5 10 :ex))))
+  (is (= "real range (5, 10)"
+         (realm/description (realm/real-range :ex 5 10 :ex))))
+  (is (= "real range (5, )"
+         (realm/description (realm/real-range :ex 5))))
+  (is (= "real range [5, )"
+         (realm/description (realm/real-range :in 5))))
+  (is (= "real range (, 5)"
+         (realm/description (realm/real-range 5 :ex))))
+  (is (= "real range (, 5]"
+         (realm/description (realm/real-range 5 :in))))
   (is (= "integer from 5 to 10"
          (realm/description (realm/integer-from-to 5 10))))
   (is (= "union of [integer, real]"
@@ -156,6 +172,40 @@
   (is (not ((realm/predicate (realm/integer-from-to 5 7)) 8)))
   (is (not ((realm/predicate (realm/integer-from-to 5 7)) "5")))
 
+  (is ((realm/predicate (realm/real-range :in 5 7 :in)) 5))
+  (is ((realm/predicate (realm/real-range :in 5 7 :in)) 7))
+  (is (not ((realm/predicate (realm/real-range :in 5 7 :in)) 4.9)))
+  (is (not ((realm/predicate (realm/real-range :in 5 7 :in)) 7.1)))
+
+  (is ((realm/predicate (realm/real-range :in 5 7 :ex)) 5))
+  (is (not ((realm/predicate (realm/real-range :in 5 7 :ex)) 7)))
+  (is (not ((realm/predicate (realm/real-range :in 5 7 :ex)) 4.9)))
+
+  (is (not ((realm/predicate (realm/real-range :ex 5 7 :in)) 5)))
+  (is ((realm/predicate (realm/real-range :ex 5 7 :in)) 7))
+  (is (not ((realm/predicate (realm/real-range :ex 5 7 :in)) 7.1)))
+
+  (is ((realm/predicate (realm/real-range :ex 5 7 :ex)) 6))
+  (is (not ((realm/predicate (realm/real-range :ex 5 7 :ex)) 5)))
+  (is (not ((realm/predicate (realm/real-range :ex 5 7 :ex)) 7)))
+
+  (is ((realm/predicate (realm/real-range :ex 5)) 6))
+  (is (not ((realm/predicate (realm/real-range :ex 5)) 5)))
+  
+  (is ((realm/predicate (realm/real-range :in 5)) 5))
+  (is (not ((realm/predicate (realm/real-range :in 5)) 4.9)))
+
+  (is ((realm/predicate (realm/real-range 5 :ex)) 4))
+  (is (not ((realm/predicate (realm/real-range 5 :ex)) 5)))
+
+  (is ((realm/predicate (realm/real-range 5 :in)) 5))
+  (is (not ((realm/predicate (realm/real-range 5 :in)) 6)))
+
+  (is (not ((realm/predicate (realm/real-range :in 5 7 :in)) "5")))
+  (is (not ((realm/predicate (realm/real-range :in 5 7 :ex)) "5")))
+  (is (not ((realm/predicate (realm/real-range :ex 5 7 :in)) "5")))
+  (is (not ((realm/predicate (realm/real-range :ex 5 7 :ex)) "5")))
+  
   (is ((realm/predicate (realm/union realm/integer realm/string)) 5))
   (is ((realm/predicate (realm/union realm/integer realm/string)) "5"))
   (is (not ((realm/predicate (realm/union realm/integer realm/string)) :five)))

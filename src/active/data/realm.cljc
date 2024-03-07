@@ -134,6 +134,7 @@
 (def-record ^{:doc "Realm for integer ranges."}
   integer-from-to-realm
   :extends Realm
+  ; FIXME: bounds optional, have this cover natural and integer
   [integer-from-to-realm-from integer-from-to-realm-to])
 
 (defn integer-from-to?
@@ -151,7 +152,97 @@
                                           (<= x to)))
                          metadata {}))
 
-(defn realm-seq-description
+(def-record  ^{:doc "Realm for integer ranges."}
+  real-range-realm
+  :extends Realm
+  ; clusive is either :in or :ex
+  [real-range-realm-clusive-left
+   real-range-realm-left ; may be nil
+   real-range-realm-right
+   real-range-realm-clusive-right])
+
+(defn- make-real-range
+  [clusive-left left right clusive-right]
+  (real-range-realm description (if (and (nil? left) (nil? right))
+                                   "real"
+                                   (str "real range "
+                                        (case clusive-left
+                                          (:in) "["
+                                          (:ex) "(")
+                                        (or left "")
+                                        ", "
+                                        (or right "")
+                                        (case clusive-right
+                                          (:in) "]"
+                                          (:ex) ")")))
+                     real-range-realm-clusive-left clusive-left
+                     real-range-realm-left left
+                     real-range-realm-right right
+                     real-range-realm-clusive-right clusive-right
+                     predicate (cond
+                                 (and left right)
+                                 (case clusive-left
+                                   (:in) (case clusive-right
+                                           (:in)
+                                           (fn [n]
+                                             (and (real? n)
+                                                  (<= left n right)))
+                                           (:ex)
+                                           (fn [n]
+                                             (and (real? n)
+                                                  (<= left n)
+                                                  (< n right))))
+                                   (:ex) (case clusive-right
+                                           (:in)
+                                           (fn [n]
+                                             (and (real? n)
+                                                  (< left n)
+                                                  (<= n right)))
+                                           (:ex)
+                                           (fn [n]
+                                             (and (real? n)
+                                                  (< left n right)))))
+
+                                 left
+                                 (case clusive-left
+                                   (:in)
+                                   (fn [n]
+                                     (and (real? n)
+                                          (<= left n)))
+                                   (:ex)
+                                   (fn [n]
+                                     (and (real? n)
+                                          (< left n))))
+
+                                 right
+                                 (case clusive-right
+                                   (:in)
+                                   (fn [n]
+                                     (and (real? n)
+                                          (<= n right)))
+                                   (:ex)
+                                   (fn [n]
+                                     (and (real? n)
+                                          (< n right))))
+
+                                 :else
+                                 real?)
+                     metadata {}))
+
+(defn real-range
+  ([clusive-left left right clusive-right]
+   (make-real-range clusive-left left right clusive-right))
+  ([lr1 lr2]
+   (case lr1
+     (:in :ex) (make-real-range lr1 lr2 nil :ex)
+     (case lr2
+       (:in :ex) (make-real-range :ex nil lr1 lr2)))))
+
+(defn real-range?
+  [thing]
+  (is-a? real-range? thing))
+
+(defn- realm-seq-description
   [realms]
   (str "["
        (string/join ", " (map description realms))

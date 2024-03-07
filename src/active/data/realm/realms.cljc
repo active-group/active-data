@@ -21,6 +21,7 @@
 (def from-predicate (realm/record->record-realm realm/from-predicate-realm))
 (def optional (realm/record->record-realm realm/optional-realm))
 (def integer-from-to (realm/record->record-realm realm/integer-from-to-realm))
+(def real-range (realm/record->record-realm realm/real-range-realm))
 (def union  (realm/record->record-realm realm/union-realm))
 (def intersection  (realm/record->record-realm realm/intersection-realm))
 (def enum  (realm/record->record-realm realm/enum-realm))
@@ -51,6 +52,7 @@
    from-predicate
    optional
    integer-from-to
+   real-range
    union
    intersection
    enum

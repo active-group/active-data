@@ -106,6 +106,16 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 11)))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s "11")))))
 
+(deftest float-range-test
+  (let [s (schema (realm/real-range :in 1 10 :in))]
+    (is (some? (schema/validate s 1)))
+    (is (some? (schema/validate s 5)))
+    (is (some? (schema/validate s 10)))
+
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 0)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 11)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s "11")))))
+
 (deftest union-test
   (let [s (schema (realm/union realm/string realm/keyword realm/integer))]
     (is (some? (schema/validate s "foo")))
