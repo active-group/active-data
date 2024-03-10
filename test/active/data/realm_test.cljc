@@ -106,6 +106,10 @@
          (realm/description (realm/real-range 5 :in))))
   (is (= "integer from 5 to 10"
          (realm/description (realm/integer-from-to 5 10))))
+  (is (= "integer from 5"
+         (realm/description (realm/integer-from 5))))
+  (is (= "integer to 10"
+         (realm/description (realm/integer-to 10))))
   (is (= "union of [integer, real]"
          (realm/description (realm/union realm/integer realm/real))))
   (is (= "intersection of [integer, real]"
@@ -171,6 +175,14 @@
   (is (not ((realm/predicate (realm/integer-from-to 5 7)) 4)))
   (is (not ((realm/predicate (realm/integer-from-to 5 7)) 8)))
   (is (not ((realm/predicate (realm/integer-from-to 5 7)) "5")))
+
+  (is ((realm/predicate (realm/integer-from 5)) 5))
+  (is ((realm/predicate (realm/integer-from 5)) 6))
+  (is (not ((realm/predicate (realm/integer-from 5)) 4)))
+
+  (is ((realm/predicate (realm/integer-to 5)) 5))
+  (is (not ((realm/predicate (realm/integer-to 5)) 6)))
+  (is ((realm/predicate (realm/integer-to 5)) 4))
 
   (is ((realm/predicate (realm/real-range :in 5 7 :in)) 5))
   (is ((realm/predicate (realm/real-range :in 5 7 :in)) 7))

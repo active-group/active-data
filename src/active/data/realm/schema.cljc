@@ -99,12 +99,9 @@
    #{(schema (realm/set-of-realm-realm realm))}
    
    realms/integer-from-to
-   (let [from (realm/integer-from-to-realm-from realm)
-         to (realm/integer-from-to-realm-to realm)]
-     (schema/constrained schema/Int
-                         (fn [n]
-                           (<= from n to))))
-
+   (schema/constrained schema/Int
+                       (realm/predicate realm))
+   
    realms/real-range
    (schema/constrained schema/Num
                        (realm/predicate realm))

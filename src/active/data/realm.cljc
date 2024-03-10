@@ -130,7 +130,6 @@
 (def-record ^{:doc "Realm for integer ranges."}
   integer-from-to-realm
   :extends Realm
-  ; FIXME: bounds optional, have this cover natural and integer
   [integer-from-to-realm-from integer-from-to-realm-to])
 
 (defn integer-from-to?
@@ -143,8 +142,28 @@
                          integer-from-to-realm-from from
                          integer-from-to-realm-to to
                          predicate (fn [x]
+                                       (and (integer? x)
+                                            (<= from x to)))
+                         metadata {}))
+
+(defn integer-from
+  [from]
+  (integer-from-to-realm description (str "integer from " from)
+                         integer-from-to-realm-from from
+                         integer-from-to-realm-to nil
+                         predicate (fn [x]
+                                       (and (integer? x)
+                                            (<= from x)))
+                         metadata {}))
+
+(defn integer-to
+  [to]
+  (integer-from-to-realm description
+                         (str "integer to " to)
+                         integer-from-to-realm-from nil
+                         integer-from-to-realm-to to
+                         predicate (fn [x]
                                      (and (integer? x)
-                                          (>= x from)
                                           (<= x to)))
                          metadata {}))
 
