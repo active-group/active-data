@@ -48,12 +48,6 @@
   [n]
   (number? n))
 
-(def natural (builtin-scalar-realm builtin-scalar-realm-id :natural
-                                   predicate natural?
-                                   description "natural" metadata {}))
-(def integer (builtin-scalar-realm builtin-scalar-realm-id :integer
-                                   predicate integer?
-                                   description "integer" metadata {}))
 #?(:clj (def rational (builtin-scalar-realm builtin-scalar-realm-id :rational
                                             predicate rational?
                                             description "rational" metadata {})))
@@ -130,11 +124,19 @@
 (def-record ^{:doc "Realm for integer ranges."}
   integer-from-to-realm
   :extends Realm
+  ;; either can be nil
   [integer-from-to-realm-from integer-from-to-realm-to])
 
 (defn integer-from-to?
   [thing]
   (is-a? integer-from-to-realm thing))
+
+(def integer
+  (integer-from-to-realm description "integer"
+                         integer-from-to-realm-from nil
+                         integer-from-to-realm-to nil
+                         predicate integer?
+                         metadata {}))
 
 (defn integer-from-to
   [from to]
@@ -166,6 +168,9 @@
                                      (and (integer? x)
                                           (<= x to)))
                          metadata {}))
+
+(def natural
+  (description (integer-from 0) "natural"))
 
 (def-record  ^{:doc "Realm for integer ranges."}
   real-range-realm

@@ -58,15 +58,12 @@
       positional-schemas))) ; FIXME: knowing that schema doesn't handle this and won't check this
 
 (def ^:private generic-function-schema (schema/pred fn? "schema for unknown function"))
-(def ^:private natural-schema (schema/constrained schema/Int (fn [n] (>= n 0)) "natural"))
 
 (defn schema
   [realm]
   (realm-dispatch/union-case
    realms/realm realm
 
-   realms/natural natural-schema
-   realms/integer schema/Int
    #?@(:clj [realms/rational (schema/pred rational?)])
    realms/number schema/Num
 
@@ -99,8 +96,12 @@
    #{(schema (realm/set-of-realm-realm realm))}
    
    realms/integer-from-to
-   (schema/constrained schema/Int
-                       (realm/predicate realm))
+   (let [from (realm/integer-from-to-realm-from realm)
+         to (realm/integer-from-to-realm-to realm)]
+     (if (and (nil? from) (nil? to))
+       schema/Int
+       (schema/constrained schema/Int
+                           (realm/predicate realm))))
    
    realms/real-range
    (schema/constrained schema/Num

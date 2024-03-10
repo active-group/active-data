@@ -5,8 +5,6 @@
 ; questionable
 (def builtin-scalar (realm/record->record-realm realm/builtin-scalar-realm))
 
-(def natural (realm/enum realm/natural))
-(def integer (realm/enum realm/integer))
 #?(:clj (def rational (realm/enum realm/rational)))
 (def number (realm/enum realm/number))
 (def char (realm/enum realm/char))
@@ -37,8 +35,6 @@
 
 (def realm
   (realm/union
-   natural
-   integer
    #?(:clj rational)
    number
    keyword
