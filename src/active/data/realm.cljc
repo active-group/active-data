@@ -425,20 +425,20 @@
                   metadata {})))
 
 (def-record ^{:doc "Realm for maps with a specific key, distinguishing it from other maps."}
-  map-with-key-realm
+  map-with-tag-realm
   :extends Realm
-  [map-with-key-realm-key
-   map-with-key-realm-value])
+  [map-with-tag-realm-key
+   map-with-tag-realm-value])
 
-(defn map-with-key?
+(defn map-with-tag?
   [thing]
-  (is-a? map-with-key-realm thing))
+  (is-a? map-with-tag-realm thing))
 
-(defn map-with-key
+(defn map-with-tag
   [key value]
-  (map-with-key-realm description (str "map with key " key " and value " value)
-                      map-with-key-realm-key key
-                      map-with-key-realm-value value
+  (map-with-tag-realm description (str "map with tag " key " -> " value)
+                      map-with-tag-realm-key key
+                      map-with-tag-realm-value value
                       predicate
                       (fn [x]
                         (and (map? x)

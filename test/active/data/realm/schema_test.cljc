@@ -181,8 +181,8 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s '())))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 'foo)))))
 
-(deftest map-with-key-test
-  (let [s (schema (realm/map-with-key :foo :bar))]
+(deftest map-with-tag-test
+  (let [s (schema (realm/map-with-tag :foo :bar))]
     (is (some? (schema/validate s {:foo :bar :baz 15})))
 
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s {})))
