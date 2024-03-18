@@ -1,5 +1,6 @@
 (ns active.data.realm-record-test
   (:require [active.data.realm :as realm]
+            [active.data.realm.inspection :as realm-inspection]
             [active.data.realm.validation :as realm-validation]
             [active.data.record :as record #?@(:cljs [:include-macros true])]
             [active.data.realm-record :as sut #?@(:cljs [:include-macros true])]
@@ -20,7 +21,7 @@
   [f3 :- realm/keyword])
 
 (deftest realm
-  (is (realm/record? (realm/compile T))))
+  (is (realm-inspection/record? (realm/compile T))))
 
 (deftest simple-validation
   (is (record/is-a? T
@@ -31,7 +32,7 @@
                 (T f1 "bar" f2 "foo")))))
 
 (deftest extended-realm-structs
-  (is (realm/record? (realm/compile ExtT)))
+  (is (realm-inspection/record? (realm/compile ExtT)))
   
   (is (some? (realm-validation/checking
               (ExtT f1 5 f2 "foo" f3 :bar))))

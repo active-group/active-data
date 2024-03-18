@@ -1,5 +1,6 @@
 (ns active.data.realm.attach-test
   (:require [active.data.realm :as realm]
+            [active.data.realm.inspection :as realm-inspection]
             [active.data.realm.attach :as realm-attach #?@(:cljs [:include-macros true])]
             #?(:cljs [cljs.test :refer-macros (deftest is testing)])
             #?(:clj [clojure.test :refer (deftest is testing)])))
@@ -16,4 +17,4 @@
 
 #?(:clj
    (deftest fn-realm-test
-     (is (realm/function? (realm-attach/fn-realm #'twoify)))))
+     (is (realm-inspection/function? (realm-attach/fn-realm #'twoify)))))
