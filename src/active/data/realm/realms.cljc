@@ -32,7 +32,6 @@
 (def function  (realm/record->record-realm realm/function-realm))
 (def delayed  (realm/record->record-realm realm/delayed-realm))
 (def named  (realm/record->record-realm realm/named-realm))
-(def restricted  (realm/record->record-realm realm/restricted-realm))
 
 (def realm
   (realm/union
@@ -60,6 +59,5 @@
    record
    function
    delayed
-   named
-   restricted))
+   named))
    

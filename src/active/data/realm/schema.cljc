@@ -141,11 +141,6 @@
     (schema/eq (realm/map-with-key-realm-value realm))
     schema/Any schema/Any}
 
-   realms/restricted
-   (schema/constrained (schema (realm/restricted-realm-realm realm))
-                       (realm/restricted-realm-predicate realm)
-                       (realm/description realm))
-
    realms/record
    (schema/pred (realm/predicate realm)
                 (str (realm/record-realm-name realm) " record"))

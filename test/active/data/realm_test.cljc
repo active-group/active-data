@@ -82,9 +82,6 @@
                       (> (count s) 0))
                     "nonempty strings"))
 
-(deftest restricted-test
-  (is (realm/restricted? nonempty-string-realm)))
-
 (deftest description-test
   (is (= "optional integer"
          (realm/description (realm/optional realm/integer))))
@@ -114,6 +111,8 @@
          (realm/description (realm/union realm/integer realm/real))))
   (is (= "intersection of [integer, real]"
          (realm/description (realm/intersection realm/integer realm/real))))
+  (is (= "intersection of [natural, integer, real]"
+         (realm/description (realm/intersection realm/natural realm/integer realm/real))))
   (is (= "enumeration of [1, 2, 3]"
          (realm/description (realm/enum 1 2 3))))
   (is (= "map with keys {:a -> integer, :b -> real}"
@@ -226,6 +225,9 @@
 
   (is ((realm/predicate (realm/intersection realm/string nonempty-string-realm)) "foo"))
   (is (not ((realm/predicate (realm/intersection realm/string nonempty-string-realm)) "")))
+
+  (is ((realm/predicate (realm/intersection realm/natural realm/integer realm/real)) 5))
+  (is (not ((realm/predicate (realm/intersection realm/natural realm/integer realm/real)) -5)))
 
   (is ((realm/predicate (realm/enum 2 3 5)) 2))
   (is ((realm/predicate (realm/enum 2 3 5)) 3))

@@ -318,13 +318,27 @@
   (is-a? intersection-realm thing))
 
 (defn intersection
-  [& realms]
-  (intersection-realm description (str "intersection of " (realm-seq-description realms))
-                      intersection-realm-realms (map compile realms)
-                      predicate (let [predicates (map predicate realms)]
-                                  (fn [x]
-                                    (every? #(% x) predicates)))
-                      metadata {}))
+  ([realm] realm)
+  ([realm1 realm2] ; common case
+   (intersection-realm description
+                       (if (from-predicate? realm2)
+                         (str (description realm1) " restricted to " (description realm2))
+                         (str "intersection of [" (description realm1) ", " (description realm2) "]"))
+                       intersection-realm-realms [realm1 realm2]
+                       predicate (let [predicate1 (predicate realm1)
+                                       predicate2 (predicate realm2)]
+                                   (fn [x]
+                                     (and (predicate1 x)
+                                          (predicate2 x))))
+                       metadata {}))
+  ([realm1 realm2 & realms-rest]
+   (let [realms (vec (list* realm1 realm2 realms-rest))]
+     (intersection-realm description (str "intersection of " (realm-seq-description realms))
+                         intersection-realm-realms (map compile realms)
+                         predicate (let [predicates (map predicate realms)]
+                                     (fn [x]
+                                       (every? #(% x) predicates)))
+                         metadata {}))))
 
 (def-record ^{:doc "Realm for sequences."}
   sequence-of-realm
@@ -692,28 +706,10 @@ Here are the different forms:
   [thing]
   (is-a? named-realm thing))
 
-; FIXME: why not intersection + predicate?
-(def-record ^{:doc "Realm restricted by a predicate"}
-  restricted-realm
-  :extends Realm
-  [restricted-realm-realm
-   restricted-realm-predicate])
-
 (defn restricted
   [realm pred predicate-description]
-  (let [realm (compile realm)]
-    (restricted-realm restricted-realm-realm realm
-                      restricted-realm-predicate pred
-                      metadata {}
-                      predicate (let [realm-predicate (predicate realm)]
-                                  (fn [x]
-                                    (and (realm-predicate x)
-                                         (pred x))))
-                      description (str (description realm) " restricted to " predicate-description))))
-
-(defn restricted?
-  [thing]
-  (is-a? restricted-realm thing))
+  (intersection realm
+                (from-predicate predicate-description pred)))
 
 (defn compile
   [shorthand]
