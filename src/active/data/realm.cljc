@@ -410,6 +410,27 @@
                   predicate map?
                   metadata {})))
 
+(def-record ^{:doc "Realm for maps with a specific key, distinguishing it from other maps."}
+  map-with-key-realm
+  :extends Realm
+  [map-with-key-realm-key
+   map-with-key-realm-value])
+
+(defn map-with-key?
+  [thing]
+  (is-a? map-with-key-realm thing))
+
+(defn map-with-key
+  [key value]
+  (map-with-key-realm description (str "map with key " key " and value " value)
+                      map-with-key-realm-key key
+                      map-with-key-realm-value value
+                      predicate
+                      (fn [x]
+                        (and (map? x)
+                             (= (get x key) value)))
+                      metadata {}))
+
 (def-record ^{:doc "Realm for tuples, i.e. sequences with a fixed number of elements, each of which has a realm."}
   tuple-realm
   :extends Realm

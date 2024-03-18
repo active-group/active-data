@@ -181,6 +181,16 @@
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s '())))
     (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 'foo)))))
 
+(deftest map-with-key-test
+  (let [s (schema (realm/map-with-key :foo :bar))]
+    (is (some? (schema/validate s {:foo :bar :baz 15})))
+
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s {})))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s {:foo :baz :baz 15})))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s [])))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s '())))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 'foo)))))
+
 (deftest enum-test
   (let [s (schema (realm/enum :a "a" 'b 1 2 [4]))]
     (is (some? (schema/validate s :a)))

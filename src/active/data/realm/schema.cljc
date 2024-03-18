@@ -136,6 +136,11 @@
                    (schema realm)]))
               (realm/map-with-keys-realm-map realm)))
 
+   realms/map-with-key
+   {(schema/required-key (realm/map-with-key-realm-key realm))
+    (schema/eq (realm/map-with-key-realm-value realm))
+    schema/Any schema/Any}
+
    realms/restricted
    (schema/constrained (schema (realm/restricted-realm-realm realm))
                        (realm/restricted-realm-predicate realm)

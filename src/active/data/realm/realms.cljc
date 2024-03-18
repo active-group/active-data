@@ -25,6 +25,7 @@
 (def sequence-of  (realm/record->record-realm realm/sequence-of-realm))
 (def set-of  (realm/record->record-realm realm/set-of-realm))
 (def map-with-keys  (realm/record->record-realm realm/map-with-keys-realm))
+(def map-with-key  (realm/record->record-realm realm/map-with-key-realm))
 (def map-of  (realm/record->record-realm realm/map-of-realm))
 (def tuple  (realm/record->record-realm realm/tuple-realm))
 (def record  (realm/record->record-realm realm/record-realm))
@@ -54,6 +55,7 @@
    set-of
    map-with-keys
    map-of
+   map-with-key
    tuple
    record
    function

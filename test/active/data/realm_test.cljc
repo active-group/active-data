@@ -120,6 +120,8 @@
          (realm/description (realm/map-with-keys {:a realm/integer :b realm/real}))))
   (is (= "map of {integer -> real}"
          (realm/description (realm/map-of realm/integer realm/real))))
+  (is (= "map with key :foo and value :bar"
+         (realm/description (realm/map-with-key :foo :bar))))
   (is (= "function (integer, integer) -> boolean"
          (realm/description (realm/function realm/integer realm/integer -> realm/boolean))))
   (is (= "function (integer, integer & sequence of string) -> boolean"
@@ -246,6 +248,12 @@
   (is (not ((realm/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) 5)))
   (is (not ((realm/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) [])))
 
+  (is ((realm/predicate (realm/map-with-key :foo :bar)) {:foo :bar :baz "5"}))
+  (is (not ((realm/predicate (realm/map-with-key :foo :bar)) {:foop :bar :baz "5"})))
+  (is (not ((realm/predicate (realm/map-with-key :foo :bar)) {:foo :baz :baz "5"})))
+  (is (not ((realm/predicate (realm/map-with-key :foo :bar)) 5)))
+  (is (not ((realm/predicate (realm/map-with-key :foo :bar)) {})))
+  
   (is ((realm/predicate (realm/map-of realm/keyword realm/integer)) {}))
   (is ((realm/predicate (realm/map-of realm/keyword realm/integer)) {:foo 5}))
   (is ((realm/predicate (realm/map-of realm/keyword realm/integer)) {"foo" "5"}))
