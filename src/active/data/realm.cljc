@@ -716,9 +716,6 @@ Here are the different forms:
   (if (realm? shorthand)
     shorthand
     (cond
-      (fn? shorthand)
-      (from-predicate "unknown predicate" shorthand) ; FIXME: questionable
-
       (vector? shorthand)
       (if (= 1 (count shorthand))
         (sequence-of (first shorthand))
@@ -739,9 +736,6 @@ Here are the different forms:
         
       (struct/struct? shorthand)
       (struct->record-realm shorthand)
-
-      (keyword? shorthand)
-      (named shorthand any)
 
       :else
       (throw (ex-info (str "unknown realm shorthand: " (pr-str shorthand))

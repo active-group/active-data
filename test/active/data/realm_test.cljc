@@ -5,10 +5,6 @@
             #?(:cljs [cljs.test :refer-macros (is deftest testing)])
             #?(:clj [clojure.test :refer (is deftest testing)])))
 
-(deftest from-predicate-test
-  (is (realm/from-predicate?
-       (realm/compile integer?))))
-
 (deftest sequence-of-test
   (is (realm/sequence-of?
        (realm/compile [realm/integer])))
@@ -71,10 +67,6 @@
                  (realm/field "kdr" realm/real :kdr)]))
 
 (record/def-record Rare [rar rdr])
-
-(deftest named-test
-  (is (realm/named?
-       (realm/compile :a))))
 
 (def nonempty-string-realm
   (realm/restricted realm/string
