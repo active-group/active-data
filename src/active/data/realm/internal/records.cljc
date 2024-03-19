@@ -1,4 +1,4 @@
-(ns active.data.realm.internal.records
+(ns ^:no-doc active.data.realm.internal.records
   (:refer-clojure :exclude [keyword symbol char boolean seq compile record? delay delayed?
                             contains? uuid])
   (:require
