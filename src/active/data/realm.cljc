@@ -1,4 +1,12 @@
-(ns active.data.realm
+(ns ^{:doc
+      "Namespace for constructing and using realms to describe the shape of data.
+      
+Also has [[contains?]] for dispatch on realms.
+
+It also defines, via the [[compile]] function, a shorthand
+notation for realms, that is available in most places a realm is expected,
+i.e. in realm combinators and realm syntax."}
+      active.data.realm
   (:refer-clojure :exclude [keyword symbol char boolean seq compile delay
                             contains? uuid])
   (:require
@@ -15,10 +23,17 @@
    [clojure.string :as string]))
 
 (defn contains?
+  "Does a realm contain a value?
+  
+  Note this is intended for dispatch, not validation:
+
+  It only does a shallow check that runs in constant time, and does
+  not perform full validation."
   [realm x]
   ((realm-records/predicate realm) x))
 
 (defn with-metadata
+  "Return a new realm with added or changed metadata for one key."
   [realm key data]
   (assoc realm realm-records/metadata
          (assoc (realm-records/metadata realm) key data)))
@@ -40,62 +55,79 @@
            realm-records/builtin-scalar-realm-id :rational
            realm-records/predicate rational?
            realm-records/description "rational" realm-records/metadata {})))
-(def number
+(def ^{:doc "Realm containing all numbers."}
+  number
   (realm-records/builtin-scalar-realm
    realm-records/builtin-scalar-realm-id :number
    realm-records/predicate number?
    realm-records/description "number" realm-records/metadata {}))
-(def char
+(def ^{:doc "Realm containing all chars."}
+  char
   (realm-records/builtin-scalar-realm
    realm-records/builtin-scalar-realm-id :char
    realm-records/predicate char?
    realm-records/description "char" realm-records/metadata {}))
-(def keyword
+(def ^{:doc "Realm containing all keywords."}
+  keyword
   (realm-records/builtin-scalar-realm
    realm-records/builtin-scalar-realm-id :keyword
    realm-records/predicate keyword?
    realm-records/description "keyword" realm-records/metadata {}))
-(def symbol
+(def ^{:doc "Realm containing all symbols."}
+  symbol
   (realm-records/builtin-scalar-realm
    realm-records/builtin-scalar-realm-id :symbol
    realm-records/predicate symbol?
    realm-records/description "symbol" realm-records/metadata {}))
-(def string
+(def ^{:doc "Realm containing all strings."}
+  string
   (realm-records/builtin-scalar-realm
    realm-records/builtin-scalar-realm-id :string
    realm-records/predicate string?
    realm-records/description "string"  realm-records/metadata {}))
-(def boolean
+(def ^{:doc "Realm containing true and false."}
+  boolean
   (realm-records/builtin-scalar-realm
    realm-records/builtin-scalar-realm-id :boolean
    realm-records/predicate boolean?
    realm-records/description "boolean" realm-records/metadata {}))
-(def uuid
+(def ^{:doc "Realm containing UUIDs."}
+  uuid
   (realm-records/builtin-scalar-realm
    realm-records/builtin-scalar-realm-id :uuid
    realm-records/predicate uuid?
    realm-records/description "uuid" realm-records/metadata {}))
-(def any
+(def ^{:doc "Realm containing all Clojure values."}
+  any
   (realm-records/builtin-scalar-realm
    realm-records/builtin-scalar-realm-id :any
    realm-records/predicate any?
    realm-records/description "any" realm-records/metadata {}))
 
 
-(defn from-predicate
+(defn
+  ^{:doc "Make a realm from a predicate and a prescription.
+
+Don't use this if you don't have to, as the predicate is by its
+nature opaque and not suitable for e.g. generation."}
+  from-predicate
   [desc pred]
   (realm-records/from-predicate-realm realm-records/description desc
                                       realm-records/predicate pred
                                       realm-records/metadata {}))
 
-(def integer
+(def ^{:doc "Realm containing all integers."}
+  integer
   (realm-records/integer-from-to-realm realm-records/description "integer"
                                        realm-records/integer-from-to-realm-from nil
                                        realm-records/integer-from-to-realm-to nil
                                        realm-records/predicate integer?
                                        realm-records/metadata {}))
 
-(defn integer-from-to
+(defn ^{:doc "Create realm for integer range.
+
+`from` and `to` are both inclusive."}
+  integer-from-to
   [from to]
   (realm-records/integer-from-to-realm realm-records/description (str "integer from " from " to " to)
                                        realm-records/integer-from-to-realm-from from
@@ -105,7 +137,10 @@
                                                                       (<= from x to)))
                                        realm-records/metadata {}))
 
-(defn integer-from
+(defn ^{:doc "Create a realm for integers above a lower bound.
+
+`from` is inclusive."}
+  integer-from
   [from]
   (realm-records/integer-from-to-realm realm-records/description (str "integer from " from)
                                        realm-records/integer-from-to-realm-from from
@@ -115,7 +150,10 @@
                                                                       (<= from x)))
                                        realm-records/metadata {}))
 
-(defn integer-to
+(defn ^{:doc "Create a realm for integers below an upper bound.
+
+`to` is inclusive."}
+  integer-to
   [to]
   (realm-records/integer-from-to-realm realm-records/description (str "integer to " to)
                                        realm-records/integer-from-to-realm-from nil
@@ -125,7 +163,10 @@
                                                                       (<= x to)))
                                        realm-records/metadata {}))
 
-(def natural
+(def ^{:doc "Realm containing all natural numbers.
+
+I.e. all integers >= 0."}
+  natural
   (realm-records/description (integer-from 0) "natural"))
 
 (defn- make-real-range
@@ -197,7 +238,24 @@
                              real?)
    realm-records/metadata {}))
 
-(defn real-range
+(defn ^{:doc "Create a realm containg a real range.
+
+With the four-argument version, the four arguments specify:
+
+* `clusive-left` is one of the keywords `:in`, `:ex`, specifying
+   whether the lower bound is inclusive or exclusive.
+* `left` is the lower bound
+* `right` is the upper bound
+* `clusive-right` is one of the keywords `:in`, `:ex`, specifying
+   whether the upper bound is inclusive or exclusive.
+
+The two-argument version can be called as follows:
+
+* `(real-range :in lower-bound)` for a real range with inclusive lower bound
+* `(real-range :ex lower-bound)` for a real range with exclusive lower bound
+* `(real-range upper-bound :in)` for a real range with inclusive upper bound
+* `(real-range upper-bound :ex)` for a real range with exclusive upper bound"}
+  real-range
   ([clusive-left left right clusive-right]
    (make-real-range clusive-left left right clusive-right))
   ([lr1 lr2]
@@ -206,7 +264,9 @@
      (case lr2
        (:in :ex) (make-real-range :ex nil lr1 lr2)))))
 
-(def real (real-range :in nil nil :in))
+(def ^{:doc "Realm containing all real numbers."}
+  real
+  (real-range :in nil nil :in))
 
 (defn- realm-seq-description
   [realms]
@@ -216,7 +276,8 @@
 
 (declare compile)
 
-(defn optional
+(defn ^{:doc ""}
+  optional
   [realm]
   (let [realm (compile realm)]
     (realm-records/optional-realm
@@ -239,6 +300,7 @@
    realm-records/metadata {}))
 
 (defn enum
+  "Creates a realm containing the values in `values`."
   [& values]
   (let [values-set (set values)]
     (realm-records/enum-realm
@@ -249,6 +311,10 @@
      realm-records/metadata {})))
 
 (defn intersection
+  "Creates an intersection realm of its arguments.
+
+  The returned realm contains the values that are contained
+  by all the argument realms."
   ([realm] realm)
   ([realm1 realm2] ; common case
    (realm-records/intersection-realm
@@ -274,6 +340,9 @@
       realm-records/metadata {}))))
 
 (defn sequence-of
+  "Create realm containing uniform sequences.
+
+  `realm` is the realm of the elements of the sequences."
   [realm]
   (let [realm (compile realm)]
     (realm-records/sequence-of-realm
@@ -283,6 +352,9 @@
      realm-records/metadata {})))
 
 (defn set-of
+  "Create realm containing uniform sets.
+
+  `realm` is the realm of the elements of the sets."
   [realm]
   (let [realm (compile realm)]
     (realm-records/set-of-realm
@@ -292,6 +364,9 @@
      realm-records/metadata {})))
 
 (defn map-with-keys
+  "Create realm containing certain keys.
+
+  `keys-realm-map` is map from keys to the realms of their values."
   [keys-realm-map]
   (let [keys-realm-map (into {}
                              (map (fn [[key realm]]
@@ -309,6 +384,10 @@
      realm-records/metadata {})))
 
 (defn map-of
+  "Create realm containing uniform maps.
+
+  `key-realm` is the realm of the keys,
+  `value-realm` is the realm of the values."
   [key-realm value-realm]
   (let [key-realm (compile key-realm)
         value-realm (compile value-realm)]
@@ -324,6 +403,9 @@
      realm-records/metadata {})))
 
 (defn map-with-tag
+  "Create realm for maps containing a tag.
+
+  I.e. a certain `key` mapping to a certain `value`."
   [key value]
   (realm-records/map-with-tag-realm
    realm-records/description (str "map with tag " key " -> " value)
@@ -336,6 +418,11 @@
    realm-records/metadata {}))
 
 (defn tuple
+  "Create realm for tuples.
+
+  These are sequences of a fixed length.
+  `realms` is a sequence of the realms of the elements
+  of the tuples."
   [& realms]
   (let [realms (mapv compile realms)]
     (realm-records/tuple-realm
@@ -350,12 +437,23 @@
      realm-records/metadata {})))
 
 (defn field
+  "Create a record-field descriptor.
+
+  * `name` is a symbol naming the field
+  * `realm` is the realm for the field values
+  * `getter` is the selector for that field"
   [name realm getter]
   (realm-records/record-realm-field realm-records/record-realm-field-name name
                                     realm-records/record-realm-field-realm (compile realm)
                                     realm-records/record-realm-field-getter getter))
 
 (defn record
+  "Create a record realm.
+
+  * `name` is a symbol naming the record
+  * `constructor` is a positional constructor
+  * `pred` is a prediucate for the record
+  * `fields` is a sequence of [[field]]s"
   [name constructor pred fields]
   (realm-records/record-realm
    realm-records/description (str "record " name
@@ -403,7 +501,7 @@
   (create-realm-struct-realm struct {}))
 
 (defn ^:no-doc record->record-realm
-  "Returns a realm for a record."
+  "Returns a realm for a record from [[active.data.record]] or [[active.data.realm-record]]."
   [record]
   (or (get (meta record) realm-record-meta/record-realm-meta-key)
       (create-realm-record-realm record {})))
@@ -500,19 +598,21 @@
                  (conj! positional `(compile ~f))))))))
 
 (defmacro function
-  "Shorthand for function realms.
+  "Shorthand for function realms with a single arity.
 
 Here are the different forms:
 
-(function r1 r2 r3 -> r)                       - fixed arity
-(function r1 r2 r3 & (rs) -> r)                - rest args
-(function r1 r2 r3 & [rr1 rr2]) -> r)          - 2 optional args
-(function r1 r2 r3 & {:a ra :b rb :c rc} -> r) - optional keyword args"
+  * `(function r1 r2 r3 -> r) for fixed arity
+  * `(function r1 r2 r3 & (rs) -> r)` for rest arguments
+  * `(function r1 r2 r3 & [rr1 rr2]) -> r)` for 2 optional args
+  * `(function r1 r2 r3 & {:a ra :b rb :c rc} -> r)` for optional keyword args"
   [& shorthand]
   (compile-function-case-shorthand shorthand))
 
-(defn ^:no-doc function-cases
-  "Just call this on a buch of function realms."
+(defn function-cases
+  "Create a realm for functions with several cases.
+
+   Typically applied to the return values of `function`."
   [& cases]
   (let [cases (mapcat realm-records/function-realm-cases cases)]
     (realm-records/function-realm realm-records/function-realm-cases cases
@@ -524,6 +624,11 @@ Here are the different forms:
                                     (str "function with cases " (string/join ", " (map function-case-description cases)))))))
 
 (defmacro delay
+  "Delay the evaluation of a realm.
+
+  Its operand must be an expression evaluating to a realm.
+
+  This is for generating recursive realms."
   [realm-expression]
   `(let [delay-object# (core/delay (compile ~realm-expression))]
      (realm-records/delayed-realm realm-records/delayed-realm-delay delay-object#
@@ -533,6 +638,10 @@ Here are the different forms:
                                   realm-records/description "delayed realm")))
 
 (defn named
+  "Name a realm.
+
+  Returns a realm that describes the same values as `realm`.
+  The name intended is for printing in polymorphic realms."
   [name realm]
   (let [realm (compile realm)]
     (realm-records/named-realm realm-records/named-realm-name name
@@ -542,12 +651,32 @@ Here are the different forms:
                                realm-records/description (str "realm named " name ": " (realm-records/description realm)))))
 
 (defn restricted
+  "Restrict a realm with a predicate.
+
+  The resulting realm contains only those values of the input
+  realm for which `pred` (a unary function) returns a true value.
+
+  Only use this if you have to, as it forfeits inspectability."  
   [realm pred predicate-description]
   (intersection realm
                 (from-predicate predicate-description
                                 pred)))
 
 (defn compile
+  "Compile a realm shorthand into a realm object.
+
+  This is called by most realm constructors and macros that generate
+  realms from source code.
+  
+  Shorthand notation includes:
+
+  * A one-element vector containing a realm denotes a [[sequence-of]] that realm.
+  * Any vector that does not have length 1 containing realms denotes a [[tuple]] of those realms.
+  * A one-element set containing a realm denotes a [[set-of]] that realm.
+  * A map containing one entry, whose key and value are both realms, denotes a [[map-of]] of those realms.
+  * Any other map denotes a [[map-with-keys]] of its keys and value realms.
+  * Record types from [[active.data.record]] or [[active.data.realm-record]] denote the corresponding record realm.
+  * Struct types from [[active.data..struct]] denote the corresponding record realm."  
   [shorthand]
   (if (realm-inspection/realm? shorthand)
     shorthand
