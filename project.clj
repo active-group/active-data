@@ -11,6 +11,9 @@
   :global-vars {*warn-on-reflection* true}
   
   :aliases {"benchmarks" ["with-profiles" "+test," "run" "-m" active.data.benchmarks]}
-  
+
   ;; Note: run ClojureScript tests with > npm run test
+
+  :codox {:metadata {:doc/format :markdown}
+          :source-uri "https://github.com/active-group/active-data/blob/{version}/{filepath}#L{line}"}
   )
