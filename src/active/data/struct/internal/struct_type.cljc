@@ -1,4 +1,4 @@
-(ns ^:no-doc active.data.struct.struct-type
+(ns ^:no-doc active.data.struct.internal.struct-type
   (:require [active.data.struct.validator :as validator])
   (:refer-clojure :exclude [alter-meta!
                             get-validator set-validator!

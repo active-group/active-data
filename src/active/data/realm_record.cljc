@@ -2,7 +2,7 @@
   (:require [active.data.record :as record #?@(:cljs [:include-macros true])]
             [active.data.realm.internal.record-meta :as realm-record-meta]
             [active.data.struct.validator :as struct-validator]
-            [active.data.struct.struct-type :as struct-type]
+            [active.data.struct.internal.struct-type :as struct-type]
             [active.data.realm :as realm]
             [active.data.realm.validation :as realm-validation]))
 

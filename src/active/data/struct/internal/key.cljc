@@ -1,4 +1,4 @@
-(ns ^:no-doc active.data.struct.key)
+(ns ^:no-doc active.data.struct.internal.key)
 
 (defprotocol ^:private IKey
   (-set-optimized! [this opt-get opt-assoc] "Set (optimize) get and assoc functions. Note that these don't take the key: (get m) => value for key, and (assoc m value) => new m"))

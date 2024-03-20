@@ -1,6 +1,6 @@
-(ns ^:no-doc active.data.struct.closed-struct-data
+(ns ^:no-doc active.data.struct.internal.closed-struct-data
   "Mutable data structure backing struct maps."
-  (:require [active.data.struct.struct-type :as struct-type]))
+  (:require [active.data.struct.internal.struct-type :as struct-type]))
 
 (defn unsafe-create ^objects [size]
   (object-array size))

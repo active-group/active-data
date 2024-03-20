@@ -1,7 +1,6 @@
 (ns active.data.record-test
   (:require [active.data.record :as sut #?@(:cljs [:include-macros true])]
             [active.data.struct :as struct]
-            [active.data.struct.key :as key]
             [active.data.struct.validator :as validator]
             #?(:clj [clojure.pprint :as pp]
                :cljs [cljs.pprint :as pp])

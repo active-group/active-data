@@ -1,12 +1,12 @@
-(ns ^:no-doc active.data.struct.closed-struct-map
-  (:require [active.data.struct.struct-type :as struct-type]
-            [active.data.struct.closed-struct-data :as data]
+(ns ^:no-doc active.data.struct.internal.closed-struct-map
+  (:require [active.data.struct.internal.struct-type :as struct-type]
+            [active.data.struct.internal.closed-struct-data :as data]
             [active.data.struct.validator :as v]
             #?(:clj [clojure.pprint :as pp]
                :cljs [cljs.pprint :as pp])
             [clojure.set :as set])
   #?(:clj (:import (clojure.lang Util)))
-  #?(:cljs (:require-macros [active.data.struct.closed-struct-map :refer [gen-positional]]))
+  #?(:cljs (:require-macros [active.data.struct.internal.closed-struct-map :refer [gen-positional]]))
   (:refer-clojure :rename {instance? clj-instance?
                            satisfies? clj-satisfies?}
                   :exclude [#?@(:cljs [satisfies? instance?])

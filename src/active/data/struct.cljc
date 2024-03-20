@@ -48,8 +48,8 @@
   (struct? person)
   ```
   "
-  (:require [active.data.struct.struct-type :as struct-type]
-            [active.data.struct.closed-struct-map :as struct-map]
+  (:require [active.data.struct.internal.struct-type :as struct-type]
+            [active.data.struct.internal.closed-struct-map :as struct-map]
             #_[active.clojure.lens :as lens])
   (:refer-clojure :exclude [struct-map struct
                             set-validator! get-validator

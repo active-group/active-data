@@ -76,12 +76,10 @@
   record and keys, that still work on instances of the previous
   definition.
   ```
-  
   "
-  
-  (:require [active.data.struct.key :as key #?@(:cljs [:include-macros true])]
-            [active.data.struct.closed-struct-map :as struct-map]
-            [active.data.struct.struct-type :as struct-type])
+  (:require [active.data.struct.internal.key :as key #?@(:cljs [:include-macros true])]
+            [active.data.struct.internal.closed-struct-map :as struct-map]
+            [active.data.struct.internal.struct-type :as struct-type])
   (:refer-clojure :exclude [record? accessor]))
 
 (declare to-record-map)
