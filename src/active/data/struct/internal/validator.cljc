@@ -1,4 +1,4 @@
-(ns active.data.struct.internal.validator)
+(ns ^:no-doc active.data.struct.internal.validator)
 
 (defprotocol IMapValidator
   "Note: Both methods are called on every construction and change;
