@@ -1,7 +1,7 @@
 (ns ^:no-doc active.data.struct.internal.closed-struct-map
   (:require [active.data.struct.internal.struct-type :as struct-type]
             [active.data.struct.internal.closed-struct-data :as data]
-            [active.data.struct.validator :as v]
+            [active.data.struct.internal.validator :as v]
             #?(:clj [clojure.pprint :as pp]
                :cljs [cljs.pprint :as pp])
             [clojure.set :as set])

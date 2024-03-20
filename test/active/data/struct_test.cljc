@@ -1,6 +1,5 @@
 (ns active.data.struct-test
   (:require [active.data.struct :as sut #?@(:cljs [:include-macros true])]
-            #_[active.data.struct.validator :as validator]
             #_[active.clojure.lens :as lens]
             [clojure.data :as data]
             #?(:clj [clojure.test :as t]
