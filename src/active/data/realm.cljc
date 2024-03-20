@@ -16,7 +16,7 @@ i.e. in realm combinators and realm syntax."}
       :cljs [active.data.record :refer [is-a?] :refer-macros [def-record]])
    [active.data.struct :as struct]
    [active.data.record :as record]
-   [active.data.realm.realm-record-meta :as realm-record-meta]
+   [active.data.realm.internal.record-meta :as realm-record-meta]
    [active.data.realm.internal.records :as realm-records]
    [clojure.set :as set]
    [clojure.string :as string]))

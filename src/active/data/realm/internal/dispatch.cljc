@@ -1,4 +1,4 @@
-(ns active.data.realm.dispatch
+(ns active.data.realm.internal.dispatch
   (:require [active.data.realm :as realm]
             [clojure.string :as string]))
 

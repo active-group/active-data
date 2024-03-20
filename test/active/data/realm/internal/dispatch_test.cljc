@@ -1,6 +1,6 @@
-(ns active.data.realm.dispatch-test
+(ns active.data.realm.internal.dispatch-test
   (:require [active.data.realm :as realm]
-            [active.data.realm.dispatch :as realm-dispatch #?@(:cljs [:include-macros true])]
+            [active.data.realm.internal.dispatch :as realm-dispatch #?@(:cljs [:include-macros true])]
             #?(:cljs [cljs.test :refer-macros (deftest is testing)])
             #?(:clj [clojure.test :refer (deftest is testing)])))
 

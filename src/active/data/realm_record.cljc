@@ -1,6 +1,6 @@
 (ns active.data.realm-record
   (:require [active.data.record :as record #?@(:cljs [:include-macros true])]
-            [active.data.realm.realm-record-meta :as realm-record-meta]
+            [active.data.realm.internal.record-meta :as realm-record-meta]
             [active.data.struct.validator :as struct-validator]
             [active.data.struct.struct-type :as struct-type]
             [active.data.realm :as realm]

@@ -1,6 +1,6 @@
 (ns active.data.realm.schema
   (:require [active.data.realm.inspection :as realm-inspection]
-            [active.data.realm.dispatch :as realm-dispatch #?@(:cljs [:include-macros true])]
+            [active.data.realm.internal.dispatch :as realm-dispatch #?@(:cljs [:include-macros true])]
             [schema.core :as schema]
             [schema.utils :as schema-utils]
             [schema.spec.core :as schema-spec :include-macros true]
