@@ -85,18 +85,22 @@
     (assert (record? v))
     v))
 
-(defn record-name [t]
+(defn record-name
+  "Returns the name of the given record as a namespaced symbol."
+  [t]
   (let [v (struct-type/variant t)]
     (assert (record-variant? v))
     (:record-name v)))
 
-(defn record-extends [t]
+(defn record-extends
+  "Returns the record that the given record `t` extends, or nil if it doesn't extend another record."
+  [t]
   (let [v (struct-type/variant t)]
     (assert (record-variant? v))
     (:extends v)))
 
 (defn record?
-  "Tests if `v` is a record, defined via [[def-record]].
+  "Tests if `v` is a record, as defined via [[def-record]].
 
   Note: use [[is-a?]] to test for instances of a particular record instead."
   [v]
@@ -172,5 +176,15 @@
 (defn ^:no-doc mutator [record key]
   (struct-map/mutator* record key (struct-type-matcher record)))
 
-(defn mutator! [record key]
+(defn mutator!
+  "Returns a slightly optimized mutator function for transient record instances.
+  
+  So instead of `(assoc! (transient (r r-key 42)) r-key v)` you can
+  ```
+  (def-record r [r-key])
+  (def r-key! (mutator! r r-key))
+  (r-key! (transient (r r-key 42)) 21)
+  ```
+  "
+  [record key]
   (struct-map/mutator!* record key (struct-type-matcher record)))
