@@ -414,7 +414,7 @@ The two-argument version can be called as follows:
    realm-records/predicate
    (fn [x]
      (and (map? x)
-          (= (get x key) value)))
+          (= (get x key nil) value)))
    realm-records/metadata {}))
 
 (defn tuple
