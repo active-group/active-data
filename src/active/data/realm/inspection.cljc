@@ -1,5 +1,5 @@
 (ns active.data.realm.inspection
-  (:refer-clojure :exclude [record? char keyword symbol boolean])
+  (:refer-clojure :exclude [record? char keyword symbol boolean uuid])
   (:require [active.data.realm.internal.records :as realm-records]
             [active.data.realm :as realm]
             #?(:clj [active.data.record :refer [def-record is-a?]]
