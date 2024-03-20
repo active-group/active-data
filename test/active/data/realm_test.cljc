@@ -2,7 +2,7 @@
   (:require [active.data.realm :as realm #?@(:cljs [:include-macros true])]
             [active.data.realm.inspection :as realm-inspection]
             [active.data.struct :as struct #?@(:cljs [:include-macros true])]
-            [active.data.record :as record #?@(:cljs [:include-macros true])]
+            [active.data.raw-record :as record #?@(:cljs [:include-macros true])]
             #?(:cljs [cljs.test :refer-macros (is deftest testing)])
             #?(:clj [clojure.test :refer (is deftest testing)])))
 

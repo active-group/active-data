@@ -4,13 +4,9 @@
   (:require
    #?(:clj [clojure.core :as core]
       :cljs [cljs.core :as core])
-   #?(:clj [active.data.record :refer [def-record is-a?]]
-      :cljs [active.data.record :refer [is-a?] :refer-macros [def-record]])
-   [active.data.struct :as struct]
-   [active.data.record :as record]
-   [active.data.realm.internal.record-meta :as realm-record-meta]
-   [clojure.set :as set]
-   [clojure.string :as string]))
+   #?(:clj [active.data.raw-record :refer [def-record is-a?]]
+      :cljs [active.data.raw-record :refer [is-a?] :refer-macros [def-record]])
+   [active.data.realm.internal.record-meta :as realm-record-meta]))
 
 (def-record realm [description predicate metadata])
 

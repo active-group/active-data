@@ -12,13 +12,12 @@ i.e. in realm combinators and realm syntax."}
   (:require
    #?(:clj [clojure.core :as core]
       :cljs [cljs.core :as core])
-   #?(:clj [active.data.record :refer [def-record is-a?]]
-      :cljs [active.data.record :refer [is-a?] :refer-macros [def-record]])
+   #?(:clj [active.data.raw-record :refer [def-record is-a?]]
+      :cljs [active.data.raw-record :refer [is-a?] :refer-macros [def-record]])
    [active.data.struct :as struct]
-   [active.data.record :as record]
+   [active.data.raw-record :as record]
    [active.data.realm.internal.record-meta :as realm-record-meta]
    [active.data.realm.internal.records :as realm-records]
-   [clojure.set :as set]
    [clojure.string :as string]))
 
 (defn contains?

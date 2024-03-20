@@ -1,6 +1,6 @@
 (ns active.data.benchmarks
   (:require [criterium.core :as c]
-            [active.data.record :as r]))
+            [active.data.raw-record :as r]))
 
 (defmacro bench [what construct access modify]
   `(do (println "***" ~what "construct")

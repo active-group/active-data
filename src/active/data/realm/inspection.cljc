@@ -2,8 +2,8 @@
   (:refer-clojure :exclude [record? char keyword symbol boolean uuid])
   (:require [active.data.realm.internal.records :as realm-records]
             [active.data.realm :as realm]
-            #?(:clj [active.data.record :refer [def-record is-a?]]
-               :cljs [active.data.record :refer [is-a?] :refer-macros [def-record]])
+            #?(:clj [active.data.raw-record :refer [def-record is-a?]]
+               :cljs [active.data.raw-record :refer [is-a?] :refer-macros [def-record]])
             #?(:clj [active.data.internal.export :refer [re-export]]
                :cljs [active.data.internal.export :refer-macros [re-export]])))
 
