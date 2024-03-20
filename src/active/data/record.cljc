@@ -145,13 +145,22 @@
   (let [[options fields*] (raw-record/parse-def-record-args args)
         pairs (parse-fields fields*)
         fields (map first pairs)]
-    (assert (every? #{:extends} (map first options)) "Invalid option")
+    (assert (every? #{:extends :validator} (map first options)) "Invalid option")
+    ;; TODO: a usecase for a custom validator would be to define some additional invariants between fields; but if they also have realms,
+    ;; then just the :validator option that replaces the default is very inconvenient; maybe add :add-validator option?
     `(do (raw-record/def-record ~t
-           ~@(apply concat options)
-           :validator (validator (map (fn [[field# realm#]]
-                                           [field# (if realm# (realm/compile realm#) realm/any)])
-                                      [~@pairs])
-                                 ~(:extends options))
+           ~@(apply concat
+                    (-> options
+                        (update :validator
+                                (fn [v]
+                                  (if (contains? options :validator)
+                                    ;; keep, even if specified as nil.
+                                    v
+                                    ;; default code otherwise.
+                                    `(realm-validator (map (fn [[field# realm#]]
+                                                             [field# (if realm# (realm/compile realm#) realm/any)])
+                                                           [~@pairs])
+                                                      ~(:extends options)))))))
            [~@fields])
 
          (set-realm-record-meta! ~t (map (fn [[field# realm#]]
@@ -160,17 +169,26 @@
 
          ~t)))
 
-(defn ^:no-doc validator [field-realm-pairs opt-extended-record]
-  (-> (struct-validator/field-validators
-       (into {}
-             (map (fn [[field realm]]
-                    (let [validator (realm-validation/validator realm)]
-                      [field validator]))
-                  (concat (when opt-extended-record
-                            (when-let [ext-fields-realm-map (get (meta opt-extended-record) realm-record-meta/fields-realm-map-meta-key)]
-                              ext-fields-realm-map))
-                          field-realm-pairs))))
-      (struct-validator/conditionally realm-validation/checking?)))
+(defn- validate-only-if-checking [v] ;; -> name? move to realm-validation?
+  (struct-validator/conditionally v realm-validation/checking?))
+
+(defn ^:no-doc realm-validator
+  ([field-realm-pairs]
+   (realm-validator field-realm-pairs nil))
+  ([field-realm-pairs opt-extended-record]
+   (when-let [f-validators (->> (concat (when opt-extended-record
+                                          (when-let [ext-fields-realm-map (get (meta opt-extended-record) realm-record-meta/fields-realm-map-meta-key)]
+                                            ext-fields-realm-map))
+                                        field-realm-pairs)
+                                (map (fn [[field realm]]
+                                       (when-not (= realm/any realm)
+                                         (let [validator (realm-validation/validator realm)]
+                                           [field validator]))))
+                                (remove nil?)
+                                (into {})
+                                (not-empty))]
+     (-> (struct-validator/field-validators f-validators)
+         (validate-only-if-checking)))))
 
 (defn ^:no-doc set-realm-record-meta! [t own-field-realm-pairs]
   ;; if record extends a realm-record, add the realms of inherited keys
