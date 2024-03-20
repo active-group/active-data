@@ -12,95 +12,95 @@
    [clojure.set :as set]
    [clojure.string :as string]))
 
-(def-record Realm [description predicate metadata])
+(def-record realm [description predicate metadata])
 
 (def-record ^{:doc "Builtin scalar realm."}
   builtin-scalar-realm
-  :extends Realm
+  :extends realm
   [builtin-scalar-realm-id])
 
-(def-record ^{:doc "Realm only defined through a predicate."}
+(def-record ^{:doc "realm only defined through a predicate."}
   from-predicate-realm
-  :extends Realm
+  :extends realm
   [])
 
-(def-record ^{:doc "Realm of optional values."}
+(def-record ^{:doc "realm of optional values."}
   optional-realm
-  :extends Realm
+  :extends realm
   [optional-realm-realm])
 
-(def-record ^{:doc "Realm for integer ranges."}
+(def-record ^{:doc "realm for integer ranges."}
   integer-from-to-realm
-  :extends Realm
+  :extends realm
   ;; either can be nil
   [integer-from-to-realm-from integer-from-to-realm-to])
 
-(def-record  ^{:doc "Realm for real ranges."}
+(def-record  ^{:doc "realm for real ranges."}
   real-range-realm
-  :extends Realm
+  :extends realm
   ; clusive is either :in or :ex
   [real-range-realm-clusive-left
    real-range-realm-left ; may be nil
    real-range-realm-right
    real-range-realm-clusive-right])
 
-(def-record ^{:doc "Realm for unions."}
+(def-record ^{:doc "realm for unions."}
   union-realm
-  :extends Realm
+  :extends realm
   ;; the shallow predicates of these should identify pairwise disjoint sets
   [union-realm-realms])
 
-(def-record^{:doc "Realm for enumerations."}
+(def-record^{:doc "realm for enumerations."}
   enum-realm
-  :extends Realm
+  :extends realm
   [enum-realm-values]) ; set
 
-(def-record ^{:doc "Realm for intersections."}
+(def-record ^{:doc "realm for intersections."}
   intersection-realm
-  :extends Realm
+  :extends realm
   ;; the shallow predicates of these should identify pairwise disjoint sets
   [intersection-realm-realms])
 
-(def-record ^{:doc "Realm for sequences."}
+(def-record ^{:doc "realm for sequences."}
   sequence-of-realm
-  :extends Realm
+  :extends realm
   [sequence-of-realm-realm])
 
-(def-record ^{:doc "Realm for sets."}
+(def-record ^{:doc "realm for sets."}
   set-of-realm
-  :extends Realm
+  :extends realm
   [set-of-realm-realm])
 
 ;; keys you can live out just have optional realms
 
-(def-record ^{:doc "Realm for maps with certain constant keys."}
+(def-record ^{:doc "realm for maps with certain constant keys."}
   map-with-keys-realm
-  :extends Realm
+  :extends realm
   [map-with-keys-realm-map])
 
-(def-record ^{:doc "Realm for maps with realms for keys and values respectively."}
+(def-record ^{:doc "realm for maps with realms for keys and values respectively."}
   map-of-realm
-  :extends Realm
+  :extends realm
   [map-of-realm-key-realm map-of-realm-value-realm])
 
-(def-record ^{:doc "Realm for maps with a specific key, distinguishing it from other maps."}
+(def-record ^{:doc "realm for maps with a specific key, distinguishing it from other maps."}
   map-with-tag-realm
-  :extends Realm
+  :extends realm
   [map-with-tag-realm-key
    map-with-tag-realm-value])
 
-(def-record ^{:doc "Realm for tuples, i.e. sequences with a fixed number of elements, each of which has a realm."}
+(def-record ^{:doc "realm for tuples, i.e. sequences with a fixed number of elements, each of which has a realm."}
   tuple-realm
-  :extends Realm
+  :extends realm
   [tuple-realm-realms])
 
 (def-record ^{:doc "Description of the field of a record."}
   record-realm-field
   [record-realm-field-name record-realm-field-realm record-realm-field-getter])
 
-(def-record ^{:doc "Realm for records."}
+(def-record ^{:doc "realm for records."}
   record-realm
-  :extends Realm
+  :extends realm
   [record-realm-name
    record-realm-constructor
    record-realm-fields])
@@ -111,20 +111,20 @@
    function-case-optional-arguments-realm ; nil or sequence-of realm or map-with-keys realm or tuple realm
    function-case-return-realm])
 
-(def-record ^{:doc "Realm for function with multiple cases."}
+(def-record ^{:doc "realm for function with multiple cases."}
   function-realm
-  :extends Realm
+  :extends realm
   [function-realm-cases])
 
 (def-record ^{:doc "Lazy realm."}
   delayed-realm
-  :extends Realm
+  :extends realm
   [delayed-realm-delay])
 
 ; for documenting polymorphism
 (def-record ^{:doc "Named realm."}
   named-realm
-  :extends Realm
+  :extends realm
   [named-realm-name ; keyword
    named-realm-realm])
 

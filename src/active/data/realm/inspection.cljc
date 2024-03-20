@@ -6,7 +6,7 @@
 
 (defn realm?
   [thing]
-  (is-a? realm-records/Realm thing))
+  (is-a? realm-records/realm thing))
 
 (def description realm-records/description)
 (def predicate realm-records/predicate)
