@@ -2,6 +2,8 @@
   (:require [active.data.struct.struct-type :as struct-type]
             [active.data.struct.closed-struct-data :as data]
             [active.data.struct.validator :as v]
+            #?(:clj [clojure.pprint :as pp]
+               :cljs [cljs.pprint :as pp])
             [clojure.set :as set])
   #?(:clj (:import (clojure.lang Util)))
   #?(:cljs (:require-macros [active.data.struct.closed-struct-map :refer [gen-positional]]))
@@ -538,6 +540,14 @@
                          pr-writer
                          writer
                          opts))))
+
+(let [pprint pp/*print-pprint-dispatch*]
+  (pp/set-pprint-dispatch (fn [v]
+                            (if (clj-instance? PersistentClosedStructMap v)
+                              (do (when-let [p (struct-type/print-map-prefix (.-struct ^PersistentClosedStructMap v))]
+                                    (print (str p)))
+                                  (pprint (into {} v)))
+                              (pprint v)))))
 
 (defn struct-map? [v]
   (clj-instance? PersistentClosedStructMap v))

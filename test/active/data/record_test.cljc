@@ -3,6 +3,8 @@
             [active.data.struct :as struct]
             [active.data.struct.key :as key]
             [active.data.struct.validator :as validator]
+            #?(:clj [clojure.pprint :as pp]
+               :cljs [cljs.pprint :as pp])
             #?(:clj [clojure.test :as t]
                :cljs [cljs.test :as t :include-macros true])))
 
@@ -101,15 +103,19 @@
   (t/is (some? (throws #(dissoc (R r-a 42 r-b "foo") r-a)))))
 
 (t/deftest printer-test
-  (let [v (R r-a 42 r-b "foo")]
-    (t/is (= "#active.data.record-test/R{r-a 42, r-b \"foo\"}" (pr-str v)))
-    ;; Note: (str) is sometimes different - but no in maps?
-    (t/is (= "{:foo \"bar\"}" (str {:foo "bar"})))
-    (t/is (= "#active.data.record-test/R{r-a 42, r-b \"foo\"}" (str v)))
+  (t/testing "Record instances"
+    (let [v (R r-a 42 r-b "foo")]
+      (t/is (= "#active.data.record-test/R{r-a 42, r-b \"foo\"}" (pr-str v)))
+      ;; Note: (str) is sometimes different - but no in maps?
+      (t/is (= "{:foo \"bar\"}" (str {:foo "bar"})))
+      (t/is (= "#active.data.record-test/R{r-a 42, r-b \"foo\"}" (str v)))
 
-    ;; TODO: or just the record type name?
-    (t/is (= "#active.data.record.Record{r-a, r-b}" (pr-str R)))
-    ))
+      (t/is (= "#active.data.record-test/R{r-a 42, r-b \"foo\"}\n" (with-out-str (pp/pprint v))))
+      ))
+  (t/testing "Records themselves"
+   ;; TODO: or just the record type name?
+   (t/is (= "#active.data.record.Record{r-a, r-b}" (pr-str R))))
+  )
 
 (t/deftest extends-test
   (sut/def-record ExtR :extends R [r-c])
