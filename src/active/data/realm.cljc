@@ -18,7 +18,6 @@ i.e. in realm combinators and realm syntax."}
    [active.data.record :as record]
    [active.data.realm.realm-record-meta :as realm-record-meta]
    [active.data.realm.internal.records :as realm-records]
-   [active.data.realm.inspection :as realm-inspection]
    [clojure.set :as set]
    [clojure.string :as string]))
 
@@ -319,7 +318,7 @@ The two-argument version can be called as follows:
   ([realm1 realm2] ; common case
    (realm-records/intersection-realm
     realm-records/description
-    (if (realm-inspection/from-predicate? realm2)
+    (if (is-a? realm-records/from-predicate-realm realm2)
       (str (realm-records/description realm1) " restricted to " (realm-records/description realm2))
       (str "intersection of [" (realm-records/description realm1) ", " (realm-records/description realm2) "]"))
     realm-records/intersection-realm-realms [realm1 realm2]
@@ -678,7 +677,7 @@ Here are the different forms:
   * Record types from [[active.data.record]] or [[active.data.realm-record]] denote the corresponding record realm.
   * Struct types from [[active.data..struct]] denote the corresponding record realm."  
   [shorthand]
-  (if (realm-inspection/realm? shorthand)
+  (if (is-a? realm-records/realm shorthand)
     shorthand
     (cond
       (vector? shorthand)
