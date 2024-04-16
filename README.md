@@ -14,7 +14,7 @@ In particular, it includes
 
 [Here](doc/intro.md) is an introduction to Active Data.
 
-[API Docs are here.](https://active-group.github.io/active-data/target/doc/).
+[API Docs are here.](https://active-group.github.io/active-data/target/doc/)
 
 ## License
 
