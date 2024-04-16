@@ -8,7 +8,7 @@ of course.)
 Thus, they are in a similar space as
 [`clojure.spec`](https://clojure.org/about/spec),
 [Schema](https://github.com/plumatic/schema), and
-[Malli](https://github.com/plumatic/schema), and we would have loved
+[Malli](https://github.com/metosin/malli), and we would have loved
 to avoid creating an alternative.  However, we couldn't make any
 existing system meet all of our requirements:
 
