@@ -8,7 +8,13 @@
       :cljs [active.data.raw-record :refer [is-a?] :refer-macros [def-record]])
    [active.data.realm.internal.record-meta :as realm-record-meta]))
 
-(def-record realm [description predicate metadata])
+(def-record realm
+  [^{:doc "Description string for realm."}
+   description
+   ^{:doc "Shallow predicate for values of the realm."}
+   predicate
+   ^{:doc "Metadata for the realm, for additional semantically relevant information."}
+   metadata])
 
 (def-record ^{:doc "Builtin scalar realm."}
   builtin-scalar-realm
