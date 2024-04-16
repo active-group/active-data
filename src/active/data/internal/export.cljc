@@ -1,4 +1,4 @@
-(ns active.data.internal.export)
+(ns ^:no-doc active.data.internal.export)
 
 (defn- re-export-1
   [var-name]
