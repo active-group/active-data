@@ -1,4 +1,5 @@
-(ns active.data.realm.schema
+(ns ^{:doc "Translate realms to Schema's schemas."}
+    active.data.realm.schema
   (:require [active.data.realm.inspection :as realm-inspection]
             [active.data.realm.internal.dispatch :as realm-dispatch #?@(:cljs [:include-macros true])]
             [schema.core :as schema]
@@ -60,6 +61,7 @@
 
 (defn schema
   [realm]
+  "Translate a realm to a Schema schema."
   (realm-dispatch/union-case
    realm-inspection/realm realm
 

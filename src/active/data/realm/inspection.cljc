@@ -1,4 +1,5 @@
-(ns active.data.realm.inspection
+(ns ^{:doc "Predicates, selectors, and realms for processing realm values as input."}
+  active.data.realm.inspection
   (:refer-clojure :exclude [record? char keyword symbol boolean uuid])
   (:require [active.data.realm.internal.records :as realm-records]
             [active.data.realm :as realm]
@@ -169,35 +170,69 @@
 ; questionable
 (def builtin-scalar (realm/record->record-realm realm-records/builtin-scalar-realm))
 
-#?(:clj (def rational (realm/enum realm/rational)))
-(def number (realm/enum realm/number))
-(def char (realm/enum realm/char))
-(def keyword (realm/enum realm/keyword))
-(def symbol (realm/enum realm/symbol))
-(def string (realm/enum realm/string))
-(def boolean (realm/enum realm/boolean))
-(def uuid (realm/enum realm/uuid))
-(def any (realm/enum realm/any))
+#?(:clj (def ^{:doc "Realm containg the rational realm."}rational (realm/enum realm/rational)))
+(def ^{:doc "Realm containg the number realm."}number (realm/enum realm/number))
+(def ^{:doc "Realm containg the char realm."}char (realm/enum realm/char))
+(def ^{:doc "Realm containg the keyword realm."}keyword (realm/enum realm/keyword))
+(def ^{:doc "Realm containg the symbol realm."}symbol (realm/enum realm/symbol))
+(def ^{:doc "Realm containg the string realm."} string (realm/enum realm/string))
+(def ^{:doc "Realm containg the boolean realm."} boolean (realm/enum realm/boolean))
+(def ^{:doc "Realm containg the uuid realm."} uuid (realm/enum realm/uuid))
+(def ^{:doc "Realm containing the any realm."} any (realm/enum realm/any))
 
-(def from-predicate (realm/record->record-realm realm-records/from-predicate-realm))
-(def optional (realm/record->record-realm realm-records/optional-realm))
-(def integer-from-to (realm/record->record-realm realm-records/integer-from-to-realm))
-(def real-range (realm/record->record-realm realm-records/real-range-realm))
-(def union  (realm/record->record-realm realm-records/union-realm))
-(def intersection  (realm/record->record-realm realm-records/intersection-realm))
-(def enum  (realm/record->record-realm realm-records/enum-realm))
-(def sequence-of  (realm/record->record-realm realm-records/sequence-of-realm))
-(def set-of  (realm/record->record-realm realm-records/set-of-realm))
-(def map-with-keys  (realm/record->record-realm realm-records/map-with-keys-realm))
-(def map-with-tag  (realm/record->record-realm realm-records/map-with-tag-realm))
-(def map-of  (realm/record->record-realm realm-records/map-of-realm))
-(def tuple  (realm/record->record-realm realm-records/tuple-realm))
-(def record  (realm/record->record-realm realm-records/record-realm))
-(def function  (realm/record->record-realm realm-records/function-realm))
-(def delayed  (realm/record->record-realm realm-records/delayed-realm))
-(def named  (realm/record->record-realm realm-records/named-realm))
+(def ^{:doc "Realm containing predicate realms."}
+  from-predicate
+  (realm/record->record-realm realm-records/from-predicate-realm))
+(def ^{:doc "Realm containing optional realms."}
+  optional
+  (realm/record->record-realm realm-records/optional-realm))
+(def ^{:doc "Realm containing integer-from-to realms."}
+  integer-from-to
+  (realm/record->record-realm realm-records/integer-from-to-realm))
+(def ^{:doc "Realm containing real-range realms."}
+  real-range
+  (realm/record->record-realm realm-records/real-range-realm))
+(def ^{:doc "Realm containing union realms."}
+  union
+  (realm/record->record-realm realm-records/union-realm))
+(def ^{:doc "Realm containing intersection realms."}
+  intersection
+  (realm/record->record-realm realm-records/intersection-realm))
+(def ^{:doc "Realm containing enum realms."}
+  enum
+  (realm/record->record-realm realm-records/enum-realm))
+(def ^{:doc "Realm containing sequence-of realms."}
+  sequence-of
+  (realm/record->record-realm realm-records/sequence-of-realm))
+(def ^{:doc "Realm containing set-of realms."}
+  set-of
+  (realm/record->record-realm realm-records/set-of-realm))
+(def ^{:doc "Realm containing map-with-keys realms."}
+  map-with-keys
+  (realm/record->record-realm realm-records/map-with-keys-realm))
+(def ^{:doc "Realm containing map-with-tag realms."}
+  map-with-tag
+  (realm/record->record-realm realm-records/map-with-tag-realm))
+(def ^{:doc "Realm containing map-of realms."}
+  map-of
+  (realm/record->record-realm realm-records/map-of-realm))
+(def ^{:doc "Realm containing tuple realms."}
+  tuple
+  (realm/record->record-realm realm-records/tuple-realm))
+(def ^{:doc "Realm containing record realms."}
+  record
+  (realm/record->record-realm realm-records/record-realm))
+(def ^{:doc "Realm containing function realms."}
+  function
+  (realm/record->record-realm realm-records/function-realm))
+(def ^{:doc "Realm containing delayed realms."}
+  delayed
+  (realm/record->record-realm realm-records/delayed-realm))
+(def ^{:doc "Realm containing named realms."}
+  named
+  (realm/record->record-realm realm-records/named-realm))
 
-(def realm
+(def ^{:doc "Realm containing all realms"} realm
   (realm/union
    #?(:clj rational)
    number

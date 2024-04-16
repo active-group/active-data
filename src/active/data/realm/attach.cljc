@@ -1,4 +1,5 @@
-(ns active.data.realm.attach
+(ns ^{:doc "Forms for attaching realms to functions."}
+  active.data.realm.attach
   (:refer-clojure :exclude [def defn fn])
   (:require [active.data.realm :as realm]
             [active.data.realm.schema :as realm-schema]
