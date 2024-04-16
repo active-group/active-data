@@ -1,5 +1,5 @@
 (ns active.data.record
-  "Records distinctly define structured data.
+  "Records distinctly define compound data.
 
   ```
   (def-record Person [person-name person-age])
