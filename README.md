@@ -1,7 +1,7 @@
 # Active Data
 
 The goal of this library is to provide facilities for systematic data
-modelling in the style of design recipes.  
+modelling in the style of design recipes.
 
 In particular, it includes
 
@@ -12,9 +12,11 @@ In particular, it includes
   and generating, addressing the shortcomings of `clojure.spec`,
   Schema, Malli and similar libraries.
 
+[Here](doc/intro.md) is an introduction to Active Data.
+
 ## License
 
-Copyright © 2023 Active Group GmbH
+Copyright © 2024 Active Group GmbH
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at
