@@ -151,7 +151,7 @@
                             (realm-inspection/named-realm-name realm))
 
    realm-inspection/delayed
-   (schema/recursive (delay (schema (realm-inspection/delayed-realm-delay realm))))
+   (schema/recursive (delay (schema (deref (realm-inspection/delayed-realm-delay realm)))))
 
    realm-inspection/function
    (let [cases (realm-inspection/function-realm-cases realm)]

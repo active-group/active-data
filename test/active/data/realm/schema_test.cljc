@@ -261,6 +261,10 @@
                               (realm/field "kdr" (realm/delay plist-realm) :kdr)])))
 
 (deftest delay-test
+  (let [s (schema (realm/delay realm/integer))]
+    (is (some? (schema/validate s 5)))
+    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s "5"))))
+    
   (let [s (schema plist-realm)]
 
     (is (some? (schema/validate s '())))
