@@ -34,10 +34,9 @@ to mix data.  With compound data, we need something in the language to
 package data up.  Clojure natively has two ways of doing that, maps
 and records, where records are special cases of maps.
 
-Both are [suboptimal](#gripes) for implementing design recipes.
-This is where Active Data comes in, which offers a superior
-replacement for Clojure's records,`
-[`active.data.record`](active.data.record.html).
+Both are [suboptimal](#gripes) for implementing design recipes.  This
+is where Active Data comes in, which offers a superior replacement for
+Clojure's records,[`active.data.record`](active.data.record.html).
 
 Our records have lightweight notation, and are tagged, so instances of
 one record can always be distinguished from other types of data.  This
@@ -105,14 +104,14 @@ representation has several drawbacks:
    parts of our software could agree on a common convention.
   
 2. Clojure makes it very easy to make mistakes dealing with keyword
-   maps: If you make a type such as `(::animal/armadillo-liveness
-   dillo)`, Clojure does not rais an exception but just returns `nil` -
-   with the result of the error silently propagating through the
-   program.
+   maps: If you make a typo such as `(::animal/armadillo-liveness
+   dillo)`, Clojure does not raise an exception but just returns
+   `nil` - with the result of the error silently propagating through
+   the program.
   
 3. As there's no way to restrict access to keyworded map entries, code
    using maps is inherently coupled to a concrete representation,
-   making the code hard architecturally brittle and hard to refactor.
+   making the code architecturally brittle and hard to refactor.
 
 4. There's no way to prevent maps floating around your program that
    have invalid/unexpected values attached to certain keys.  You can
@@ -124,9 +123,9 @@ Clojure's [defrecord](https://clojuredocs.org/clojure.core/defrecord)
 doesn't really address most of these problems: Records are still
 keyworded maps.  While records are distinguishable via `instance?`,
 `assoc` and `dissoc` are unrestricted, meaning that `instance?`
-doesn't really tell you the structure of the record you're looking
-at.  Moreover, `defrecord` has issues with AOT, making it primarily
-useful as a Java interop mechanism.
+doesn't really tell you the structure of the record you're looking at.
+Moreover, `defrecord` has issues with AOT compilation, making it
+primarily useful as a Java interop mechanism.
 
 Active Data's records address the above issues as follows:
 
