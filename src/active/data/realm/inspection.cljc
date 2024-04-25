@@ -44,6 +44,17 @@
   realm-records/integer-from-to-realm-from
   realm-records/integer-from-to-realm-to)
 
+(defn integer-from-to?
+  [thing]
+  (is-a? integer-from-to-realm thing))
+
+(re-export
+ realm-records/real-range-realm
+ realm-records/real-range-realm-clusive-left
+ realm-records/real-range-realm-left
+ realm-records/real-range-realm-right
+ realm-records/real-range-realm-clusive-right)
+
 (defn real-range?
   [thing]
   (is-a? real-range? thing))
