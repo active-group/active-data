@@ -181,15 +181,26 @@
 ; questionable
 (def builtin-scalar (realm/record->record-realm realm-records/builtin-scalar-realm))
 
-#?(:clj (def ^{:doc "Realm containg the rational realm."}rational (realm/enum realm/rational)))
-(def ^{:doc "Realm containg the number realm."}number (realm/enum realm/number))
-(def ^{:doc "Realm containg the char realm."}char (realm/enum realm/char))
-(def ^{:doc "Realm containg the keyword realm."}keyword (realm/enum realm/keyword))
-(def ^{:doc "Realm containg the symbol realm."}symbol (realm/enum realm/symbol))
-(def ^{:doc "Realm containg the string realm."} string (realm/enum realm/string))
-(def ^{:doc "Realm containg the boolean realm."} boolean (realm/enum realm/boolean))
-(def ^{:doc "Realm containg the uuid realm."} uuid (realm/enum realm/uuid))
-(def ^{:doc "Realm containing the any realm."} any (realm/enum realm/any))
+(defn- the-builtin-scalar [realm]
+  ;; Note: using (enum realm) would work usually, but not when metadata are added to the base value.
+  ;; That's why we need a predicate that checks if it's also a builting-scalar-realm and with the same id.
+  (assert (is-a? realm-records/builtin-scalar-realm realm))
+  (let [this-id (realm-records/builtin-scalar-realm-id realm)]
+    (realm/from-predicate (realm-records/description realm)
+                          (fn [r]
+                            (and (is-a? realm-records/builtin-scalar-realm r)
+                                 (= (realm-records/builtin-scalar-realm-id r)
+                                    this-id))))))
+
+#?(:clj (def ^{:doc "Realm containg the rational realm."} rational (the-builtin-scalar realm/rational)))
+(def ^{:doc "Realm containg the number realm."} number (the-builtin-scalar realm/number))
+(def ^{:doc "Realm containg the char realm."} char (the-builtin-scalar realm/char))
+(def ^{:doc "Realm containg the keyword realm."} keyword (the-builtin-scalar realm/keyword))
+(def ^{:doc "Realm containg the symbol realm."} symbol (the-builtin-scalar realm/symbol))
+(def ^{:doc "Realm containg the string realm."} string (the-builtin-scalar realm/string))
+(def ^{:doc "Realm containg the boolean realm."} boolean (the-builtin-scalar realm/boolean))
+(def ^{:doc "Realm containg the uuid realm."} uuid (the-builtin-scalar realm/uuid))
+(def ^{:doc "Realm containing the any realm."} any (the-builtin-scalar realm/any))
 
 (def ^{:doc "Realm containing predicate realms."}
   from-predicate

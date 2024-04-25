@@ -62,3 +62,7 @@
     (let [v (T f1 42 f2 "foo")]
       (is (sut/is-a? T v))
       (is (sut/is-exactly-a? T v)))))
+
+;; scalars with metadata works (regression)
+(sut/def-record MetaT
+  [meta-t-a :- (realm/with-metadata realm/string ::foo "42")])
