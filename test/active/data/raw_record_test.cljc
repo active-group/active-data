@@ -32,6 +32,8 @@
   (t/is (some? (throws #(R :bar 42)))
         "Cannot construct with foreign fields")
 
+  (t/is (= (R r-a 42 r-b "foo") ((sut/constructor R) 42 "foo")))
+
   (t/testing "predicates"
     (let [v (R r-a 42 r-b "foo")]
       (t/is (sut/is-a? R v))

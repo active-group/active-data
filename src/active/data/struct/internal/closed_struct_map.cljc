@@ -689,7 +689,7 @@
                 ~size (struct-type/size ~struct)]
             (if (some? (struct-type/get-validator ~struct))
               (fn [~@vars]
-                (let [~validator (struct-type/get-current-validator! ~struct)]
+                (if-let [~validator (struct-type/get-current-validator! ~struct)]
                   (do ~@(map (fn [k v]
                                `(v/validate-single! ~validator ~k ~v))
                              keys
@@ -697,7 +697,8 @@
 
                       (let [res# ~(gen-create struct size vars locked?)]
                         (v/validate-map-only! ~validator res#)
-                        res#))))
+                        res#))
+                  ~(gen-create struct size vars locked?)))
               (fn [~@vars]
                 ~(gen-create struct size vars locked?))))))))
 
