@@ -15,3 +15,10 @@
                (realm-validation/checking
                 (twoify "7")))))
 
+(deftest key-value-optional-test
+  ;; optional value realm results in both optional value and optional key schema
+  (let [map-realm (realm/map-with-keys {:key (realm/optional realm/string)})
+        check (realm-validation/validator map-realm)]
+    (is (= {:key nil} (check {:key nil})))
+    (is (= {} (check {})))
+    (is (= {:key "foo"} (check {:key "foo"})))))

@@ -131,8 +131,9 @@
    (into {}
          (map (fn [[key realm]]
                 (if (realm-inspection/optional? realm)
+                  ;; make both keys and value optional - (:key {}) == (:key {:key nil})
                   [(schema/optional-key key)
-                   (schema (realm-inspection/optional-realm-realm realm))]
+                   (schema realm)]
                   [(schema/required-key key)
                    (schema realm)]))
               (realm-inspection/map-with-keys-realm-map realm)))
