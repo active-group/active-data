@@ -289,13 +289,14 @@ The two-argument version can be called as follows:
 
 (defn union
   [& realms]
-  (realm-records/union-realm
-   realm-records/description (str "union of " (realm-seq-description realms))
-   realm-records/union-realm-realms (map compile realms)
-   realm-records/predicate (let [predicates (map realm-records/predicate realms)]
-                             (fn [x]
-                               (core/boolean (some #(% x) predicates))))
-   realm-records/metadata {}))
+  (let [realms (map compile realms)]
+    (realm-records/union-realm
+     realm-records/description (str "union of " (realm-seq-description realms))
+     realm-records/union-realm-realms realms
+     realm-records/predicate (let [predicates (map realm-records/predicate realms)]
+                               (fn [x]
+                                 (core/boolean (some #(% x) predicates))))
+     realm-records/metadata {})))
 
 (defn enum
   "Creates a realm containing the values in `values`."
@@ -313,25 +314,27 @@ The two-argument version can be called as follows:
 
   The returned realm contains the values that are contained
   by all the argument realms."
-  ([realm] realm)
+  ([realm] (compile realm))
   ([realm1 realm2] ; common case
-   (realm-records/intersection-realm
-    realm-records/description
-    (if (is-a? realm-records/from-predicate-realm realm2)
-      (str (realm-records/description realm1) " restricted to " (realm-records/description realm2))
-      (str "intersection of [" (realm-records/description realm1) ", " (realm-records/description realm2) "]"))
-    realm-records/intersection-realm-realms [realm1 realm2]
-    realm-records/predicate (let [predicate1 (realm-records/predicate realm1)
-                                  predicate2 (realm-records/predicate realm2)]
-                              (fn [x]
-                                (and (predicate1 x)
-                                     (predicate2 x))))
-    realm-records/metadata {}))
+   (let [realm1 (compile realm1)
+         realm2 (compile realm2)]
+     (realm-records/intersection-realm
+      realm-records/description
+      (if (is-a? realm-records/from-predicate-realm realm2)
+        (str (realm-records/description realm1) " restricted to " (realm-records/description realm2))
+        (str "intersection of [" (realm-records/description realm1) ", " (realm-records/description realm2) "]"))
+      realm-records/intersection-realm-realms [realm1 realm2]
+      realm-records/predicate (let [predicate1 (realm-records/predicate realm1)
+                                    predicate2 (realm-records/predicate realm2)]
+                                (fn [x]
+                                  (and (predicate1 x)
+                                       (predicate2 x))))
+      realm-records/metadata {})))
   ([realm1 realm2 & realms-rest]
-   (let [realms (vec (list* realm1 realm2 realms-rest))]
+   (let [realms (map compile (list* realm1 realm2 realms-rest))]
      (realm-records/intersection-realm
       realm-records/description (str "intersection of " (realm-seq-description realms))
-      realm-records/intersection-realm-realms (map compile realms)
+      realm-records/intersection-realm-realms realms
       realm-records/predicate (let [predicates (map realm-records/predicate realms)]
                                 (fn [x]
                                   (every? #(% x) predicates)))
