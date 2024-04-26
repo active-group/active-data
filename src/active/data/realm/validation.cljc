@@ -25,5 +25,4 @@ Currently implemented via Schema."}
 This function accepts a value and will raise an exception
 if validation fails."
   (let [schema (realm-schema/schema realm)]
-    (fn [thing]
-      (schema/validate schema thing))))
+    (schema/validator schema)))
