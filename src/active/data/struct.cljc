@@ -114,7 +114,9 @@
 
 (defn accessor
   "Returns an optimized accessor function for the value associated with
-  the given key in a struct-map of the given struct."
+  the given key in a struct-map of the given struct. Note that unlike
+  the key itself, the optimized function will throw an error if called
+  with values that are not not instances of the given struct."
   [struct key]
   ;; Note: (key m) and even (get m key) is already very
   ;; efficient. This is slightly more efficient; but only use it if
@@ -123,7 +125,9 @@
 
 (defn mutator
   "Returns an optimized mutator function for the value associated with
-  the given key in a struct-map of the given struct."
+  the given key in a struct-map of the given struct. Note that unlike
+  the key itself, the optimized function will throw an error if called
+  with values that are not not instances of the given struct."
   [struct key]
   ;; Note: (key m v) and even (assoc m key v) is already very
   ;; efficient. This is slightly more efficient; but only use it if
@@ -132,7 +136,10 @@
 
 (defn mutator!
   "Returns an optimized mutator function for the value associated with
-  the given key in a transient struct-map of the given struct."
+  the given key in a transient struct-map of the given struct. Note
+  that unlike the key itself, the optimized function will throw an
+  error if called with values that are not not instances of the given
+  struct."
   [struct key]
   ;; Note: (assoc! m key v) and even (assoc m key v) is already very
   ;; efficient. This is slightly more efficient; but only use it if

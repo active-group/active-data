@@ -41,7 +41,6 @@
               (hash sym))])
 
   #?@(:clj
-      ;; Note: the struct-map implementation of get and assoc will use 'optimized-for' info
       [clojure.lang.IFn
        (invoke [this m]
                (if opt-get

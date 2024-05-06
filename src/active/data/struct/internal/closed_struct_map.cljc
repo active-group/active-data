@@ -606,6 +606,20 @@
   (and (clj-instance? TransientClosedStructMap m)
        (struct-match? (.-struct ^TransientClosedStructMap m))))
 
+(defn- not-struct-map-of [struct key v]
+  (if (or (clj-instance? PersistentClosedStructMap v) (clj-instance? TransientClosedStructMap v))
+    (ex-info (str "Key " (pr-str key) " not in " (pr-str (if (clj-instance? PersistentClosedStructMap v)
+                                                           (.-struct ^PersistentClosedStructMap v)
+                                                           (.-struct ^TransientClosedStructMap v))))
+             {:expected struct
+              :key key
+              :value v})
+    (ex-info (str "Key " (pr-str key) " cannot be used with a value of type " (type v))
+             {:expected struct
+              :key key
+              :value v})))
+
+
 (defn accessor* [struct key struct-match?]
   (let [idx (find-index-of struct key)]
     (if (>= idx 0)
@@ -613,7 +627,7 @@
         (if (is-definitely-struct-map-of? m struct-match?)
           ;; (do-unsafe-get m idx), inlined:
           (data/unsafe-access (.-data ^PersistentClosedStructMap m) idx)
-          (get m key)))
+          (throw (not-struct-map-of struct key m))))
       (throw (unknown-key key struct)))))
 
 (defn accessor [struct key]
@@ -625,7 +639,7 @@
       (fn [m v]
         (if (is-definitely-struct-map-of? m struct-match?)
           (do-unsafe-assoc ^PersistentClosedStructMap m key idx v)
-          (get m key)))
+          (throw (not-struct-map-of struct key m))))
       (throw (unknown-key key struct)))))
 
 (defn mutator [struct key]
@@ -637,7 +651,7 @@
       (fn [m v]
         (if (is-definitely-transient-struct-map-of? m struct-match?)
           (t-unsafe-assoc ^TransientClosedStructMap m key idx v)
-          (assoc! m key v)))
+          (throw (not-struct-map-of struct key m))))
       (throw (unknown-key key struct)))))
 
 (defn mutator! [struct key]
