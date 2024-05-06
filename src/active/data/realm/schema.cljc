@@ -102,11 +102,13 @@
      (if (and (nil? from) (nil? to))
        schema/Int
        (schema/constrained schema/Int
-                           (realm-inspection/predicate realm))))
+                           (realm-inspection/predicate realm)
+                           (realm-inspection/description realm))))
    
    realm-inspection/real-range
    (schema/constrained schema/Num
-                       (realm-inspection/predicate realm))
+                       (realm-inspection/predicate realm)
+                       (realm-inspection/description realm))
    
 
    realm-inspection/union
