@@ -662,7 +662,7 @@
         nkeys (count keys)
         locked? (struct-type/locked-maps? struct)
         do-create (fn [args]
-                    (assert (= (count args) nkeys) "Invalid arity")
+                    (assert (= (count args) nkeys) (str "Invalid arity. Expected " nkeys ", but got " (count args) "."))
                     (create struct
                             (let [data (data/create struct)]
                               (doseq [[idx v] (map-indexed vector args)]

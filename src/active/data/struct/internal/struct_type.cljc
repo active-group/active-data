@@ -42,6 +42,9 @@
 (defn- ctor [struct-type m]
   (-construct-from (-variant struct-type) struct-type m))
 
+(defn- arity-error []
+  (ex-info "Invalid constructor arity. Must be one or an even number of arguments." {}))
+
 (deftype ^:private StructType [keys keyset index-map variant validator ^:unsynchronized-mutable _meta]
   ;; Note: 'keys' is in original order; keyset the same as a set. index-map {key => index in raw data}
   IStructType
@@ -64,18 +67,28 @@
        (meta [this] _meta)
 
        clojure.lang.IFn
+       ;; Note: I think applyTo is used for 'apply'; 'invoke more' is used for many static args.
        (applyTo [this arglist] (if (= 1 (count arglist)) (ctor this (first arglist)) (ctor this (apply array-map arglist))))
        (invoke [this a] (ctor this a))
        (invoke [this] (ctor this {}))
        (invoke [this a b] (ctor this (array-map a b)))
+       (invoke [this a b c] (throw (arity-error)))
        (invoke [this a b c d] (ctor this (array-map a b c d)))
+       (invoke [this a b c d e] (throw (arity-error)))
        (invoke [this a b c d e f] (ctor this (array-map a b c d e f)))
+       (invoke [this a b c d e f g] (throw (arity-error)))
        (invoke [this a b c d e f g h] (ctor this (array-map a b c d e f g h)))
+       (invoke [this a b c d e f g h i] (throw (arity-error)))
        (invoke [this a b c d e f g h i j] (ctor this (array-map a b c d e f g h i j)))
+       (invoke [this a b c d e f g h i j k] (throw (arity-error)))
        (invoke [this a b c d e f g h i j k l] (ctor this (array-map a b c d e f g h i j k l)))
+       (invoke [this a b c d e f g h i j k l m] (throw (arity-error)))
        (invoke [this a b c d e f g h i j k l m n] (ctor this (array-map a b c d e f g h i j k l m n)))
+       (invoke [this a b c d e f g h i j k l m n o] (throw (arity-error)))
        (invoke [this a b c d e f g h i j k l m n o p] (ctor this (array-map a b c d e f g h i j k l m n o p)))
+       (invoke [this a b c d e f g h i j k l m n o p q] (throw (arity-error)))
        (invoke [this a b c d e f g h i j k l m n o p q r] (ctor this (array-map a b c d e f g h i j k l m n o p q r)))
+       (invoke [this a b c d e f g h i j k l m n o p q r s] (throw (arity-error)))
        (invoke [this a b c d e f g h i j k l m n o p q r s t] (ctor this (array-map a b c d e f g h i j k l m n o p q r s t)))
        (invoke [this a b c d e f g h i j k l m n o p q r s t more] (ctor this (apply array-map a b c d e f g h i j k l m n o p q r s t more)))
        ]
@@ -96,20 +109,30 @@
        IHash
        (-hash [this] (calc-hash this))
 
+       ;; Fn? - https://github.com/reagent-project/reagent/blob/a14faba55e373000f8f93edfcfce0d1222f7e71a/src/reagent/impl/util.cljs#L64
        IFn
        (-invoke [this a] (ctor this a))
        (-invoke [this] (ctor this {}))
        (-invoke [this a b] (ctor this (array-map a b)))
+       (-invoke [this a b c] (throw (arity-error)))
        (-invoke [this a b c d] (ctor this (array-map a b c d)))
+       (-invoke [this a b c d e] (throw (arity-error)))
        (-invoke [this a b c d e f] (ctor this (array-map a b c d e f)))
+       (-invoke [this a b c d e f g] (throw (arity-error)))
        (-invoke [this a b c d e f g h] (ctor this (array-map a b c d e f g h)))
+       (-invoke [this a b c d e f g h i] (throw (arity-error)))
        (-invoke [this a b c d e f g h i j] (ctor this (array-map a b c d e f g h i j)))
+       (-invoke [this a b c d e f g h i j k] (throw (arity-error)))
        (-invoke [this a b c d e f g h i j k l] (ctor this (array-map a b c d e f g h i j k l)))
+       (-invoke [this a b c d e f g h i j k l m] (throw (arity-error)))
        (-invoke [this a b c d e f g h i j k l m n] (ctor this (array-map a b c d e f g h i j k l m n)))
+       (-invoke [this a b c d e f g h i j k l m n o] (throw (arity-error)))
        (-invoke [this a b c d e f g h i j k l m n o p] (ctor this (array-map a b c d e f g h i j k l m n o p)))
+       (-invoke [this a b c d e f g h i j k l m n o p q] (throw (arity-error)))
        (-invoke [this a b c d e f g h i j k l m n o p q r] (ctor this (array-map a b c d e f g h i j k l m n o p q r)))
+       (-invoke [this a b c d e f g h i j k l m n o p q r s] (throw (arity-error)))
        (-invoke [this a b c d e f g h i j k l m n o p q r s t] (ctor this (array-map a b c d e f g h i j k l m n o p q r s t)))
-       (-invoke [this a b c d e f g h i j k l m n o p q r s t rest] (ctor this (apply array-map a b c d e f g h i j k l m n o p q r s t rest)))
+       (-invoke [this a b c d e f g h i j k l m n o p q r s t more] (ctor this (apply array-map a b c d e f g h i j k l m n o p q r s t more)))
        ]))
 
 (defn get-validator [^StructType struct-type]
