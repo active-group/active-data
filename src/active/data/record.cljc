@@ -118,13 +118,12 @@
 
 (defmacro def-record
   "
-  ```
   Defines a record and its keys, optionally giving a realm for each key:
-  
+  ```
   (def-record T
     [f1 :- realm/int,
      f2 :- realm/string])
-
+  ```
   A corresponding instance can be created by using the record as a function:
 
   ```
