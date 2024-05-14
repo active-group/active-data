@@ -3,7 +3,7 @@
 (defprotocol ^:private IKey
   (-set-optimized! [this opt-get opt-assoc] "Set (optimize) get and assoc functions. Note that these don't take the key: (get m) => value for key, and (assoc m value) => new m"))
 
-(deftype ^:private Key [^clojure.lang.Symbol sym ^:unsynchronized-mutable opt-get ^:unsynchronized-mutable opt-assoc]
+(deftype ^:private Key [#?@(:clj [^clojure.lang.Symbol sym] :cljs [^cljs.core/Symbol sym]) ^:unsynchronized-mutable opt-get ^:unsynchronized-mutable opt-assoc]
   IKey
   (-set-optimized! [this opt-get opt-assoc]
     (set! (.-opt-get this) opt-get)
