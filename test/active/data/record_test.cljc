@@ -66,3 +66,8 @@
 ;; scalars with metadata works (regression)
 (sut/def-record MetaT
   [meta-t-a :- (realm/with-metadata realm/string ::foo "42")])
+
+;; Testing that delayed realms can be used in records; resp. that it
+;; doesn't fail at compile time:
+(sut/def-record FooT
+  [foot-t-a :- (realm/optional (realm/delay FooT))])

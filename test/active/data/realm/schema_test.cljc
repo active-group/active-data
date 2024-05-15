@@ -261,20 +261,24 @@
                               (realm/field "kdr" (realm/delay plist-realm) :kdr)])))
 
 (deftest delay-test
-  (let [s (schema (realm/delay realm/integer))]
-    (is (some? (schema/validate s 5)))
-    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s "5"))))
-    
-  (let [s (schema plist-realm)]
+  (testing "Getting the schema before defined"
+    (let [a (atom nil)
+          s (schema (realm/delay @a))]
+      (reset! a realm/integer)
+      (is (some? (schema/validate s 5)))
+      (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s "5")))))
 
-    (is (some? (schema/validate s '())))
-    (is (some? (schema/validate s (->Pare 5 '()))))
-    (is (some? (schema/validate s (->Pare 3 (->Pare 5 '())))))
+  (testing "Using a recursive schema"
+    (let [s (schema plist-realm)]
 
-    (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 5)))
-    ;; note this one does not throw an exception - that's supposed to be done by the record constructor
-    #_(is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s (->Pare :a '()))))
-    ))
+      (is (some? (schema/validate s '())))
+      (is (some? (schema/validate s (->Pare 5 '()))))
+      (is (some? (schema/validate s (->Pare 3 (->Pare 5 '())))))
+
+      (is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s 5)))
+      ;; note this one does not throw an exception - that's supposed to be done by the record constructor
+      #_(is (thrown? #?(:clj Exception :cljs js/Error) (schema/validate s (->Pare :a '()))))
+      )))
 
 (deftest function-test
   (let [s1 (schema (realm/function realm/integer realm/integer -> realm/boolean))

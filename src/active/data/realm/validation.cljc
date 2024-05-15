@@ -22,7 +22,12 @@ Currently implemented via Schema."}
   [realm]
   "Return a validation function for a given realm.
 
-This function accepts a value and will raise an exception
-if validation fails."
+  This function accepts a value and will raise an exception
+  if validation fails."
   (let [schema (realm-schema/schema realm)]
-    (schema/validator schema)))
+    ;; Note: delay realms, resp. recursive schemas, are forced by
+    ;; schema/validator. That would be problematic/inconvenient for
+    ;; using them in records (which call this at definition time).
+    (let [f (delay (schema/validator schema))]
+      (fn [v]
+        (@f v)))))
