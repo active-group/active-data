@@ -52,11 +52,13 @@
 
 #?(:clj
    (t/deftest non-generative-clj-test
-     (let [[t1 v1] (eval '(vector (active.data.raw-record/def-record A [a])
-                                  (A a :foo)))
-           [t2 v2] (eval '(vector (active.data.raw-record/def-record A [a])
-                                  (A a :foo)))]
-
+     (let [[t1 v1 get-1] (eval '(vector (active.data.raw-record/def-record A [a])
+                                        (A a :foo)
+                                        a))
+           [t2 v2 get-2] (eval '(vector (active.data.raw-record/def-record A [a])
+                                        (A a :foo)
+                                        a))]
+       
        ;; records and instances are equal
        (t/is (= t1 t2))
        
@@ -65,6 +67,10 @@
        ;; both values are exact instances of the "other" record
        (t/is (sut/is-exactly-a? t1 v2))
        (t/is (sut/is-exactly-a? t2 v1))
+
+       ;; access works too either way
+       (t/is (= :foo (get-1 v2)))
+       (t/is (= :foo (get-2 v1)))
        )))
 
 (t/deftest reflection-test

@@ -118,7 +118,7 @@
 (defn- is-exactly?-0 [t-1 t-2]
   (= t-1 t-2))
 
-(defn- is-exactly?-2 [t-1 t-2]
+#_(defn- is-exactly?-2 [t-1 t-2]
   (identical? t-1 t-2))
 
 (defn- is-exactly-a?-0 [t m]
@@ -137,7 +137,7 @@
     (or (is-exactly?-0 parent-t et)
         (is-extension-of?-0 parent-t et))))
 
-(defn- is-extension-of?-2 [parent-t child-t]
+#_(defn- is-extension-of?-2 [parent-t child-t]
   ;; is the record child-t a direct or indirect extension of parent-t?
   (when-let [et (:extends (struct-type/variant child-t))]
     (or (is-exactly?-2 parent-t et)
@@ -163,12 +163,12 @@
 
 (defn- struct-type-matcher [record]
   ;; Note: this enables optimized access to keys in extended records; extended
-  ;; keys must be come first for this, so the indices are the same as in the parent record!
+  ;; keys must come first for this, so the indices are the same as in the parent record!
   (fn [struct-type]
-    ;; This may return false negatives (e.g. after hot code reload) as an optimization for the normal case.
-    (or (is-exactly?-2 record struct-type)
+    ;; If this returns false, an exception is thrown in the optimized accessors.
+    (or (is-exactly?-0 record struct-type)
         (and (record? struct-type)
-             (is-extension-of?-2 record struct-type)))))
+             (is-extension-of?-0 record struct-type)))))
 
 (defn ^:no-doc accessor [record key]
   (struct-map/accessor* record key (struct-type-matcher record)))
