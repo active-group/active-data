@@ -14,3 +14,6 @@ pom.xml.asc
 .shadow-cljs
 node_modules
 out
+resources/clj-kondo.exports/de.active-group/active-data/.cache
+.clj-kondo
+.lsp
