@@ -15,10 +15,15 @@
     f))
 
 (defn lint [forms]
-  (clj-kondo/run! {:lint [(as-tempfile forms)]
-                   :cache false
+  (clj-kondo/run! {:lint         [(as-tempfile forms)]
+                   :copy-configs false
+                   :cache        false
                    ;; :debug true
-                   :config-dir (io/file "resources/clj-kondo.exports/de.active-group/active-data/")}))
+                   :config-dir   "resources/clj-kondo.exports/de.active-group/active-data/"}))
+
+(defn other-findings [result]
+  (->> (:findings result)
+       (remove #(= :unresolved-symbol (:type %)))))
 
 (defn unresolved-symbols [result]
   (->> (:findings result)
@@ -27,26 +32,35 @@
 
 (deftest base-test
   (testing "test the utils actually work"
-    (is (not (empty? (-> (lint '((ns test.namespace)
-                                 (def foo bar)))
-                         (unresolved-symbols)))))))
+    (is (not-empty (-> (lint '((ns test.namespace)
+                               (def foo bar)
+                               foo
+                               bar))
+                       (unresolved-symbols))))))
 
-#_(deftest def-record-test
-  (testing "plain record"
+(deftest def-record-test
+  (testing "plain record has no unresolved-symbols"
     (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.record :as r]))
-                                            (r/def-record Foo [foo-a foo-b])))))))
+                                            (r/def-record Foo [foo-a foo-b])
+                                            Foo
+                                            foo-a
+                                            foo-b))))))
 
   (testing "record with realms"
     (is (empty? (unresolved-symbols (lint '((ns test.namespace2 (:require [active.data.record :as r]
                                                                           [active.data.realm :as realm]))
-                                            (r/def-record Foo [foo-a :- realm/string foo-b])))))))
+                                            (r/def-record Foo [foo-a :- realm/string
+                                                               foo-b :- realm/string
+                                                               foo-c
+                                                               foo-d :- realm/string
+                                                               foo-e])))))))
 
   (testing "record with realms and options"
     (is (empty? (unresolved-symbols (lint '((ns test.namespace3 (:require [active.data.record :as r]
                                                                           [active.data.realm :as realm]))
                                             (r/def-record Base [base-a])
                                             (r/def-record Foo :extends Base
-                                              [foo-a foo-b  :- realm/string]))))))))
+                                              [foo-a foo-b :- realm/string]))))))))
 
 #_(deftest defn-attach-test
   (testing "plain defn"

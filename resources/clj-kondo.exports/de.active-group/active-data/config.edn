@@ -1,0 +1,3 @@
+{:lint-as {}
+ :linters {}
+ :hooks {:analyze-call {active.data.record/def-record hooks.active-data/def-record}}}
