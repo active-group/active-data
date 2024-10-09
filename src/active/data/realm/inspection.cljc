@@ -57,7 +57,7 @@
 
 (defn real-range?
   [thing]
-  (is-a? real-range? thing))
+  (is-a? real-range-realm thing))
 
 (re-export
   realm-records/union-realm
