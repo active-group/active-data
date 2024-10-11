@@ -78,16 +78,30 @@
                                                                           [active.data.realm :as realm]))
                                             (a/defn foo :- realm/string [bar :- realm/integer] bar))))))))
 
-#_(deftest function-test
-  (testing "simple function"
-    (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
-                                            (realm/function realm/string -> realm/string)))))))
-  (testing "function with rest args"
-    (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
-                                            (realm/function realm/string & (realm/string) -> realm/string)))))))
-  (testing "function with optional args"
-    (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
-                                            (realm/function realm/string & [realm/string realm/string] -> realm/string)))))))
-  (testing "function with optional keyword args"
-    (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
-                                            (realm/function realm/string & {:a realm/string} -> realm/string))))))))
+(deftest function-test
+  (testing "positive"
+    (testing "simple function"
+      (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
+                                              (realm/function realm/string -> realm/string)))))))
+    (testing "function with rest args"
+      (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
+                                              (realm/function realm/string & (realm/string) -> realm/string)))))))
+    (testing "function with optional args"
+      (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
+                                              (realm/function realm/string & [realm/string realm/string] -> realm/string)))))))
+    (testing "function with optional keyword args"
+      (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
+                                              (realm/function realm/string & {:a realm/string} -> realm/string))))))))
+  (testing "negative"
+    (testing "simple function"
+      (is (= 2 (count (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
+                                                  (realm/function realm_in -> realm_out))))))))
+    (testing "function with rest args"
+      (is (= 1 (count (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
+                                                  (realm/function realm/string & (realm_string) -> realm/string))))))))
+    (testing "function with optional args"
+      (is (= 1 (count (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
+                                                  (realm/function realm/string & [realm_string realm/string] -> realm/string))))))))
+    (testing "function with optional keyword args"
+      (is (= 1 (count (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
+                                                  (realm/function realm/string & {:a realm_string} -> realm/string))))))))))

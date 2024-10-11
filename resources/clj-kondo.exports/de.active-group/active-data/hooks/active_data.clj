@@ -1,7 +1,7 @@
 (ns hooks.active-data
   (:require [clj-kondo.hooks-api :as api]
-            [clojure.string :as str]
-            [clojure.pprint :as pp]))
+            ;; [clojure.pprint :as pp]
+            ))
 
 (defn- rewrite-list
   "rewrite children list of a list-node to a single new node."
@@ -92,3 +92,21 @@
                                     field-names))]
                         ;; (pp/pprint (api/sexpr new-node))
                         new-node)))))
+
+(defn function [expr]
+  ;; could do some more checking here, but just separate references from syntax for now.
+  (-> expr
+      (rewrite-list
+       (fn [children]
+         (let [get-vals (fn get-vals [nodes]
+                          (->> nodes
+                               (mapcat (fn [n]
+                                         (cond
+                                           (api/token-node? n) (case (:value n)
+                                                                 (& ->) nil
+                                                                 [n])
+                                           (api/list-node? n) (get-vals (:children n))
+                                           (api/vector-node? n) (get-vals (:children n))
+                                           (api/map-node? n) (get-vals (:children n))
+                                           :else nil)))))]
+           (apply as-do (get-vals (rest children))))))))
