@@ -59,8 +59,14 @@
     (is (empty? (unresolved-symbols (lint '((ns test.namespace3 (:require [active.data.record :as r]
                                                                           [active.data.realm :as realm]))
                                             (r/def-record Base [base-a])
-                                            (r/def-record Foo :extends Base
-                                              [foo-a foo-b :- realm/string]))))))))
+                                            (r/def-record Foo
+                                              :extends Base
+                                              :future-option nil
+                                              [foo-a foo-b :- realm/string]))))))
+    (is (= 1 (count (unresolved-symbols (lint '((ns test.namespace4 (:require [active.data.record :as r]))
+                                                (r/def-record Foo
+                                                  :extends undefine_Base
+                                                  [foo-a])))))))))
 
 #_(deftest defn-attach-test
   (testing "plain defn"

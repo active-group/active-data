@@ -50,32 +50,45 @@
       (rewrite-list (fn [children]
                       ;; rewrite node to defn, removing :static
                       (let [[record-name & args] (apply drop-docstring (rest children))
-                            [maybe-base-name maybe-fields]
-                            (cond (and (api/keyword-node? (first args))
-                                       (= :extends
-                                          (:k (first args)))
-                                       (api/token-node? (second args))
-                                       (api/vector-node? (third args)))
-                                  [(second args) (third args)]
+                            [maybe-base-name fields]
+                            (loop [args args
+                                   res [nil nil]]
+                              (cond
+                                (empty? args)
+                                res
+                                
+                                (and (api/keyword-node? (first args))
+                                     (api/token-node? (second args)))
+                                (if (= :extends (:k (first args)))
+                                  (recur (drop 2 args)
+                                         [(second args) (second res)])
+                                  ;; drop other options
+                                  (recur (drop 2 args) res))
 
-                                  (api/vector-node? (first args))
-                                  [nil (first args)]
+                                (api/vector-node? (first args))
+                                [(first res) (:children (first args))]
+                                
+                                :else ;; something is syntactically wrong
+                                res))
 
-                                  :else
-                                  [nil nil])
-
-                            partitioned-field-vector (partition-fields-and-realms (:children maybe-fields))
+                            partitioned-field-vector (partition-fields-and-realms fields)
                             field-names              (map #(if (vector? %)
                                                              (first %)
                                                              %)
                                                           partitioned-field-vector)
                             new-node
                             (apply as-do
+                                   ;; reference the base record
+                                   maybe-base-name
+                                   ;; declare the record name (arities are complex)
                                    (api/list-node (list (api/token-node 'declare)
                                                         record-name))
                                    (map
-                                    #(api/list-node (list (api/token-node 'declare)
-                                                          %))
+                                    ;; define fields as 1 or 2 arity fns.
+                                    #(api/list-node (list (api/token-node 'defn)
+                                                          %
+                                                          (api/list-node (list (api/vector-node (list (api/token-node '_r))) (api/token-node nil)))
+                                                          (api/list-node (list (api/vector-node (list (api/token-node '_r) (api/token-node '_v))) (api/token-node nil)))))
                                     field-names))]
                         ;; (pp/pprint (api/sexpr new-node))
                         new-node)))))
