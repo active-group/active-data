@@ -1,4 +1,6 @@
-{:lint-as {}
+{:lint-as {active.data.internal.export/re-export potemkin/import-vars}
  :hooks {:analyze-call {active.data.record/def-record hooks.active-data/def-record
                         active.data.realm/function hooks.active-data/function
-                        active.data.realm.attach/defn hooks.active-data/realm-defn}}}
+                        active.data.realm.attach/defn hooks.active-data/realm-defn
+                        ;;active.data.internal.export/re-export hooks.active-data/re-export
+                        }}}

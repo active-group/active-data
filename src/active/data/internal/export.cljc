@@ -2,6 +2,7 @@
 
 (defn- re-export-1
   [var-name]
+  (assert (symbol? var-name))
   (let [local-name (symbol (name var-name))]
     `(do
        (def ~local-name ~var-name)

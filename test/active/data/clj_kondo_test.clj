@@ -112,3 +112,17 @@
     (testing "function with optional keyword args"
       (is (= 1 (count (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]))
                                                   (realm/function realm/string & {:a realm_string} -> realm/string))))))))))
+
+(deftest re-export-test
+  (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm :as realm]
+                                                                        [active.data.internal.export :refer [re-export]]))
+                                          (re-export realm/integer-from-to
+                                                     realm/integer-from)
+                                          integer-from-to
+                                          integer-from)))))
+  ;; these don't work; I guess clj-kondo doesn't really check namespaced references in the same way?
+  #_(is (empty? (unresolved-symbols (lint '((ns test.namespace2 (:require [active.data.realm.inspection :as i]))
+                                            i/metadata
+                                            i/optional-realm)))))
+  #_(is (not (empty? (unresolved-symbols (lint '((ns test.namespace2 (:require [active.data.realm.inspection :as i]))
+                                                 i/metadataxx)))))))

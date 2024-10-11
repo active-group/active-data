@@ -15,7 +15,8 @@
 
   :auto {"test" {:file-pattern #"\.(clj|cljs|cljx|cljc|edn)$"
                  :paths        ["resources/clj-kondo.exports/de.active-group/active-data/"
-                                "test/active/data/"]}}
+                                "test/"
+                                "src/"]}}
 
   :global-vars {*warn-on-reflection* true}
   
