@@ -1,7 +1,6 @@
 (ns hooks.active-data
   (:require [clj-kondo.hooks-api :as api]
-            ;; [clojure.pprint :as pp]
-            ))
+            [clojure.pprint :as pp]))
 
 (defn- rewrite-list
   "rewrite children list of a list-node to a single new node."
@@ -25,25 +24,30 @@
   ;; multiple nodes in a 'do'
   (api/list-node (list* (api/token-node 'do) nodes)))
 
-(defn- partition-fields-and-realms [field-vector-children]
-  (->> field-vector-children
-       (reduce (fn [v arg-node]
-                 (cond
-                   (= :-
-                      (:k arg-node))
-                   (conj (vec (butlast v)) [(last v) arg-node])
-
-                   ;; TODO maybe we should check if arg-node is a realm here
-                   (= :-
-                      (:k (last (last v))))
-                   (conj (vec (butlast v)) (conj (last v) arg-node))
-
-                   :else
-                   (conj v arg-node)))
-               [])))
-
 (defn- third [l]
   (first (nnext l)))
+
+(defn- analyze-fields-and-realms [field-vector-children]
+  (loop [exprs field-vector-children
+         res {:names []
+              :realms []}]
+    (cond
+      (empty? exprs) res
+
+      (empty? (rest exprs))
+      (-> res (update :names conj (first exprs)))
+
+      (and (api/keyword-node? (second exprs))
+           (= :- (:k (second exprs))))
+      (recur (drop 3 exprs)
+             (-> res
+                 (update :names conj (first exprs))
+                 (update :realms conj (third exprs))))
+
+      :else
+      (recur (rest exprs)
+             (-> res
+                 (update :names conj (first exprs)))))))
 
 (defn def-record [expr]
   (-> expr
@@ -71,15 +75,13 @@
                                 :else ;; something is syntactically wrong
                                 res))
 
-                            partitioned-field-vector (partition-fields-and-realms fields)
-                            field-names              (map #(if (vector? %)
-                                                             (first %)
-                                                             %)
-                                                          partitioned-field-vector)
+                            {field-names :names field-realms :realms} (analyze-fields-and-realms fields)
+                            
                             new-node
                             (apply as-do
-                                   ;; reference the base record
+                                   ;; reference the base record and realms used
                                    maybe-base-name
+                                   (api/vector-node field-realms)
                                    ;; declare the record name (arities are complex)
                                    (api/list-node (list (api/token-node 'declare)
                                                         record-name))
@@ -110,3 +112,40 @@
                                            (api/map-node? n) (get-vals (:children n))
                                            :else nil)))))]
            (apply as-do (get-vals (rest children))))))))
+
+(defn realm-defn [expr]
+  (-> expr
+      (rewrite-list
+       (fn [children]
+         ;; (a/defn foo :- realm/string "docstring" [bar :- realm/integer] baz)
+         (let [fn-name (second children)
+               {params :params body :body realms :realms}
+               (loop [exprs (drop 2 children)
+                      res {:params [] :body nil :realms []}]
+                 (cond
+                   (empty? exprs) res
+                   
+                   ;; return realm
+                   (and (api/keyword-node? (first exprs))
+                        (= :- (:k (first exprs))))
+                   (recur (drop 2 exprs)
+                          (-> res
+                              (update :realms conj (second exprs))))
+
+                   ;; docstring, ignore
+                   (api/string-node? (first exprs))
+                   (recur (rest exprs) res)
+                   
+                   ;; params
+                   (api/vector-node? (first exprs))
+                   (let [{params :names param-realms :realms} (analyze-fields-and-realms (:children (first exprs)))]
+                     (-> res
+                         (assoc :params params)
+                         (update :realms concat param-realms)
+                         (assoc :body (rest exprs))))))]
+           (as-do
+            (api/vector-node realms)
+            (api/list-node (list* (api/token-node 'defn)
+                                  fn-name
+                                  (api/vector-node params)
+                                  body))))))))

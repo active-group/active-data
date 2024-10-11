@@ -36,11 +36,13 @@
                                    (conj res [arg nil]))))))]
     [return-realm doc-string args-realms body]))
 
+;; TODO: fn macro?
+
 (defmacro defn
   "Define a function with realms for return value and arguments.
 
   ```
-  (defn myfun :- realm/integer [a :- realm/string]
+  (defn myfun :- realm/integer \"docstring\" [a :- realm/string]
     ...)
   ```
   "

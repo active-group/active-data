@@ -68,15 +68,22 @@
                                                   :extends undefine_Base
                                                   [foo-a])))))))))
 
-#_(deftest defn-attach-test
+(deftest defn-attach-test
   (testing "plain defn"
     (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm.attach :as a]))
-                                            (a/defn foo [bar] bar)))))))
+                                            (a/defn foo [bar] bar))))))
+    (is (= 1 (count (unresolved-symbols (lint '((ns test.namespace11 (:require [active.data.realm.attach :as a]))
+                                                (a/defn foo [bar] baz)))))))
+    (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm.attach :as a]))
+                                            (a/defn foo "docstring" [bar] bar)))))))
 
   (testing "defn with realms"
     (is (empty? (unresolved-symbols (lint '((ns test.namespace1 (:require [active.data.realm.attach :as a]
                                                                           [active.data.realm :as realm]))
-                                            (a/defn foo :- realm/string [bar :- realm/integer] bar))))))))
+                                            (a/defn foo :- realm/string [bar :- realm/integer] bar))))))
+    (is (= 1 (count (unresolved-symbols (lint '((ns test.namespace10 (:require [active.data.realm.attach :as a]
+                                                                              [active.data.realm :as realm]))
+                                                (a/defn foo :- realm/string [bar :- realm/integer] baz)))))))))
 
 (deftest function-test
   (testing "positive"
