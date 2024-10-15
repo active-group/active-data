@@ -365,7 +365,7 @@ The two-argument version can be called as follows:
      realm-records/metadata {})))
 
 (defn map-with-keys
-  "Create realm containing certain keys.
+  "Create realm containing certain keys and a different realm for the value associated with each key.
 
   `keys-realm-map` is map from keys to the realms of their values."
   [keys-realm-map]
@@ -385,7 +385,7 @@ The two-argument version can be called as follows:
      realm-records/metadata {})))
 
 (defn map-of
-  "Create realm containing uniform maps.
+  "Create realm containing uniform maps, where keys and value are each from a fixed realm.
 
   `key-realm` is the realm of the keys,
   `value-realm` is the realm of the values."

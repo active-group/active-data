@@ -51,7 +51,7 @@
   (is (thrown? #?(:clj Exception :cljs js/Error)
                (realm-validation/checking
                 (ExtT f1 :wrong f2 "foo" f3 :bar)))
-      "Validates fields 'inherited' fields too"))
+      "Validates 'inherited' fields too"))
 
 (deftest construction-test
   (is (some? (T f1 42 f2 "foo")))

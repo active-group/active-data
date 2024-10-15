@@ -8,7 +8,8 @@ Currently implemented via Schema."}
 (defmacro checking
   "Execute body with input and output schema validation turned on for
   all realm-attach/defn and realm-attach/fn instances globally (across
-  all threads). After all forms have been executed, resets function
+  all threads). This includes construction and modification of record
+  instances. After all forms have been executed, resets function
   validation to its previously set value. Not concurrency-safe."
   [& body]
   `(schema/with-fn-validation ~@body))
@@ -16,7 +17,8 @@ Currently implemented via Schema."}
 (def ^{:doc "Set whether validation takes place."}
   set-checking! schema/set-fn-validation!)
 
-(def ^{:doc "Return a boolean that tells whether validation is taking place."} checking? schema/fn-validation?)
+(def ^{:doc "Return a boolean that tells whether validation is taking place."}
+  checking? schema/fn-validation?)
 
 (defn validator
   [realm]
