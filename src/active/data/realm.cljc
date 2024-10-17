@@ -364,6 +364,16 @@ The two-argument version can be called as follows:
      realm-records/predicate set?
      realm-records/metadata {})))
 
+(defn- map-with-keys-predicate [keys-realm-map]
+  (let [key? (set (keys keys-realm-map))
+        required-keys (->> keys-realm-map
+                           (remove #(contains? (second %) nil))
+                           (map first))]
+    (fn [x]
+      (and (map? x)
+           (every? #(core/contains? x %) required-keys)
+           (every? key? (keys x))))))
+
 (defn map-with-keys
   "Create realm containing certain keys and a different realm for the value associated with each key.
 
@@ -381,7 +391,7 @@ The two-argument version can be called as follows:
                                                            keys-realm-map))
                                     "}")
      realm-records/map-with-keys-realm-map keys-realm-map
-     realm-records/predicate map?
+     realm-records/predicate (map-with-keys-predicate keys-realm-map)
      realm-records/metadata {})))
 
 (defn map-of

@@ -239,7 +239,8 @@
 
   (is ((realm-inspection/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) {:foo 5 :bar "5"}))
   (is ((realm-inspection/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) {:foo "5" :bar 5}))
-  (is ((realm-inspection/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) {:bla 5 :baz "5"}))
+  (is ((realm-inspection/predicate (realm/map-with-keys {:foo realm/integer :bar (realm/optional realm/string)})) {:foo "5"}))
+  (is (not ((realm-inspection/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) {:bla 5 :baz "5"})))
   (is (not ((realm-inspection/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) 5)))
   (is (not ((realm-inspection/predicate (realm/map-with-keys {:foo realm/integer :bar realm/string})) [])))
 
