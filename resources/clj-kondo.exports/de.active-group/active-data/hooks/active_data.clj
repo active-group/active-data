@@ -90,7 +90,7 @@
                                     #(api/list-node (list (api/token-node 'defn)
                                                           %
                                                           (api/list-node (list (api/vector-node (list (api/token-node '_r))) (api/token-node nil)))
-                                                          (api/list-node (list (api/vector-node (list (api/token-node '_r) (api/token-node '_v))) (api/token-node nil)))))
+                                                          (api/list-node (list (api/vector-node (list (api/token-node 'r) (api/token-node '_v))) (api/token-node 'r)))))
                                     field-names))]
                         ;; (pp/pprint (api/sexpr new-node))
                         new-node)))))
