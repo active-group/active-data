@@ -403,6 +403,11 @@ The two-argument version can be called as follows:
      realm-records/predicate map?
      realm-records/metadata {})))
 
+(defn- map-with-tag-predicate [key value]
+  (fn [x]
+    (and (map? x)
+         (= (get x key nil) value))))
+
 (defn map-with-tag
   "Create realm for maps containing a tag.
 
@@ -412,10 +417,7 @@ The two-argument version can be called as follows:
    realm-records/description (str "map with tag " key " -> " value)
    realm-records/map-with-tag-realm-key key
    realm-records/map-with-tag-realm-value value
-   realm-records/predicate
-   (fn [x]
-     (and (map? x)
-          (= (get x key nil) value)))
+   realm-records/predicate (map-with-tag-predicate key value)
    realm-records/metadata {}))
 
 (defn tuple
