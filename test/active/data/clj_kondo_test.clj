@@ -30,6 +30,11 @@
        (filter #(= :unresolved-symbol (:type %)))
        (map :message)))
 
+(defn type-mismatches [result]
+  (->> (:findings result)
+       (filter #(= :type-mismatch (:type %)))
+       (map :message)))
+
 (deftest base-test
   (testing "test the utils actually work"
     (is (not-empty (-> (lint '((ns test.namespace)
@@ -66,7 +71,12 @@
     (is (= 1 (count (unresolved-symbols (lint '((ns test.namespace4 (:require [active.data.record :as r]))
                                                 (r/def-record Foo
                                                   :extends undefine_Base
-                                                  [foo-a])))))))))
+                                                  [foo-a]))))))))
+  (testing "return type for using a record field as a single arity function can be anything"
+    (is (empty? (type-mismatches (lint '((ns test.namespace5 (:require [active.data.record :as r]))
+                                         (r/def-record Foo [foo-a])
+                                         (def foo (Foo foo-a 1))
+                                         (+ 1 (foo-a foo)))))))))
 
 (deftest defn-attach-test
   (testing "plain defn"
@@ -125,4 +135,4 @@
                                             i/metadata
                                             i/optional-realm)))))
   #_(is (not (empty? (unresolved-symbols (lint '((ns test.namespace2 (:require [active.data.realm.inspection :as i]))
-                                                 i/metadataxx)))))))
+                                                 i/doesnotexist)))))))
