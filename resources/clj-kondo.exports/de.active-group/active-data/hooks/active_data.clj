@@ -90,10 +90,10 @@
                                     #(api/list-node (list (api/token-node 'defn)
                                                           %
                                                           (api/list-node (list (api/vector-node (list (api/token-node '_r)))
-                                                                               (api/list-node (api/token-node 'throw)
-                                                                                              (api/list-node (list (api/token-node 'ex-info)
-                                                                                                                   "NOTE: An exception is no return type, so that clj-kondo can't infer that."
-                                                                                                                   {})))))
+                                                                               (api/list-node (list (api/token-node 'throw)
+                                                                                                    (api/list-node (list (api/token-node 'ex-info)
+                                                                                                                         "NOTE: An exception is no return type, so that clj-kondo can't infer that."
+                                                                                                                         {}))))))
                                                           (api/list-node (list (api/vector-node (list (api/token-node 'r) (api/token-node '_v)))
                                                                                (api/token-node 'r)))))
                                     field-names))]
