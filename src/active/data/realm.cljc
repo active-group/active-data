@@ -679,7 +679,7 @@ Here are the different forms:
   * A map containing one entry, whose key and value are both realms, denotes a [[map-of]] of those realms.
   * Any other map denotes a [[map-with-keys]] of its keys and value realms.
   * Record types from [[active.data.record]] or [[active.data.realm-record]] denote the corresponding record realm.
-  * Struct types from [[active.data..struct]] denote the corresponding record realm."  
+  * Struct types from [[active.data.struct]] denote the corresponding record realm."  
   [shorthand]
   (if (is-a? realm-records/realm shorthand)
     shorthand
