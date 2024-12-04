@@ -245,7 +245,9 @@
 (defn- find-index-of ^long [struct key]
   (struct-type/maybe-index-of struct key))
 
-(def ^:private codox-present? (some? (find-ns 'codox.main)))
+(def ^:private codox-present? (or (some? (find-ns 'codox.main))
+                                  ;; clj-doc.metagetta is sort of a clone of codox.
+                                  (some? (find-ns 'cljdoc-analyzer.metagetta.main))))
 
 (deftype ^:private PersistentClosedStructMap [struct data locked? _meta
                                               #?(:clj ^:unsynchronized-mutable ^int _hasheq) ;; only clj!
