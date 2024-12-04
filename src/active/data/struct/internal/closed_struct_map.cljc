@@ -344,8 +344,6 @@
 
   ;; TODO: Ifn taking key.
   #?@(:clj
-      ;; TODO: IKVReduce ? (looks like an optimization)
-      
       ;; Note: if we used gen-class instead of deftype, we could
       ;; extend APersistentMap; but using gen-class is also not easy
       ;; in terms of the interop.
