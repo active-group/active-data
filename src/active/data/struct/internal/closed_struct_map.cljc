@@ -619,7 +619,11 @@
              {:expected struct
               :key key
               :value v})
-    (ex-info (str "Key " (pr-str key) " cannot be used with a value of type " (type v))
+    (ex-info (let [stype (str (type v))]
+               ;; Note: type(nil) = nil
+               (if (empty? stype)
+                 (str "Key " (pr-str key) " cannot be used with value " (pr-str v))
+                 (str "Key " (pr-str key) " cannot be used with a value of type " stype)))
              {:expected struct
               :key key
               :value v})))
