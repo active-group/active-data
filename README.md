@@ -1,3 +1,7 @@
+[![Latest Version](https://img.shields.io/clojars/v/de.active-group/active-data.svg)](https://clojars.org/de.active-group/active-data)
+[![cljdoc badge](https://cljdoc.org/badge/de.active-group/active-data)](https://cljdoc.org/d/de.active-group/active-data/CURRENT)
+[![Tests Status](https://github.com/active-group/active-data/workflows/Clojure%20CI/badge.svg)](https://github.com/active-group/active-data/actions)
+
 # Active Data
 
 The goal of this library is to provide facilities for systematic data
@@ -14,7 +18,7 @@ In particular, it includes
 
 [Here](doc/intro.md) is an introduction to Active Data.
 
-[API Docs are here.](https://active-group.github.io/active-data/target/doc/)
+[API Docs are here.](https://cljdoc.org/d/de.active-group/active-data/CURRENT)
 
 ## License
 
