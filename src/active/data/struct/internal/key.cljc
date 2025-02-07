@@ -82,7 +82,7 @@
   (Key. sym nil nil))
 
 (defmacro def-key [name]
-  `(def ~name (make (symbol ~(str *ns*) ~(str name)))))
+  `(defonce ~name (make (symbol ~(str *ns*) ~(str name)))))
 
 (defn set-optimized! [^Key key opt-get opt-assoc]
   ;; Note: should only be called once and immediately after construction/during definition;
