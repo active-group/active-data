@@ -22,6 +22,11 @@
   (is (= '{:docstring "docstring", :options [{:name :extends, :value x}], :fields []}
          (sut/parse-def-record-args '("docstring" :extends x []))))
 
+  (is (= '{:fields [{:name arg1 :realm {:separator :- :value r/realm1} :docstring "docstring 1"}
+                    {:name arg2 :docstring "docstring 2"}]}
+         (sut/parse-def-record-args '([arg1 :- r/realm1 "docstring 1"
+                                       arg2 "docstring 2"]))))
+
   #_(is (= :clojure.spec.alpha/invalid
          (sut/parse-def-record-args '(:other x [])))))
 

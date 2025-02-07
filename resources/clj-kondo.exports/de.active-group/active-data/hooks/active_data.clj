@@ -20,6 +20,12 @@
     (list* name more)
     (list* name (cons x more))))
 
+(defn- drop-opt-string [exprs]
+  (if (or (empty? exprs)
+          (not (api/string-node? (first exprs))))
+    exprs
+    (rest exprs)))
+
 (defn- as-do [& nodes]
   ;; multiple nodes in a 'do'
   (api/list-node (list* (api/token-node 'do) nodes)))
@@ -39,13 +45,13 @@
 
       (and (api/keyword-node? (second exprs))
            (= :- (:k (second exprs))))
-      (recur (drop 3 exprs)
+      (recur (drop-opt-string (drop 3 exprs))
              (-> res
                  (update :names conj (first exprs))
                  (update :realms conj (third exprs))))
 
       :else
-      (recur (rest exprs)
+      (recur (drop-opt-string (rest exprs)) ;; docstring
              (-> res
                  (update :names conj (first exprs)))))))
 
@@ -92,7 +98,7 @@
                                                           (api/list-node (list (api/vector-node (list (api/token-node '_r)))
                                                                                (api/list-node (list (api/token-node 'throw)
                                                                                                     (api/list-node (list (api/token-node 'ex-info)
-                                                                                                                         "NOTE: An exception is no return type, so that clj-kondo can't infer that."
+                                                                                                                         "NOTE: An exception has no return type, so that clj-kondo can't infer a wrong one."
                                                                                                                          {}))))))
                                                           (api/list-node (list (api/vector-node (list (api/token-node 'r) (api/token-node '_v)))
                                                                                (api/token-node 'r)))))

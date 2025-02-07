@@ -31,7 +31,8 @@
    (let [spec (spec/cat :docstring (spec/? string?)
                         :options (spec/* (spec/cat :name keyword?
                                                    :value any?))
-                        :fields (spec/spec (spec/* simple-symbol?)))]
+                        :fields (spec/spec (spec/* (spec/cat :name simple-symbol?
+                                                             :docstring (spec/? string?)))))]
      (defn ^:no-doc parse-def-record-args [args]
        (let [r (spec/conform spec args)]
          (if (= r :clojure.spec.alpha/invalid)
@@ -49,15 +50,19 @@
 
 (defmacro def-record
   [t & args]
-  (let [{docstring :docstring options* :options fields :fields} (parse-def-record-args args)
-        options (into {} (map (juxt :name :value) options*))]
+  (let [{docstring :docstring options* :options fields* :fields} (parse-def-record-args args)
+        options (into {} (map (juxt :name :value) options*))
+        fields (mapv :name fields*)]
     (check-options #{:extends :validator} options) ;; couldn't do that in the spec properly
     `(do
-       ~@(for [f# fields]
+       ~@(for [{f# :name ds# :docstring} fields*]
            `(key/def-key ~(cond-> f#
                             (and (contains? (meta t) :private)
                                  (not (contains? (meta f#) :private)))
                             (vary-meta assoc :private (:private (meta t)))
+
+                            (some? ds#)
+                            (vary-meta assoc :doc ds#)
                             
                             true
                             (vary-meta update :arglists #(or % `'~(key-a-lists t))))))

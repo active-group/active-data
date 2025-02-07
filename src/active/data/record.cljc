@@ -110,7 +110,8 @@
                         :options (spec/* (spec/cat :name keyword?
                                                    :value any?))
                         :fields (spec/spec (spec/* (spec/cat :name simple-symbol?
-                                                             :realm (spec/? (spec/cat :separator #{:-} :value any?))))))]
+                                                             :realm (spec/? (spec/cat :separator #{:-} :value any?))
+                                                             :docstring (spec/? string?)))))]
      (defn ^:no-doc parse-def-record-args [args]
        (let [r (spec/conform spec args)]
          (if (= r :clojure.spec.alpha/invalid)
