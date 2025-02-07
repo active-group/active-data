@@ -155,17 +155,3 @@
                                   (api/vector-node params)
                                   body))))))))
 
-;; Note: use builin lint-as potemkin/import-vars... I think kondo has some internal special handling of that to make it work.
-#_(defn re-export [expr]
-  (rewrite-list
-   expr
-   (fn [children]
-     (->> (rest children)
-          (map (fn [sym-token]
-                 (if (api/token-node? sym-token)
-                   (api/list-node (list (api/token-node 'def)
-                                        (api/token-node (symbol (name (:value sym-token))))
-                                        (api/token-node sym-token)))
-                   ;; else syntax error? keep
-                   sym-token)))
-          (apply as-do)))))
