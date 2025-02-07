@@ -83,7 +83,8 @@
             [active.data.struct.internal.struct-type :as struct-type]
             [active.data.internal.export #?@(:clj [:refer [re-export]] :cljs [:refer-macros [re-export]])]
             [active.data.realm :as realm]
-            [active.data.realm.validation :as realm-validation])
+            [active.data.realm.validation :as realm-validation]
+            #?(:clj [clojure.spec.alpha :as spec]))
   (:refer-clojure :exclude [record? accessor]))
 
 ;; re-export reflection api
@@ -104,17 +105,17 @@
            raw-record/mutator
            raw-record/mutator!)
 
-(defn ^:no-doc parse-fields [fields]
-  (loop [fields fields
-         res []]
-    (if (empty? fields)
-      res
-      (let [field (first fields)]
-        (if (= :- (second fields))
-          (recur (drop 3 fields)
-                 (conj res [field (second (rest fields))]))
-          (recur (rest fields)
-                 (conj res [field nil])))))))
+#?(:clj
+   (let [spec (spec/cat :docstring (spec/? string?)
+                        :options (spec/* (spec/cat :name keyword?
+                                                   :value any?))
+                        :fields (spec/spec (spec/* (spec/cat :name simple-symbol?
+                                                             :realm (spec/? (spec/cat :separator #{:-} :value any?))))))]
+     (defn ^:no-doc parse-def-record-args [args]
+       (let [r (spec/conform spec args)]
+         (if (= r :clojure.spec.alpha/invalid)
+           (throw (Exception. (spec/explain-str spec args)))
+           r)))))
 
 (defmacro def-record
   "
@@ -141,13 +142,14 @@
   ```
   "
   [t & args]
-  (let [[options fields*] (raw-record/parse-def-record-args args)
-        pairs (parse-fields fields*)
+  (let [{options* :options fields* :fields docstring :docstring} (parse-def-record-args args)
+        options (into {} (map (juxt :name :value) options*))
+        pairs (map (juxt :name (comp :value :realm)) fields*)
         fields (map first pairs)]
-    (assert (every? #{:extends :validator} (map first options)) "Invalid option")
+    (raw-record/check-options #{:extends :validator} options) ;; couldn't do that in the spec properly
     ;; TODO: a usecase for a custom validator would be to define some additional invariants between fields; but if they also have realms,
     ;; then just the :validator option that replaces the default is very inconvenient; maybe add :add-validator option?
-    `(do (raw-record/def-record ~t
+    `(do (raw-record/def-record ~t ~@(when docstring [docstring])
            ~@(apply concat
                     (-> options
                         (update :validator

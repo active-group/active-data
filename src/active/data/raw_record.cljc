@@ -1,7 +1,8 @@
 (ns ^:no-doc active.data.raw-record
   (:require [active.data.struct.internal.key :as key #?@(:cljs [:include-macros true])]
             [active.data.struct.internal.closed-struct-map :as struct-map]
-            [active.data.struct.internal.struct-type :as struct-type])
+            [active.data.struct.internal.struct-type :as struct-type]
+            #?(:clj [clojure.spec.alpha :as spec]))
   (:refer-clojure :exclude [record? accessor]))
 
 (declare to-record-map)
@@ -26,28 +27,27 @@
 (defn- record-variant? [v]
   (instance? RecordVariant v))
 
-(defn ^:no-doc parse-def-record-args [args]
-  ;; TODO: not actually checking possible errors... use spec for that?
-  (loop [args args
-         options {}
-         fields nil]
-    (if (empty? args)
-      [options fields]
-      (cond
-        (keyword? (first args))
-        (recur (rest (rest args))
-               (assoc options (first args) (second args))
-               nil)
-        
-        :else
-        (recur (rest args)
-               options
-               (first args))))))
+#?(:clj
+   (let [spec (spec/cat :docstring (spec/? string?)
+                        :options (spec/* (spec/cat :name keyword?
+                                                   :value any?))
+                        :fields (spec/spec (spec/* simple-symbol?)))]
+     (defn ^:no-doc parse-def-record-args [args]
+       (let [r (spec/conform spec args)]
+         (if (= r :clojure.spec.alpha/invalid)
+           (throw (Exception. (spec/explain-str spec args)))
+           r)))))
+
+#?(:clj
+   (defn ^:no-doc check-options [valid-keys options]
+     (when-let [l (seq (remove valid-keys (map first options)))]
+       (throw (Exception. (str "Invalid option: " (first l)))))))
 
 (defmacro def-record
   [t & args]
-  (let [[options fields] (parse-def-record-args args)]
-    (assert (every? #{:extends :validator} (map first options)) "Invalid option")
+  (let [{docstring :docstring options* :options fields :fields} (parse-def-record-args args)
+        options (into {} (map (juxt :name :value) options*))]
+    (check-options #{:extends :validator} options) ;; couldn't do that in the spec properly
     `(do
        ~@(for [f# fields]
            `(key/def-key ~(cond-> f#
@@ -63,6 +63,8 @@
                                (record-variant (symbol ~(str *ns*) (str '~t)) e#)
                                ~(:validator options)
                                nil)))
+       ~(when (some? docstring)
+          `(alter-meta! (var ~t) assoc :doc ~docstring))
 
        ~@(for [f# fields]
            `(key/set-optimized! ~f# (accessor ~t ~f#) (mutator ~t ~f#)))

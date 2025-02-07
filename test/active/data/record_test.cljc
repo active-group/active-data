@@ -9,6 +9,22 @@
 
 ;; Note: more detailed tests in raw-record-test; this just adds tests for the optional realms.
 
+(deftest parse-def-record-args-test
+  (is (= '{:fields [{:name arg1 :realm {:separator :- :value r/realm1}}
+                    {:name arg2}]}
+         (sut/parse-def-record-args '([arg1 :- r/realm1 arg2]))))
+  (is (= '{:fields []}
+         (sut/parse-def-record-args '([]))))
+  
+  (is (= '{:options [{:name :validator, :value x}], :fields []}
+         (sut/parse-def-record-args '(:validator x []))))
+
+  (is (= '{:docstring "docstring", :options [{:name :extends, :value x}], :fields []}
+         (sut/parse-def-record-args '("docstring" :extends x []))))
+
+  #_(is (= :clojure.spec.alpha/invalid
+         (sut/parse-def-record-args '(:other x [])))))
+
 (sut/def-record T
   [f1 :- realm/integer,
    f2 :- realm/string])

@@ -9,11 +9,27 @@
 
 ;; Focuses on what is different than in structs
 
+(t/deftest parse-def-record-args-test
+  (t/is (= '{:fields [arg1 arg2]}
+           (sut/parse-def-record-args '([arg1 arg2]))))
+  (t/is (= '{:fields []}
+           (sut/parse-def-record-args '([]))))
+  
+  (t/is (= '{:options [{:name :validator, :value x}], :fields [arg1 arg2]}
+           (sut/parse-def-record-args '(:validator x [arg1 arg2]))))
+  (t/is (= '{:options [{:name :extends, :value x}], :fields [arg1 arg2]}
+           (sut/parse-def-record-args '(:extends x [arg1 arg2]))))
+  (t/is (= '{:docstring "docstring", :options [{:name :extends, :value x}], :fields [arg1 arg2]}
+           (sut/parse-def-record-args '("docstring" :extends x [arg1 arg2]))))
+
+  #_(t/is (= :clojure.spec.alpha/invalid
+             (sut/parse-def-record-args '(:other x [])))))
+
 (defn throws [t]
   #?(:clj (try (t) nil (catch Throwable e e))
      :cljs (try (t) nil (catch :default e e))))
 
-(sut/def-record R
+(sut/def-record R "a docstring"
   [r-a r-b])
 
 (sut/def-record OtherR
@@ -21,10 +37,14 @@
 
 (sut/def-record ^:private PrivT [pt-a ^{:private false} pt-b])
 
-(t/testing "private inheritance"
-    (t/is (:private (meta #'PrivT)))
-    (t/is (:private (meta #'pt-a)) "Privateness is inherited")
-    (t/is (not (:private (meta #'pt-b))) "Privateness is inherited only as a default"))
+(t/deftest meta-data-test
+  (t/testing "docstring"
+    (t/is (= "a docstring" (:doc (meta #'R)))))
+  
+  (t/testing "private inheritance"
+   (t/is (:private (meta #'PrivT)))
+   (t/is (:private (meta #'pt-a)) "Privateness is inherited")
+   (t/is (not (:private (meta #'pt-b))) "Privateness is inherited only as a default")))
 
 (t/deftest construction-test
   (t/is (some? (R r-a 42 r-b "foo")))
