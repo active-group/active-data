@@ -11,7 +11,8 @@
              :dev  {:src-paths    ["resources/clj-kondo.exports/de.active-group/active-data/"]
                     :dependencies [[clj-kondo "2024.05.24"]]}}
 
-  :plugins [[lein-auto "0.1.3"]]
+  :plugins [[lein-auto "0.1.3"]
+            [lein-codox "0.10.8"]]
 
   :auto {"test" {:file-pattern #"\.(clj|cljs|cljx|cljc|edn)$"
                  :paths        ["resources/clj-kondo.exports/de.active-group/active-data/"
