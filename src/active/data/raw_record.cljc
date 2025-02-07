@@ -43,6 +43,10 @@
      (when-let [l (seq (remove valid-keys (map first options)))]
        (throw (Exception. (str "Invalid option: " (first l)))))))
 
+(defn ^:private key-a-lists [t] nil
+  (list [t]
+        [t 'value]))
+
 (defmacro def-record
   [t & args]
   (let [{docstring :docstring options* :options fields :fields} (parse-def-record-args args)
@@ -53,8 +57,10 @@
            `(key/def-key ~(cond-> f#
                             (and (contains? (meta t) :private)
                                  (not (contains? (meta f#) :private)))
-                            (vary-meta assoc :private (:private (meta t))))))
-
+                            (vary-meta assoc :private (:private (meta t)))
+                            
+                            true
+                            (vary-meta update :arglists #(or % `'~(key-a-lists t))))))
 
        (def ~t
          (let [e# ~(:extends options)]

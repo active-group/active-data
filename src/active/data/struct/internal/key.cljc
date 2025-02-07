@@ -81,8 +81,13 @@
 (defn make [sym]
   (Key. sym nil nil))
 
+(def ^:private a-lists '([coll] [coll value]))
+
 (defmacro def-key [name]
-  `(defonce ~name (make (symbol ~(str *ns*) ~(str name)))))
+  `(do (defonce ~name (make (symbol ~(str *ns*) ~(str name))))
+       (alter-meta! (var ~name) update
+                    :arglists #(or % '~a-lists))
+       ~name))
 
 (defn set-optimized! [^Key key opt-get opt-assoc]
   ;; Note: should only be called once and immediately after construction/during definition;
