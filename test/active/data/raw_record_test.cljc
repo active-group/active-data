@@ -43,6 +43,10 @@
   (t/testing "docstring"
     (t/is (= "field a" (:doc (meta #'r-a))))
 
+    #?(:clj
+       ;; can't get this to work in cljs; don't know why.
+       (t/is (= '([R] [R value]) (:arglists (meta #'r-a)))))
+
     (t/is (= "a docstring" (:doc (meta #'R)))))
   
   (t/testing "private inheritance"

@@ -67,15 +67,13 @@
                             true
                             (vary-meta update :arglists #(or % `'~(key-a-lists t))))))
 
-       (def ~t
+       (def ~(vary-meta t assoc :doc docstring)
          (let [e# ~(:extends options)]
            (struct-type/create (cond->> ~fields
                                  e# (concat (record-keys e#)))
                                (record-variant (symbol ~(str *ns*) (str '~t)) e#)
                                ~(:validator options)
                                nil)))
-       ~(when (some? docstring)
-          `(alter-meta! (var ~t) assoc :doc ~docstring))
 
        ~@(for [f# fields]
            `(key/set-optimized! ~f# (accessor ~t ~f#) (mutator ~t ~f#)))

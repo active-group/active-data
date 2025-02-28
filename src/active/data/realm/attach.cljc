@@ -50,18 +50,22 @@
   ;; TODO: support some 'rest args' forms?
   (let [[return-realm doc-string args-realms body] (apply parse-defn-args next rest-args)
         arrow '->]
-    `(let [ret# (schema/defn ~name ~@(when return-realm `[:- (realm-schema/schema (realm/compile ~return-realm))])
-                  ~(vec (apply concat
-                               (map (core/fn [[parameter realm]]
-                                      `[~parameter ~@(when realm `[:- (realm-schema/schema (realm/compile ~realm))])])
-                                    args-realms)))
-                  ~@body)]
-       (alter-meta! (var ~name) assoc fn-realm-meta-key
-                    (realm/function ~@(map (core/fn [[arg realm]]
+    `(schema/defn
+       ;; name
+       ~(vary-meta name assoc fn-realm-meta-key
+                   `(realm/function ~@(map (core/fn [[arg realm]]
                                              (or realm realm/any))
                                            args-realms)
                                     ~arrow (or ~return-realm realm/any)))
-       ret#)))
+       ;; return schema
+       ~@(when return-realm `[:- (realm-schema/schema (realm/compile ~return-realm))])
+       ;; args
+       ~(vec (apply concat
+                    (map (core/fn [[parameter realm]]
+                           `[~parameter ~@(when realm `[:- (realm-schema/schema (realm/compile ~realm))])])
+                         args-realms)))
+       ;; body
+       ~@body)))
 
 #?(:clj
    ;; Note: ClojureScript does not allow to alter the metadata of a var.
