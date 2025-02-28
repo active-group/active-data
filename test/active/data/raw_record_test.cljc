@@ -9,21 +9,22 @@
 
 ;; Focuses on what is different than in structs
 
-(t/deftest parse-def-record-args-test
-  (t/is (= '{:fields [{:name arg1} {:name arg2}]}
-           (sut/parse-def-record-args '([arg1 arg2]))))
-  (t/is (= '{:fields []}
-           (sut/parse-def-record-args '([]))))
+#?(:clj
+   (t/deftest parse-def-record-args-test
+     (t/is (= '{:fields [{:name arg1} {:name arg2}]}
+              (sut/parse-def-record-args '([arg1 arg2]))))
+     (t/is (= '{:fields []}
+              (sut/parse-def-record-args '([]))))
   
-  (t/is (= '{:options [{:name :validator, :value x}], :fields []}
-           (sut/parse-def-record-args '(:validator x []))))
-  (t/is (= '{:options [{:name :extends, :value x}], :fields []}
-           (sut/parse-def-record-args '(:extends x []))))
-  (t/is (= '{:docstring "docstring", :options [{:name :extends, :value x}], :fields [{:name arg1 :docstring "a doc"}]}
-           (sut/parse-def-record-args '("docstring" :extends x [arg1 "a doc"]))))
+     (t/is (= '{:options [{:name :validator, :value x}], :fields []}
+              (sut/parse-def-record-args '(:validator x []))))
+     (t/is (= '{:options [{:name :extends, :value x}], :fields []}
+              (sut/parse-def-record-args '(:extends x []))))
+     (t/is (= '{:docstring "docstring", :options [{:name :extends, :value x}], :fields [{:name arg1 :docstring "a doc"}]}
+              (sut/parse-def-record-args '("docstring" :extends x [arg1 "a doc"]))))
 
-  #_(t/is (= :clojure.spec.alpha/invalid
-             (sut/parse-def-record-args '(:other x [])))))
+     #_(t/is (= :clojure.spec.alpha/invalid
+                (sut/parse-def-record-args '(:other x []))))))
 
 (defn throws [t]
   #?(:clj (try (t) nil (catch Throwable e e))
