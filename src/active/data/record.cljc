@@ -118,11 +118,10 @@
            (throw (Exception. (spec/explain-str spec args)))
            r)))))
 
-#?(:clj
-   (defn ^:no-doc compile-fields [field-realm-pairs]
-     (map (fn [[field realm]]
-            [field (if realm (realm/compile realm) realm/any)])
-          field-realm-pairs)))
+(defn ^:no-doc compile-fields [field-realm-pairs]
+  (map (fn [[field realm]]
+         [field (if realm (realm/compile realm) realm/any)])
+       field-realm-pairs))
 
 (defmacro def-record
   "
