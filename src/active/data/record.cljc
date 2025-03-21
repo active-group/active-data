@@ -118,6 +118,12 @@
            (throw (Exception. (spec/explain-str spec args)))
            r)))))
 
+#?(:clj
+   (defn ^:no-doc compile-fields [field-realm-pairs]
+     (map (fn [[field realm]]
+            [field (if realm (realm/compile realm) realm/any)])
+          field-realm-pairs)))
+
 (defmacro def-record
   "
   Defines a record and its keys, optionally giving a realm for each key:
@@ -159,15 +165,11 @@
                                     ;; keep, even if specified as nil.
                                     v
                                     ;; default code otherwise.
-                                    `(realm-validator (map (fn [[field# realm#]]
-                                                             [field# (if realm# (realm/compile realm#) realm/any)])
-                                                           [~@pairs])
+                                    `(realm-validator (compile-fields [~@pairs])
                                                       ~(:extends options)))))))
            [~@fields])
 
-         (set-realm-record-meta! ~t (map (fn [[field# realm#]]
-                                           [field# (if realm# (realm/compile realm#) realm/any)])
-                                         [~@pairs]))
+         (set-realm-record-meta! ~t (compile-fields [~@pairs]))
 
          ~t)))
 

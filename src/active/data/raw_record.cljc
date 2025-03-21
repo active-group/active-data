@@ -44,7 +44,7 @@
      (when-let [l (seq (remove valid-keys (map first options)))]
        (throw (Exception. (str "Invalid option: " (first l)))))))
 
-(defn ^:private key-a-lists [t] nil
+(defn ^:private key-a-lists [t]
   (list [t]
         [t 'value]))
 
