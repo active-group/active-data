@@ -5,7 +5,7 @@
             #?(:clj [clojure.pprint :as pp]
                :cljs [cljs.pprint :as pp])
             [clojure.set :as set])
-  #?(:clj (:import (clojure.lang Util)))
+  #?(:clj (:import (clojure.lang Util MapEntry)))
   #?(:cljs (:require-macros [active.data.struct.internal.closed-struct-map :refer [gen-positional]]))
   (:refer-clojure :rename {instance? clj-instance?
                            satisfies? clj-satisfies?}
@@ -432,6 +432,7 @@
        (valAt [this key] (do-get this key))
        (valAt [this key not-found] (do-get-with-default this key not-found))
        (empty [this] (do-empty this))
+       (entryAt [this key] (MapEntry/create key (do-get this key)))
 
        clojure.lang.IEditableCollection
        (asTransient [this] (do-transient this))

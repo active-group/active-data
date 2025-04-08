@@ -303,3 +303,8 @@
   (let [{a :t-a b :t-b} (sut/struct-map T :t-a 42 :t-b :foo)]
     (t/is (= a 42))
     (t/is (= b :foo))))
+
+(t/deftest select-keys-test
+  (let [s (sut/struct-map T :t-a 42 :t-b :foo)]
+    (t/is (= {:t-a 42} (select-keys s [:t-a]))
+    (t/is (= {:t-a 42 :t-b :foo} (select-keys s [:t-a :t-b]))))))
