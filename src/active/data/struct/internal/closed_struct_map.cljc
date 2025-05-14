@@ -155,7 +155,7 @@
     (let [index (t-find-index-of struct key)]
       (if (>= index 0)
         (data/unsafe-access data index)
-        (throw (unknown-key key struct)))))
+        nil)))
   (t-get-with-default [this key not-found]
     (ensure-editable! owner)
     (let [index (t-find-index-of struct key)]
@@ -245,10 +245,6 @@
 (defn- find-index-of ^long [struct key]
   (struct-type/maybe-index-of struct key))
 
-(def ^:private codox-present? (or (some? (find-ns 'codox.main))
-                                  ;; clj-doc.metagetta is sort of a clone of codox.
-                                  (some? (find-ns 'cljdoc-analyzer.metagetta.main))))
-
 (deftype ^:private PersistentClosedStructMap [struct data locked? _meta
                                               #?(:clj ^:unsynchronized-mutable ^int _hasheq) ;; only clj!
                                               #?(:clj ^:unsynchronized-mutable ^int _hash :cljs ^:mutable _hash)]
@@ -261,12 +257,7 @@
     (let [index (find-index-of struct key)]
       (if (>= index 0)
         (data/unsafe-access data index)
-        (if locked?
-          ;; Work around a 'bug' in codox: https://github.com/weavejester/codox/pull/223
-          (if (and codox-present? (= key :on-interface))
-            nil
-            (throw (unknown-key key struct)))
-          nil))))
+        nil)))
 
   (do-get-with-default [this key not-found]
     (let [index (find-index-of struct key)]

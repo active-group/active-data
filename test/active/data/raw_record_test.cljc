@@ -135,7 +135,11 @@
   (t/is (not= (Empty1) (Empty2))))
 
 (t/deftest no-foreign-keys-test
-  (t/is (some? (throws #(get (R r-a 42 r-b "foo") :bla))))
+  ;; Note: get => nil for any foreign key is important for several clojure libraries
+  ;; codox: https://github.com/weavejester/codox/pull/223
+  ;; and clojure.data/diff when things are different records.
+  (t/is (nil? (get (R r-a 42 r-b "foo") :bla)))
+  (t/is (nil? (get (transient (R r-a 42 r-b "foo")) :bla)))
   
   (t/is (some? (throws #(assoc (R r-a 42 r-b "foo") :bla 1)))))
 
