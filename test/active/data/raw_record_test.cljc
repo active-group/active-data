@@ -103,6 +103,7 @@
 
 (t/deftest reflection-test
   (t/is (= R (sut/record-of (R r-a 42 r-b :foo))))
+  (t/is (= nil (sut/record-of :other)))
 
   (t/is (=  [r-a r-b] (sut/record-keys R)))
 

@@ -90,11 +90,14 @@
        (record-variant? (struct-type/variant (struct-map/struct-of-map m)))))
 
 (defn record-of
-  "Returns the record defined via [[def-record]] for the given instance of it."
+  "Returns the record defined via [[def-record]] for the given instance
+   of it, or nil if m is not a record instance."
   [m]
-  (let [v (struct-map/struct-of-map m)]
-    (assert (record? v))
-    v))
+  ;; Note: returning nil helps using this in multimethods with mixed data, e.g. dispatching over #(or (record-of %) (type %)).
+  (when (struct-map/struct-map? m)
+    (let [v (struct-map/struct-of-map m)]
+      (when (record? v)
+        v))))
 
 (defn record-name
   "Returns the name of the given record as a namespaced symbol."
