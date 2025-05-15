@@ -92,6 +92,8 @@
            raw-record/record-name
            raw-record/record-extends
            raw-record/record?
+           raw-record/record
+           raw-record/set-optimized-for!
            raw-record/record-keys)
 
 ;; re-export value predicates

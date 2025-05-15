@@ -48,6 +48,27 @@
   (list [t]
         [t 'value]))
 
+(defn ^:no-doc record
+  ([name fields]
+   (record name {} fields))
+  ([name options fields]
+   (assert (symbol? name))
+   (assert (every? #{:extends :validator} (keys options)))
+   ;; Note: doesn't optimize the fields for this record.
+   (let [e (:extends options)]
+     (struct-type/create (cond->> fields
+                           e (concat (record-keys e)))
+                         (record-variant name e)
+                         (:validator options)
+                         nil))))
+
+(declare accessor)
+(declare mutator)
+
+(defn ^:no-doc set-optimized-for! [t keys]
+  (doseq [k keys]
+    (key/set-optimized! k (accessor t k) (mutator t k))))
+
 (defmacro def-record
   [t & args]
   (let [{docstring :docstring options* :options fields* :fields} (parse-def-record-args args)
@@ -68,15 +89,11 @@
                             (vary-meta update :arglists #(or % `'~(key-a-lists t))))))
 
        (def ~(vary-meta t assoc :doc docstring)
-         (let [e# ~(:extends options)]
-           (struct-type/create (cond->> ~fields
-                                 e# (concat (record-keys e#)))
-                               (record-variant (symbol ~(str *ns*) (str '~t)) e#)
-                               ~(:validator options)
-                               nil)))
+         (record (symbol ~(str *ns*) (str '~t))
+                 ~options
+                 ~fields))
 
-       ~@(for [f# fields]
-           `(key/set-optimized! ~f# (accessor ~t ~f#) (mutator ~t ~f#)))
+       (set-optimized-for! ~t ~fields)
 
        ~t)))
 

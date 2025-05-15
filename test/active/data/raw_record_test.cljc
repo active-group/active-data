@@ -210,3 +210,10 @@
   (let [{a r-a b r-b} (R r-a 42 r-b :foo)]
     (t/is (= a 42))
     (t/is (= b :foo))))
+
+(t/deftest record-fn-test
+  (let [r (sut/record 'Foo [:k])]
+    (t/is (= r (sut/record 'Foo [:k])) "non-generative")
+    (t/is (sut/is-a? r (r :k 42)))
+    (t/is (= 42 (:k (r :k 42))))
+    (t/is (= (r :k 0) (assoc (r :k 42) :k 0)))))
