@@ -41,6 +41,16 @@
               (hash sym))])
 
   #?@(:clj
+      [clojure.lang.Named
+       (getName [this] (name sym))
+       (getNamespace [this] (namespace sym))]
+
+      :cljs
+      [INamed
+       (-name [this] (name sym))
+       (-namespace [this] (namespace sym))])
+
+  #?@(:clj
       [clojure.lang.IFn
        (invoke [this m]
                (if opt-get
