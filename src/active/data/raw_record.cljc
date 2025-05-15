@@ -21,7 +21,7 @@
 
 (defn ^:no-doc record-variant [name extends]
   (assert (symbol? name))
-  (assert (or (nil? extends) (record? extends)))
+  (assert (or (nil? extends) (struct-type/struct-type? extends)))
   (RecordVariant. name extends))
 
 (defn- record-variant? [v]
@@ -57,7 +57,7 @@
    ;; Note: doesn't optimize the fields for this record.
    (let [e (:extends options)]
      (struct-type/create (cond->> fields
-                           e (concat (record-keys e)))
+                           e (concat (struct-type/keys e)))
                          (record-variant name e)
                          (:validator options)
                          nil))))

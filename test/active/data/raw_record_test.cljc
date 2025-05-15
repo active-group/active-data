@@ -181,7 +181,13 @@
       (t/is (sut/is-extended-from? R v))
 
       (t/is (not (sut/is-exactly-a? R v)))
-      (t/is (sut/is-exactly-a? ExtR v)))))
+      (t/is (sut/is-exactly-a? ExtR v))))
+
+  (t/testing "allow extension of structs"
+    (let [s (struct/struct [:foo])]
+      (sut/def-record ExtR2 :extends s [bla])
+      (t/is (= "f" (:foo (ExtR2 bla 42 :foo "f"))))
+      (t/is (= 42 (bla (ExtR2 bla 42 :foo "f")))))))
 
 (t/deftest transient-test
   (let [v (R r-a 42 r-b "foo")]
