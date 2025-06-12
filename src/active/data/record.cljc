@@ -82,7 +82,7 @@
             [active.data.struct.validator :as struct-validator]
             [active.data.struct.internal.struct-type :as struct-type]
             [active.data.internal.export #?@(:clj [:refer [re-export]] :cljs [:refer-macros [re-export]])]
-            [active.data.realm :as realm]
+            [active.data.realm :as realm #?@(:cljs [:include-macros true])]
             [active.data.realm.validation :as realm-validation]
             #?(:clj [clojure.spec.alpha :as spec]))
   (:refer-clojure :exclude [record? accessor]))
